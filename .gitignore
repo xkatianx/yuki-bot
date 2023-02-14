@@ -1,0 +1,8 @@
+.env
+secret/
+
+node_modules/
+
+dist/
+
+**/WIP*

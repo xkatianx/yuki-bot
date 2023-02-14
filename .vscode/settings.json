@@ -1,0 +1,6 @@
+{
+  "standard.autoFixOnSave": true,
+  "standard.engine": "ts-standard",
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true
+}
