@@ -5,19 +5,21 @@ A discord bot for managing google spreadsheets of puzzlehunts.
 
 ### Host a yuki bot
 1. clone this repo
-2. copy .env_template to .env and fill in it
-3. ```Shell
-    $ npm i 
-   ```
-4. ```Shell
-    $ npm start 
-   ```
+```Shell
+git clone https://github.com/xkatianx/yuki-bot.git
+```
+2. copy [.env_template](.env_template) to .env and fill in it
+3. install modules and run
+```Shell
+npm i 
+npm start 
+```
 
 ### Create a Discord bot
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
 2. New Application
 3. Bot > Add Bot
-4. Copy TOKEN and set it to your environment ==token_of_discord_bot==
+4. Copy TOKEN and set it to your environment `token_of_discord_bot`
 5. Turn on MESSAGE CONTENT INTENT since you may need it
 6. OAuth2
 7. Copy CLIENT ID and set it to your environment `token_of_discord_bot`
