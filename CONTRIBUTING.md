@@ -14,7 +14,7 @@ Please refer to the [template](discord/commands/test.ts) and the [main file](dis
 
 To deploy, use 
 ```Shell 
-$ npm run slash 
+npm run slash 
 ```
 
 
