@@ -9,6 +9,7 @@ declare module 'discord.js' {
 }
 
 export class Yuki extends Bot {
+  /** channelID: Gsheet */
   sheets: Record<string, Gsheet> = {}
 
   constructor (token: string) {
