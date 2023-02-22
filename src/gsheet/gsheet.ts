@@ -30,11 +30,11 @@ export class Gsheet {
     if (id == null) throw new Error(`Invalid url: ${spreadsheetUrl}`)
     this.id = id
     this.auth = AuthToken
-    this.puzzlehunt = new PuzzleHunt()
+    this.puzzlehunt = new PuzzleHunt(this)
   }
 
   async setPuzzlehunt (): Promise<boolean> {
-    return await this.puzzlehunt.setSheet(this)
+    return await this.puzzlehunt.init()
   }
 
   async flush (): Promise<sheets_v4.Schema$Response[] | undefined> {

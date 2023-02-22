@@ -10,10 +10,11 @@ import { fail } from '../../misc/cli.js'
 import test from './test.js'
 import stats from './stats.js'
 import sheet from './sheet.js'
+import puzzle from './puzzle.js'
 
 // also remember to export them here
 export const MyCommands = {
-  test, stats, setsheet: sheet
+  test, stats, sheet, puzzle
 }
 
 export interface CommandObj {

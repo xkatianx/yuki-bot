@@ -13,7 +13,6 @@ export default newSlashCommand(
     const sheet = await bot.getSheet(channel) ??
       say('There is no sheet in this channel.\n' +
           'Please use /setsheet first.')
-    await sheet.setPuzzlehunt()
     const stat = await sheet.puzzlehunt.getStat()
     return await interaction.editReply(stat)
   }

@@ -2,28 +2,32 @@ import axios from 'axios'
 import { tokens } from './login'
 export class Page {
   /** pure html */
-  data: string
+  #data: string
   #title?: string
 
   constructor (data: string) {
-    this.data = data
+    this.#data = data
   }
 
   get title (): string {
     if (this.#title == null) {
-      this.#title = this.data.match(/<title>(.+?)<\/title>/)?.at(1) ?? ''
+      this.#title = this.#data.match(/<title>(.+?)<\/title>/)?.at(1) ?? ''
     }
     return this.#title
   }
 }
 
-export async function browse (url: string, tokens: tokens): Promise<Page> {
-  const config = {
-    headers: {
-      Cookie: `csrftoken=${tokens.csrftoken}; sessionid=${tokens.sessionid}`
+export async function browse (url: string, tokens?: tokens): Promise<Page> {
+  let res
+  if (tokens == null) res = await axios.get(url)
+  else {
+    const config = {
+      headers: {
+        Cookie: `csrftoken=${tokens.csrftoken}; sessionid=${tokens.sessionid}`
+      }
     }
+    res = await axios.get(url, config)
   }
-  const res = await axios.get(url, config)
   if (res.status !== 200) throw new Error(`Failed to browse ${url}`)
   return new Page(res.data)
 }
