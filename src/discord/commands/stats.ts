@@ -9,10 +9,12 @@ export default newSlashCommand(
     await interaction.deferReply()
     const bot = interaction.client.mybot
     const channel = interaction.channel
-    if (!(channel instanceof TextChannel)) say('This command is not available in this channel.')
-    const sheet = await bot.getSheet(channel) ??
-      say('There is no sheet in this channel.\n' +
-          'Please use /setsheet first.')
+    if (!(channel instanceof TextChannel)) {
+      say('This command is not available in this channel.')
+    }
+    const sheet =
+      (await bot.getSheet(channel)) ??
+      say('There is no sheet in this channel.\nPlease use /setsheet first.')
     const stat = await sheet.puzzlehunt.getStat()
     return await interaction.editReply(stat)
   }

@@ -3,14 +3,13 @@ import { fatal, warn } from './cli.js'
 dotenv.config()
 
 function required (name: string): string {
-  return process.env[name] ??
-    fatal(`in .env: missing "${name}"`)
+  return process.env[name] ?? fatal(`in .env: missing "${name}"`)
 }
 
 function optional (name: string): string | undefined {
-  return process.env[name] ??
-    warn(`in .env: missing "${name}"`) ??
-    process.env[name]
+  return (
+    process.env[name] ?? warn(`in .env: missing "${name}"`) ?? process.env[name]
+  )
 }
 
 export const env = {

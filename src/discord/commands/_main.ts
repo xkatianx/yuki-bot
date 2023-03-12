@@ -1,7 +1,11 @@
 // Read https://discordjs.guide/slash-commands/advanced-creation.html
 // for advanced usage.
 
-import { CacheType, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js'
+import {
+  CacheType,
+  ChatInputCommandInteraction,
+  SlashCommandBuilder
+} from 'discord.js'
 import { ELV, YukiError } from '../error.js'
 import { fail } from '../../misc/cli.js'
 
@@ -14,7 +18,10 @@ import puzzle from './puzzle.js'
 
 // also remember to export them here
 export const MyCommands = {
-  test, stats, sheet, puzzle
+  test,
+  stats,
+  sheet,
+  puzzle
 }
 
 export interface CommandObj {
@@ -28,17 +35,18 @@ export function newSlashCommand (
   execute: (interaction: ChatInputCommandInteraction<CacheType>) => Promise<any>
 ): CommandObj {
   return {
-    data: new SlashCommandBuilder()
-      .setName(name)
-      .setDescription(desc),
+    data: new SlashCommandBuilder().setName(name).setDescription(desc),
     execute
   }
 }
 
-/** This is called when a slash command has some error and fails to reply to the user,
- * this function will reply to the user instead.
+/** This is called when a slash command has some error and fails to reply
+ * to the user, this function will reply to the user instead.
  */
-export async function errorHandler (interaction: ChatInputCommandInteraction<CacheType>, e: Error): Promise<void> {
+export async function errorHandler (
+  interaction: ChatInputCommandInteraction<CacheType>,
+  e: Error
+): Promise<void> {
   let content = 'There was an error while executing this command!'
   if (e instanceof YukiError && e.level === ELV.SAY) content = e.message
   else fail(e)

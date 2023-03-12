@@ -1,7 +1,8 @@
-
 /** Waiting 1.234 sec： await sleep(1234) */
 export async function sleep (ms: number): Promise<null> {
-  return await new Promise(resolve => { setTimeout(resolve, ms) })
+  return await new Promise(resolve => {
+    setTimeout(resolve, ms)
+  })
 }
 
 /* timeZones

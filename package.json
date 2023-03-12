@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsc && node dist/index.js",
     "slash": "tsc && node dist/discord/commands/_deploy.js",
+    "format": "prettier-standard --format",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "type": "module",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^18.13.0",
+    "prettier-standard": "^16.4.1",
     "ts-standard": "^12.0.2"
   }
 }

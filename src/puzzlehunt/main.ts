@@ -18,8 +18,14 @@ export class PuzzleHunt {
   async init (): Promise<boolean> {
     if (this.#isSet) return true
     try {
-      const arr = await this.sheet.readRanges(['website', 'username', 'password'])
-      ;[this.website, this.username, this.password] = arr.map(v => v.values?.at(0)?.at(0))
+      const arr = await this.sheet.readRanges([
+        'website',
+        'username',
+        'password'
+      ])
+      ;[this.website, this.username, this.password] = arr.map(v =>
+        v.values?.at(0)?.at(0)
+      )
       // TODO deal with missing info
       this.#isSet = await this.login()
     } catch (e) {}
@@ -51,7 +57,8 @@ export class PuzzleHunt {
       ansUrl = url.replace('/puzzle/', '/solve/')
     }
     const gid = await this.sheet.newFromTemplate(title)
-    let row = (await this.sheet.readRanges(['INDEX!A:D']))[0].values?.length ?? fatal()
+    let row =
+      (await this.sheet.readRanges(['INDEX!A:D']))[0].values?.length ?? fatal()
     row++
     const escapeTitle = title.replaceAll("'", "''")
     await this.sheet

@@ -1,21 +1,27 @@
 # Yuki Bot
-A discord bot for managing google spreadsheets of puzzlehunts. 
+
+A discord bot for managing google spreadsheets of puzzlehunts.
 
 ## :mortar_board: How to
 
 ### Host a yuki bot
+
 1. clone this repo
+
 ```Shell
 git clone https://github.com/xkatianx/yuki-bot.git
 ```
+
 2. copy [.env_template](.env_template) to .env and fill in it
 3. install modules and run
+
 ```Shell
-npm i 
-npm start 
+npm i
+npm start
 ```
 
 ### Create a Discord bot
+
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
 2. New Application
 3. Bot > Add Bot
@@ -29,4 +35,5 @@ npm start
 11. Copy the GENERATED URL and open it to invite your bot to your server
 
 ### Create a Google Service
+
 TBD

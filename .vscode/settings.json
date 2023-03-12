@@ -2,5 +2,11 @@
   "standard.autoFixOnSave": true,
   "standard.engine": "ts-standard",
   "editor.tabSize": 2,
-  "editor.insertSpaces": true
+  "editor.insertSpaces": true,
+  "editor.rulers": [
+    {
+      "column": 80,
+      "color": "#66ff6650"
+    }
+  ]
 }

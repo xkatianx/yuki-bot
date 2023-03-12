@@ -49,13 +49,13 @@ export class Gsheet {
 
   /** return new sheet ID */
   async newFromTemplate (sheetName: string): Promise<number> {
-    const template = await this.getSheet('TEMPLATE') ??
+    const template =
+      (await this.getSheet('TEMPLATE')) ??
       fatal('Missing template in the spreadsheet.')
-    const templateId = template.properties?.sheetId ??
-      fatal()
+    const templateId = template.properties?.sheetId ?? fatal()
     const ress = await this.dupe(templateId, sheetName).flush()
-    const newSheetId = ress?.at(0)?.duplicateSheet?.properties?.sheetId ??
-      fatal()
+    const newSheetId =
+      ress?.at(0)?.duplicateSheet?.properties?.sheetId ?? fatal()
     await this.show(newSheetId).flush()
     return newSheetId
   }
@@ -113,7 +113,9 @@ export class Gsheet {
     return this
   }
 
-  async getSheet (sheetName: string): Promise<sheets_v4.Schema$Sheet | undefined> {
+  async getSheet (
+    sheetName: string
+  ): Promise<sheets_v4.Schema$Sheet | undefined> {
     const res = await sheets.spreadsheets.get({
       ranges: [sheetName],
       spreadsheetId: this.id,
@@ -133,13 +135,14 @@ export class Gsheet {
   }
 
   show (sheetId: number): this {
-    const updateSheetProperties: sheets_v4.Schema$UpdateSheetPropertiesRequest = {
-      properties: {
-        sheetId,
-        hidden: false
-      },
-      fields: 'hidden'
-    }
+    const updateSheetProperties: sheets_v4.Schema$UpdateSheetPropertiesRequest =
+      {
+        properties: {
+          sheetId,
+          hidden: false
+        },
+        fields: 'hidden'
+      }
     this.requests.push({ updateSheetProperties })
     return this
   }

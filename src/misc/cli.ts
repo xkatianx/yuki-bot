@@ -38,14 +38,22 @@ export class Q {
   }
 
   async ask (): Promise<string> {
-    const fulltext = this.title + '\n' +
+    const fulltext =
+      this.title +
+      '\n' +
       this.descs.map((v, i) => `  ${i + 1}. ${v}\n`).join('')
     return await new Promise((resolve, reject) => {
       if (Q.rl == null) return reject(new Error('The interface was closed.'))
       Q.rl.question(fulltext, ans => {
         const foo = this.funcs[parseInt(ans) - 1]
         if (foo != null) {
-          foo().then(_ => { resolve(ans) }).catch(e => { fail(e) })
+          foo()
+            .then(_ => {
+              resolve(ans)
+            })
+            .catch(e => {
+              fail(e)
+            })
         } else resolve(ans)
       })
     })

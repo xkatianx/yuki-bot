@@ -1,17 +1,29 @@
 import axios from 'axios'
 import { fatal } from '../misc/cli.js'
 
-export interface tokens { csrftoken: string, sessionid: string }
+export interface tokens {
+  csrftoken: string
+  sessionid: string
+}
 
-export async function gphLogin (website: string, username: string, password: string): Promise<tokens> {
+export async function gphLogin (
+  website: string,
+  username: string,
+  password: string
+): Promise<tokens> {
   const loginUrl = new URL('login', website).href
   const res = await axios.get(loginUrl)
 
   const cookie = res.headers['set-cookie']
-  const csrftoken1 = cookie?.join(';').match(/csrftoken=(\w+)/)?.at(1)
+  const csrftoken1 = cookie
+    ?.join(';')
+    .match(/csrftoken=(\w+)/)
+    ?.at(1)
 
   const data = res.data as string
-  const csrfmiddlewaretoken = data.match(/name="csrfmiddlewaretoken" ?value="(\w+)"/)?.at(1)
+  const csrfmiddlewaretoken = data
+    .match(/name="csrfmiddlewaretoken" ?value="(\w+)"/)
+    ?.at(1)
   if (csrfmiddlewaretoken == null || csrftoken1 == null) {
     throw new Error('Failed to login')
   }
