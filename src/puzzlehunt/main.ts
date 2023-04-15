@@ -46,7 +46,8 @@ export class PuzzleHunt {
     return page
   }
 
-  async appendPuzzle (url: string, title?: string): Promise<void> {
+  /** return title */
+  async appendPuzzle (url: string, title?: string): Promise<string> {
     // TODO: detect dupe title
     const page = await this.browse(url)
     if (title == null) title = page.title
@@ -69,6 +70,7 @@ export class PuzzleHunt {
       .writeCell(`'${escapeTitle}'!G1`, `=HYPERLINK("${hintUrl}", "HINT")`)
       .writeCell(`'${escapeTitle}'!H1`, `=HYPERLINK("${ansUrl}", "ANSWER")`)
       .flushWrite()
+    return title
   }
 
   async getStat (): Promise<string> {

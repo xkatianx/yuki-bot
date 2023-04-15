@@ -38,8 +38,8 @@ async function execute (
   if (sheet == null) say('Sheet has not been set. Use /sheet first.')
   const url = interaction.options.getString('url') ?? say('Wrong input.')
   const title = interaction.options.getString('title') ?? undefined
-  await sheet.puzzlehunt.appendPuzzle(url, title)
-  await interaction.editReply('Done!')
+  const tabName = await sheet.puzzlehunt.appendPuzzle(url, title)
+  await interaction.editReply(`"${tabName}" added.`)
 }
 
 export default { data, execute }
