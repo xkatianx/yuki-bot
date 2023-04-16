@@ -1,19 +1,14 @@
 import axios from 'axios'
 import { tokens } from './login'
+import HTMLParser, { HTMLElement } from 'node-html-parser'
+
 export class Page {
-  /** pure html */
-  #data: string
-  #title?: string
+  #data: HTMLElement
+  title: string
 
   constructor (data: string) {
-    this.#data = data
-  }
-
-  get title (): string {
-    if (this.#title == null) {
-      this.#title = this.#data.match(/<title>(.+?)<\/title>/)?.at(1) ?? ''
-    }
-    return this.#title
+    this.#data = HTMLParser.parse(data)
+    this.title = this.#data.getElementsByTagName('title')[0]?.textContent ?? ''
   }
 }
 
