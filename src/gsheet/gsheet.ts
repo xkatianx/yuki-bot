@@ -1,16 +1,15 @@
-import { Compute } from 'google-auth-library'
+import { GoogleAuth, Compute } from 'google-auth-library'
 import { JSONClient } from 'google-auth-library/build/src/auth/googleauth'
-import { google, sheets_v4 } from 'googleapis'
+import { sheets_v4 } from '@googleapis/sheets'
 import { fatal } from '../misc/cli.js'
 
 import * as dotenv from 'dotenv'
 import { PuzzleHunt } from '../puzzlehunt/main.js'
 dotenv.config()
 
-const sheets = google.sheets('v4')
+const sheets = new sheets_v4.Sheets({})
 const scopes = ['https://www.googleapis.com/auth/spreadsheets']
-
-const AuthToken = await new google.auth.GoogleAuth({ scopes }).getClient()
+const AuthToken = await new GoogleAuth({ scopes }).getClient()
 
 // https://developers.google.com/sheets/api/samples
 // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/request
