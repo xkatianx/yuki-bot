@@ -38,12 +38,13 @@ export class Gsheet {
   }
 
   async flush (): Promise<sheets_v4.Schema$Response[] | undefined> {
+    const requests = this.requests
+    this.requests = []
     const response = await sheets.spreadsheets.batchUpdate({
       auth: this.auth,
       spreadsheetId: this.id,
-      requestBody: { requests: this.requests }
+      requestBody: { requests }
     })
-    this.requests = []
     return response.data.replies
   }
 
