@@ -15,13 +15,15 @@ import test from './test.js'
 import stats from './stats.js'
 import sheet from './sheet.js'
 import puzzle from './puzzle.js'
+import new_ from './new.js'
 
 // also remember to export them here
 export const MyCommands = {
   test,
   stats,
   sheet,
-  puzzle
+  puzzle,
+  new: new_
 }
 
 export interface CommandObj {

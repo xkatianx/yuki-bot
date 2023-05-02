@@ -25,8 +25,8 @@ export class Gsheet {
 
   constructor (spreadsheetUrl: string) {
     this.url = spreadsheetUrl
-    const id = spreadsheetUrl.match(/\/d\/(.+?)\//)?.at(1)
-    if (id == null) throw new Error(`Invalid url: ${spreadsheetUrl}`)
+    const id = spreadsheetUrl.match(/\/d\/([^/]+)/)?.at(1)
+    if (id == null) fatal(`Invalid url: ${spreadsheetUrl}`)
     this.id = id
     this.auth = AuthToken
     this.puzzlehunt = new PuzzleHunt(this)
