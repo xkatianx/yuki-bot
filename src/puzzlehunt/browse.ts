@@ -1,6 +1,8 @@
-import axios from 'axios'
+import axios, { AxiosRequestConfig } from 'axios'
 import { tokens } from './login'
 import HTMLParser, { HTMLElement } from 'node-html-parser'
+import { fatal } from '../misc/cli.js'
+import { say } from '../discord/error.js'
 
 export class Page {
   #data: HTMLElement
@@ -13,16 +15,20 @@ export class Page {
 }
 
 export async function browse (url: string, tokens?: tokens): Promise<Page> {
-  let res
-  if (tokens == null) res = await axios.get(url)
-  else {
-    const config = {
-      headers: {
+  const config: AxiosRequestConfig = { maxRedirects: 0 }
+  if (tokens != null) {
+    config.headers = {
         Cookie: `csrftoken=${tokens.csrftoken}; sessionid=${tokens.sessionid}`
       }
     }
-    res = await axios.get(url, config)
-  }
-  if (res.status !== 200) throw new Error(`Failed to browse ${url}`)
+  try {
+    const res = await axios.get(url, config)
+    if (res.status !== 200) say(`Failed to browse ${url}\nError ${res.status}`)
   return new Page(res.data)
+  } catch (e: any) {
+    if (typeof e.response?.status === 'number') {
+      say(`Failed to browse ${url}\nError ${e.response.status as number}`)
+    }
+    fatal(e)
+  }
 }
