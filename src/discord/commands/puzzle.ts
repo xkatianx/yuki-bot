@@ -34,11 +34,11 @@ async function execute (
   if (!(channel instanceof TextChannel)) {
     say('This command is not available in this channel.')
   }
-  const sheet = await bot.getSheet(channel)
-  if (sheet == null) say('Sheet has not been set. Use /sheet first.')
+  const ph = bot.getPuzzlehunt(channel.id) ??
+    say('Puzzlehunt has not been set. Use /new first.')
   const url = interaction.options.getString('url') ?? say('Wrong input.')
   const title = interaction.options.getString('title') ?? undefined
-  const tabName = await sheet.puzzlehunt.appendPuzzle(url, title)
+  const tabName = await ph.appendPuzzle(url, title)
   await interaction.editReply(`"${tabName}" added.`)
 }
 

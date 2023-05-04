@@ -5,6 +5,7 @@ import * as dotenv from 'dotenv'
 import { env } from '../misc/env.js'
 import { fatal } from '../misc/cli.js'
 import { Gsheet } from './gsheet.js'
+import { Puzzlehunt } from '../puzzlehunt/puzzlehunt.js'
 dotenv.config()
 
 const scopes = ['https://www.googleapis.com/auth/drive']
@@ -39,13 +40,17 @@ async function copySsheetToFolder (
   return sheet.data.id ?? ''
 }
 
-export async function createFolderAndSsheet (name: string): Promise<Gsheet> {
-  const folderId = await createFolder(name)
-  if (folderId === '') fatal(`Unable to create folder "${name}"`)
+export async function createFolderAndSsheet (ph: Puzzlehunt): Promise<Gsheet> {
+  const title = ph.title ??
+    fatal('missing title in puzzlehunt')
+  const folderId = await createFolder(title)
+  if (folderId === '') fatal(`Unable to create folder "${title}"`)
   const folderUrl = `https://drive.google.com/drive/u/0/folders/${folderId}`
-  const sSheetId = await copySsheetToFolder(name, folderId)
-  if (sSheetId === '') fatal(`Unable to create sheet "${name}"`)
+  const sSheetId = await copySsheetToFolder(title, folderId)
+  if (sSheetId === '') fatal(`Unable to create sheet "${title}"`)
   const sSheetUrl = `https://docs.google.com/spreadsheets/d/${sSheetId}`
   return new Gsheet(sSheetUrl)
     .writeCell('folder', folderUrl)
+    .writeCell('username', ph.username ?? '')
+    .writeCell('password', ph.password ?? '')
 }

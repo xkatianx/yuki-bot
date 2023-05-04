@@ -6,6 +6,7 @@ import {
 } from 'discord.js'
 import { Gsheet } from '../../gsheet/gsheet.js'
 import { say } from '../error.js'
+import { Puzzlehunt } from '../../puzzlehunt/puzzlehunt.js'
 
 const data = new SlashCommandBuilder()
   .setName('sheet')
@@ -41,15 +42,13 @@ async function execute (
   const newUrl =
     interaction.options.getString('url') ??
     say('Please paste url after /sheet.')
-  bot.sheets[channel.id] = new Gsheet(newUrl)
-  const [message, init] = await Promise.all([
-    interaction.editReply(`sheet: ${newUrl}`),
-    bot.sheets[channel.id].setPuzzlehunt()
-  ])
+  const ssheet = new Gsheet(newUrl)
+  bot.sheets[channel.id] = ssheet
+  const ph = (await Puzzlehunt.from(ssheet))
+    .unwrapOr(say('Unable to parse this url.'))
+  bot.puzzlehunts[channel.id] = ph
+  const message = await interaction.editReply(`sheet: ${newUrl}`)
   await channel.messages.pin(message)
-  if (!init) {
-    await interaction.followUp('There are some missing info in this sheet.')
-  }
 }
 
 export default { data, execute }

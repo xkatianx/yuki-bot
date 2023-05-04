@@ -12,10 +12,9 @@ export default newSlashCommand(
     if (!(channel instanceof TextChannel)) {
       say('This command is not available in this channel.')
     }
-    const sheet =
-      (await bot.getSheet(channel)) ??
-      say('There is no sheet in this channel.\nPlease use /setsheet first.')
-    const stat = await sheet.puzzlehunt.getStat()
+    const ph = bot.getPuzzlehunt(channel.id) ??
+      say('Puzzlehunt has not been set. Use /new first.')
+    const stat = await ph.getStat()
     return await interaction.editReply(stat)
   }
 )

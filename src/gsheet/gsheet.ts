@@ -4,7 +4,6 @@ import { sheets_v4 } from '@googleapis/sheets'
 import { fatal } from '../misc/cli.js'
 
 import * as dotenv from 'dotenv'
-import { PuzzleHunt } from '../puzzlehunt/main.js'
 dotenv.config()
 
 const sheets = new sheets_v4.Sheets({})
@@ -21,7 +20,6 @@ export class Gsheet {
   url: string
   requests: sheets_v4.Schema$Request[] = []
   writes: sheets_v4.Schema$ValueRange[] = []
-  puzzlehunt: PuzzleHunt
 
   constructor (spreadsheetUrl: string) {
     this.url = spreadsheetUrl
@@ -29,11 +27,6 @@ export class Gsheet {
     if (id == null) fatal(`Invalid url: ${spreadsheetUrl}`)
     this.id = id
     this.auth = AuthToken
-    this.puzzlehunt = new PuzzleHunt(this)
-  }
-
-  async setPuzzlehunt (): Promise<boolean> {
-    return await this.puzzlehunt.init()
   }
 
   async flush (): Promise<sheets_v4.Schema$Response[] | undefined> {

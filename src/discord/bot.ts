@@ -10,8 +10,9 @@ import {
   ChannelType,
   Events
 } from 'discord.js'
-import { CommandObj, errorHandler, MyCommands } from './commands/_main.js'
+import { CommandObj, errorHandler, MyIrfs, MyCommands } from './commands/_main.js'
 import { done, fail, fatal, warn } from '../misc/cli.js'
+import { say } from './error.js'
 
 export class Bot {
   #token: string
@@ -47,13 +48,22 @@ export class Bot {
       this.commands.set(command.data.name, command)
     }
     this.client.on(Events.InteractionCreate, async interaction => {
-      if (!interaction.isChatInputCommand()) return
-      const command = this.commands.get(interaction.commandName)
-      if (command == null) {
-        return warn(`missing command: ${interaction.commandName}`)
-      }
       try {
-        await command.execute(interaction)
+        if (interaction.isChatInputCommand()) {
+          const command = this.commands.get(interaction.commandName) ??
+            say(`missing command: ${interaction.commandName}`)
+          await command.execute(interaction)
+        } else if (interaction.isButton()) {
+          const method = MyIrfs.button[interaction.customId as `b${string}`] ??
+            say(`missing method: ${interaction.customId}`)
+          await method(interaction)
+        } else if (interaction.isStringSelectMenu()) {
+          // respond to the select menu
+        } else if (interaction.isModalSubmit()) {
+          const method = MyIrfs.model[interaction.customId as `m${string}`] ??
+            say(`missing method: ${interaction.customId}`)
+          await method(interaction)
+        }
       } catch (e: any) {
         await errorHandler(interaction, e)
       }

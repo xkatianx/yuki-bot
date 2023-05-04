@@ -1,6 +1,7 @@
 import { TextChannel } from 'discord.js'
 import { Gsheet } from '../gsheet/gsheet.js'
 import { Bot } from './bot.js'
+import { Puzzlehunt } from '../puzzlehunt/puzzlehunt.js'
 
 declare module 'discord.js' {
   export interface Client {
@@ -11,10 +12,20 @@ declare module 'discord.js' {
 export class Yuki extends Bot {
   /** channelID: Gsheet */
   sheets: Record<string, Gsheet> = {}
+  /** channelID: Puzzlehunt */
+  puzzlehunts: Record<string, Puzzlehunt> = {}
 
   constructor (token: string) {
     super(token)
     this.client.mybot = this
+  }
+
+  setPuzzlehunt (channel: string, puzzlehunt: Puzzlehunt): void {
+    this.puzzlehunts[channel] = puzzlehunt
+  }
+
+  getPuzzlehunt (channel: string): Puzzlehunt | null {
+    return this.puzzlehunts[channel] ?? null
   }
 
   /** assume `sheet: {url}` is posted by the bot and pinned */
