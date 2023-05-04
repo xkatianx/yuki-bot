@@ -31,7 +31,7 @@ async function execute (
   interaction: ChatInputCommandInteraction<CacheType>
 ): Promise<void> {
   const [bot, channel] = await commandPrecheck(interaction)
-  await interaction.deferReply({ ephemeral: true })
+  await interaction.deferReply()
 
   const url = interaction.options.getString('url') ??
     say('Please enter puzzlehunt url.')
