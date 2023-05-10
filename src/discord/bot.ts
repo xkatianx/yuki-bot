@@ -8,17 +8,26 @@ import {
   Collection,
   MessagePayload,
   ChannelType,
-  Events
+  Events,
+  TextChannel,
+  Channel,
+  ButtonInteraction,
+  ModalSubmitInteraction
 } from 'discord.js'
-import { CommandObj, errorHandler, MyIrfs, MyCommands } from './commands/_main.js'
-import { done, fail, fatal, warn } from '../misc/cli.js'
+import {
+  CommandObj,
+  errorHandler,
+  MyIrfs,
+  MyCommands,
+  IRF
+} from './commands/_main.js'
+import { done, fail, warn } from '../misc/cli.js'
 import { say } from './error.js'
 
 export class Bot {
   #token: string
   client: Client
-  #prefix?: string
-  #logID?: string
+  #logChannel: Collection<string, TextChannel> = new Collection()
   commands: Collection<string, CommandObj>
 
   constructor (token: string) {
@@ -50,17 +59,20 @@ export class Bot {
     this.client.on(Events.InteractionCreate, async interaction => {
       try {
         if (interaction.isChatInputCommand()) {
-          const command = this.commands.get(interaction.commandName) ??
+          const command =
+            this.commands.get(interaction.commandName) ??
             say(`missing command: ${interaction.commandName}`)
           await command.execute(interaction)
         } else if (interaction.isButton()) {
-          const method = MyIrfs.button[interaction.customId as `b${string}`] ??
+          const method: IRF<ButtonInteraction> =
+            MyIrfs.button[interaction.customId as keyof typeof MyIrfs.button] ??
             say(`missing method: ${interaction.customId}`)
           await method(interaction)
         } else if (interaction.isStringSelectMenu()) {
           // respond to the select menu
         } else if (interaction.isModalSubmit()) {
-          const method = MyIrfs.model[interaction.customId as `m${string}`] ??
+          const method: IRF<ModalSubmitInteraction> =
+            MyIrfs.modal[interaction.customId as keyof typeof MyIrfs.modal] ??
             say(`missing method: ${interaction.customId}`)
           await method(interaction)
         }
@@ -70,20 +82,20 @@ export class Bot {
     })
   }
 
-  setLogChannel (channelID: string): this {
-    this.#logID = channelID
+  setLogChannel (guildId: string, channel: Channel): this {
+    if (channel.type !== ChannelType.GuildText) {
+      say('It has to be a text channel.')
+    }
+    this.#logChannel.set(guildId, channel)
     return this
   }
 
   async log (
+    guildId: string,
     message: string | MessagePayload
-  ): Promise<Message<boolean> | null> {
-    if (this.#logID == null) return null
-    const channel = this.client.channels.cache.get(this.#logID)
-    if (channel == null) fatal('unable to access this channel:', this.#logID)
-    if (channel.type !== ChannelType.GuildText) {
-      fatal('this channel is not a text channel:', this.#logID)
-    }
+  ): Promise<Message | null> {
+    const channel = this.#logChannel.get(guildId)
+    if (channel == null) return null
     return await channel.send(message)
   }
 

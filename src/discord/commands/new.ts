@@ -12,10 +12,11 @@ import {
   TextInputStyle
 } from 'discord.js'
 import { say } from '../error.js'
-import { createFolderAndSsheet } from '../../gsheet/folder.js'
+import { copySsheetToFolder, createFolder } from '../../gsheet/folder.js'
 import { Puzzlehunt } from '../../puzzlehunt/puzzlehunt.js'
-import { commandPrecheck } from './_misc.js'
+import { interactionFetch } from './_misc.js'
 import { IRF } from './_main.js'
+import { Gsheet } from '../../gsheet/gsheet.js'
 
 const data = new SlashCommandBuilder()
   .setName('new') // command here, should be the same as the file name
@@ -30,12 +31,14 @@ const data = new SlashCommandBuilder()
 async function execute (
   interaction: ChatInputCommandInteraction<CacheType>
 ): Promise<void> {
-  const [bot, channel] = await commandPrecheck(interaction)
+  const { bot, channel, guild } = interactionFetch(interaction)
   await interaction.deferReply()
 
-  const url = interaction.options.getString('url') ??
+  const url =
+    interaction.options.getString('url') ??
     say('Please enter puzzlehunt url.')
-  const puzzlehunt = new Puzzlehunt(url)
+  const setting = bot.getSetting(guild)
+  const puzzlehunt = new Puzzlehunt(url, setting.username, setting.password)
   await puzzlehunt.scan()
   bot.setPuzzlehunt(channel.id, puzzlehunt)
 
@@ -47,8 +50,7 @@ async function execute (
     .setCustomId('bCreatePuzzlehunt')
     .setLabel('Create')
     .setStyle(ButtonStyle.Success)
-  const row = new ActionRowBuilder<ButtonBuilder>()
-    .addComponents(edit, create)
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(edit, create)
 
   await interaction.editReply({
     content: puzzlehunt.printToDiscord(),
@@ -59,7 +61,8 @@ async function execute (
 export async function bEditPuzzlehunt (i: ButtonInteraction): Promise<void> {
   const bot = i.client.mybot
   const channel = i.channelId
-  const puzzlehunt = bot.getPuzzlehunt(channel) ??
+  const puzzlehunt =
+    bot.getPuzzlehunt(channel) ??
     say('Failed to create a puzzlehunt for this channel.')
 
   const modal = new ModalBuilder()
@@ -104,26 +107,45 @@ export async function bEditPuzzlehunt (i: ButtonInteraction): Promise<void> {
       .setRequired(false)
   ]
 
-  modal.addComponents(...inputs.map(v =>
-    new ActionRowBuilder<TextInputBuilder>().addComponents(v)
-  ))
+  modal.addComponents(
+    ...inputs.map(v =>
+      new ActionRowBuilder<TextInputBuilder>().addComponents(v)
+    )
+  )
 
   await i.showModal(modal)
 }
 
 export const bCreatePuzzlehunt: IRF<ButtonInteraction> = async i => {
-  const bot = i.client.mybot
-  const channel = i.channel ??
-    say('This button is not available in this channel.')
-  const puzzlehunt = bot.getPuzzlehunt(channel.id) ??
+  const { bot, channel, guild } = interactionFetch(i)
+  const ph =
+    bot.getPuzzlehunt(channel.id) ??
     say('Failed to create a puzzlehunt for this channel.')
-  if (puzzlehunt.title == null || puzzlehunt.title === '') {
+  if (ph.title == null || ph.title === '') {
     say('The title of the puzzlehunt can not be empty.')
   }
   await i.deferUpdate()
-  const sSheet = await createFolderAndSsheet(puzzlehunt)
-  await sSheet.writeCell('website', puzzlehunt.url).flushWrite()
-  puzzlehunt.setSsheet(sSheet)
+  const setting = bot.getSetting(guild)
+  const rootFolder = setting.drive
+  const driveId = rootFolder?.match(/\/folders\/([^/]+)/)?.at(1) ??
+    say('Please use /setting to set google drive first.')
+  const templateSheet = setting.sheet
+  const sheetId = templateSheet?.match(/\/d\/([^/]+)/)?.at(1) ??
+    say('Please use /setting to set template spreadsheet first.')
+
+  const newFolder = await createFolder(ph.title, driveId)
+  if (newFolder === '') say(`Unable to create folder "${ph.title}"`)
+  const newFolderUrl = `https://drive.google.com/drive/u/0/folders/${newFolder}`
+  const newSheet = await copySsheetToFolder(sheetId, ph.title, newFolder)
+  if (newSheet === '') say(`Unable to create spreadsheet "${ph.title}"`)
+  const sSheetUrl = `https://docs.google.com/spreadsheets/d/${newSheet}`
+  const sSheet = new Gsheet(sSheetUrl)
+    .writeCell('folder', newFolderUrl)
+    .writeCell('username', ph.username ?? '')
+    .writeCell('password', ph.password ?? '')
+    .writeCell('website', ph.url)
+  await sSheet.flushWrite()
+  ph.setSsheet(sSheet)
   bot.sheets[channel.id] = sSheet
   await i.editReply({ components: [] })
   const m = await i.followUp(`sheet: ${sSheet.url}`)
@@ -133,7 +155,8 @@ export const bCreatePuzzlehunt: IRF<ButtonInteraction> = async i => {
 export const mEditPuzzlehunt: IRF<ModalSubmitInteraction> = async i => {
   const bot = i.client.mybot
   const channel = i.channelId
-  const puzzlehunt = bot.getPuzzlehunt(channel ?? '') ??
+  const puzzlehunt =
+    bot.getPuzzlehunt(channel ?? '') ??
     say('Failed to create a puzzlehunt for this channel.')
   const title = i.fields.getTextInputValue('title')
   const start = i.fields.getTextInputValue('start')
@@ -146,13 +169,11 @@ export const mEditPuzzlehunt: IRF<ModalSubmitInteraction> = async i => {
   puzzlehunt.username = username
   puzzlehunt.password = password
 
-  // Property 'update' does not exist on
-  // type 'ModalSubmitInteraction<CacheType>'.ts(2339)
-  // TODO: this just works fine. no idea why this error shows
-  // @ts-expect-error
-  await i.update({
-    content: puzzlehunt.printToDiscord()
-  })
+  if (i.isFromMessage()) {
+    await i.update({
+      content: puzzlehunt.printToDiscord()
+    })
+  }
 }
 
 export default { data, execute }

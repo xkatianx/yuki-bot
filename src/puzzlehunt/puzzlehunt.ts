@@ -1,6 +1,5 @@
 import { Gsheet } from '../gsheet/gsheet.js'
 import { fatal, warn } from '../misc/cli.js'
-import { env } from '../misc/env.js'
 import { discordTime } from '../misc/time.js'
 import { Page, browse } from './browse.js'
 import { gphLogin, tokens } from './login.js'
@@ -22,10 +21,10 @@ export class Puzzlehunt {
   #isSet: boolean = false
   puzzles: Record<string, Page> = {}
 
-  constructor (url: string) {
+  constructor (url: string, username?: string, password?: string) {
     this.url = url
-    this.username = env.PH.ID
-    this.password = env.PH.PW
+    this.username = username
+    this.password = password
   }
 
   /** try to fetch info from url */

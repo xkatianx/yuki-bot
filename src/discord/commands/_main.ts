@@ -2,11 +2,9 @@
 // for advanced usage.
 
 import {
-  ButtonInteraction,
   CacheType,
   ChatInputCommandInteraction,
   Interaction,
-  ModalSubmitInteraction,
   SlashCommandBuilder
 } from 'discord.js'
 import { ELV, YukiError } from '../error.js'
@@ -23,6 +21,12 @@ import new_, {
   bCreatePuzzlehunt,
   mEditPuzzlehunt
 } from './new.js'
+import setting, {
+  bSettingGoogle,
+  bSettingRegister,
+  mSettingGoogle,
+  mSettingRegister
+} from './setting.js'
 
 /** interaction response function */
 export type IRF<T extends Interaction> = (interaction: T) => Promise<void>
@@ -33,25 +37,37 @@ export const MyCommands = {
   stats,
   sheet,
   puzzle,
-  new: new_
+  new: new_,
+  setting
 }
 
-export const MyIrfs: {
-  button: Record<`b${string}`, IRF<ButtonInteraction>>
-  model: Record<`m${string}`, IRF<ModalSubmitInteraction>>
-} = {
+export const MyIrfs = {
+  command: {},
   button: {
     bEditPuzzlehunt,
-    bCreatePuzzlehunt
+    bCreatePuzzlehunt,
+    bSettingRegister,
+    bSettingGoogle
   },
-  model: {
-    mEditPuzzlehunt
+  modal: {
+    mEditPuzzlehunt,
+    mSettingRegister,
+    mSettingGoogle
   }
 }
 
 export interface CommandObj {
   data: Omit<SlashCommandBuilder, 'addSubcommand' | 'addSubcommandGroup'>
-  execute: (interaction: ChatInputCommandInteraction<CacheType>) => Promise<any>
+  execute: IRF<ChatInputCommandInteraction>
+}
+
+declare module 'discord.js' {
+  interface ButtonBuilder {
+    setCustomId: (customId: keyof typeof MyIrfs.button) => this
+  }
+  interface ModalBuilder {
+    setCustomId: (customId: keyof typeof MyIrfs.modal) => this
+  }
 }
 
 export function newSlashCommand (
