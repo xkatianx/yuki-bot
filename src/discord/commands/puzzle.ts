@@ -1,8 +1,7 @@
 import {
   CacheType,
   ChatInputCommandInteraction,
-  SlashCommandBuilder,
-  TextChannel
+  SlashCommandBuilder
 } from 'discord.js'
 import { say } from '../error.js'
 
@@ -30,11 +29,9 @@ async function execute (
 ): Promise<void> {
   await interaction.deferReply()
   const bot = interaction.client.mybot
-  const channel = await bot.client.channels.fetch(interaction.channelId)
-  if (!(channel instanceof TextChannel)) {
-    say('This command is not available in this channel.')
-  }
-  const ph = bot.getPuzzlehunt(channel.id) ??
+  const channel = interaction.channel ??
+    say('Unable to get the interacting channel.')
+  const ph = await bot.getPuzzlehuntFromSheet(channel) ??
     say('Puzzlehunt has not been set. Use /new first.')
   const url = interaction.options.getString('url') ?? say('Wrong input.')
   const title = interaction.options.getString('title') ?? undefined

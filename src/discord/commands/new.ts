@@ -59,8 +59,7 @@ async function execute (
 }
 
 export async function bEditPuzzlehunt (i: ButtonInteraction): Promise<void> {
-  const bot = i.client.mybot
-  const channel = i.channelId
+  const { bot, channel } = interactionFetch(i)
   const puzzlehunt =
     bot.getPuzzlehunt(channel) ??
     say('Failed to create a puzzlehunt for this channel.')
@@ -119,7 +118,7 @@ export async function bEditPuzzlehunt (i: ButtonInteraction): Promise<void> {
 export const bCreatePuzzlehunt: IRF<ButtonInteraction> = async i => {
   const { bot, channel, guild } = interactionFetch(i)
   const ph =
-    bot.getPuzzlehunt(channel.id) ??
+    bot.getPuzzlehunt(channel) ??
     say('Failed to create a puzzlehunt for this channel.')
   if (ph.title == null || ph.title === '') {
     say('The title of the puzzlehunt can not be empty.')
@@ -153,10 +152,9 @@ export const bCreatePuzzlehunt: IRF<ButtonInteraction> = async i => {
 }
 
 export const mEditPuzzlehunt: IRF<ModalSubmitInteraction> = async i => {
-  const bot = i.client.mybot
-  const channel = i.channelId
+  const { bot, channel } = interactionFetch(i)
   const puzzlehunt =
-    bot.getPuzzlehunt(channel ?? '') ??
+    bot.getPuzzlehunt(channel) ??
     say('Failed to create a puzzlehunt for this channel.')
   const title = i.fields.getTextInputValue('title')
   const start = i.fields.getTextInputValue('start')

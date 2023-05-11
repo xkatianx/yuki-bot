@@ -12,7 +12,7 @@ export default newSlashCommand(
     if (!(channel instanceof TextChannel)) {
       say('This command is not available in this channel.')
     }
-    const ph = bot.getPuzzlehunt(channel.id) ??
+    const ph = bot.getPuzzlehunt(channel) ??
       say('Puzzlehunt has not been set. Use /new first.')
     const stat = await ph.getStat()
     return await interaction.editReply(stat)

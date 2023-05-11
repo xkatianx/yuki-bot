@@ -172,10 +172,9 @@ export class Puzzlehunt {
         'password'
       ])
       const [url, username, password] = arr.map(v => v.values?.at(0)?.at(0))
-      const ph = new Puzzlehunt(url)
+      const ph = new Puzzlehunt(url, username, password)
       await ph.scan()
-      ph.username = username
-      ph.password = password
+      ph.setSsheet(ssheet)
       return Ok(ph)
     } catch (e) {
       if (e instanceof Error) return Err(e)
