@@ -45,7 +45,8 @@ async function execute (
   const ssheet = new Gsheet(newUrl)
   bot.sheets[channel.id] = ssheet
   const ph = (await Puzzlehunt.from(ssheet))
-    .unwrapOr(say('Unable to parse this url.'))
+    .mapErr(_ => say('Unable to parse this url.'))
+    .unwrap()
   bot.puzzlehunts[channel.id] = ph
   const message = await interaction.editReply(`sheet: ${newUrl}`)
   await channel.messages.pin(message)
