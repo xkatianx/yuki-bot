@@ -130,6 +130,17 @@ export class Puzzlehunt {
   }
 
   /** return tab name */
+  async appendRound (name: string): Promise<string> {
+    const [data] = await this.getSsheet().readRanges(['INDEX!A:A'])
+    const row = data.values?.length ?? fatal()
+    await this.getSsheet()
+      .writeCell(`INDEX!A${row + 1}`, '-')
+      .writeCell(`INDEX!B${row + 1}`, name)
+      .flushWrite()
+    return name
+  }
+
+  /** return tab name */
   async appendPuzzle (url: string, tabName?: string): Promise<string> {
     // TODO: detect dupe title
     if (tabName == null) {

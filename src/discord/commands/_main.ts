@@ -14,6 +14,7 @@ import { fail } from '../../misc/cli.js'
 // and import them here
 import test from './test.js'
 import root from './root.js'
+import round from './round.js'
 import stats from './stats.js'
 import sheet from './sheet.js'
 import puzzle from './puzzle.js'
@@ -42,6 +43,7 @@ export const MyCommands = {
   test,
   stats,
   root,
+  round,
   sheet,
   puzzle,
   new: new_,
