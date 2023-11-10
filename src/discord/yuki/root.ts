@@ -42,8 +42,12 @@ async function getPinned (
 
   const pss = channels.map(async channel => {
     if (channel.type === ChannelType.GuildText) {
-      const pinned = await channel.messages.fetchPinned(true)
-      return [...pinned.values()]
+      try {
+        const pinned = await channel.messages.fetchPinned(true)
+        return [...pinned.values()]
+      } catch (_) {
+        return null
+      }
     } else return null
   })
   const results = (await Promise.all(pss))
