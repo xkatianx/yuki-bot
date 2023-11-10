@@ -3,7 +3,6 @@ import {
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
-  CacheType,
   ChatInputCommandInteraction,
   ModalBuilder,
   ModalSubmitInteraction,
@@ -12,99 +11,78 @@ import {
   TextInputStyle
 } from 'discord.js'
 import { say } from '../error.js'
-import { copySsheetToFolder, createFolder } from '../../gsheet/folder.js'
-import { Puzzlehunt } from '../../puzzlehunt/puzzlehunt.js'
-import { interactionFetch } from './_misc.js'
 import { IRF } from './_main.js'
-import { GSpreadsheet, Gsheet } from '../../gsheet/gsheet.js'
-import { getRootFolder } from '../yuki/root.js'
+import { interactionFetch } from './_misc.js'
+import { Puzzle } from '../../puzzlehunt/puzzle.js'
+import { createFolder, copySsheetToFolder } from '../../gsheet/folder.js'
+import { Gsheet } from '../../gsheet/gsheet.js'
 
 const data = new SlashCommandBuilder()
-  .setName('new') // command here, should be the same as the file name
-  .setDescription('Create a new puzzlehunt spreadsheet.')
+  .setName('add')
+  .setDescription(
+    'Add new puzzle tab to the solving spreadsheet of this channel.'
+  )
   .addStringOption(option =>
     option
       .setName('url')
-      .setDescription('The url of the puzzlehunt main page.')
+      .setDescription('The url of the puzzle.')
       .setRequired(true)
   )
 
-async function execute (
-  interaction: ChatInputCommandInteraction<CacheType>
-): Promise<void> {
-  const { bot, channel, guild } = interactionFetch(interaction)
-  await interaction.deferReply()
+const execute: IRF<ChatInputCommandInteraction> = async i => {
+  const { bot, channel } = interactionFetch(i)
+  const url = i.options.getString('url') ??
+    say('Usage: `/add <url>`. Please enter the url.')
+  await i.deferReply()
 
-  const url =
-    interaction.options.getString('url') ??
-    say('Please enter puzzlehunt url.')
-  const setting = bot.getSetting(guild)
-  const puzzlehunt = new Puzzlehunt(url, setting.username, setting.password)
-  await puzzlehunt.scan()
-  bot.setPuzzlehunt(channel.id, puzzlehunt)
+  const ph = await bot.getPuzzlehuntFromSheet(channel, true)
+  const page = await ph.browse(url) as Puzzle
 
   const edit = new ButtonBuilder()
-    .setCustomId('bEditPuzzlehunt')
+    .setCustomId('bAddEdit')
     .setLabel('Edit')
     .setStyle(ButtonStyle.Secondary)
   const create = new ButtonBuilder()
-    .setCustomId('bCreatePuzzlehunt')
+    .setCustomId('bAddCreate')
     .setLabel('Create')
     .setStyle(ButtonStyle.Success)
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(edit, create)
 
-  await interaction.editReply({
-    content: puzzlehunt.printToDiscord(),
+  const m = await i.editReply({
+    content: page.printToDiscord(),
     components: [row]
   })
+  ph.tmpPuzzles[m.id] = page
 }
 
-export async function bEditPuzzlehunt (i: ButtonInteraction): Promise<void> {
+export default { data, execute }
+
+export const bAddEdit: IRF<ButtonInteraction> = async i => {
   const { bot, channel } = interactionFetch(i)
-  const puzzlehunt =
+  const ph =
     bot.getPuzzlehunt(channel) ??
     say('Failed to create a puzzlehunt for this channel.')
+  const puzzle = ph.tmpPuzzles[i.message.id]
 
   const modal = new ModalBuilder()
-    .setCustomId('mEditPuzzlehunt')
-    .setTitle('Create New Puzzlehunt')
+    .setCustomId('mAddEdit')
+    .setTitle('Create New Puzzle')
 
   const inputs = [
     new TextInputBuilder()
       .setCustomId('title')
       .setLabel('title')
-      .setPlaceholder('The title of the puzzlehunt')
+      .setPlaceholder('The title of the puzzle')
       .setStyle(TextInputStyle.Short)
-      .setValue(puzzlehunt.title ?? '')
+      .setValue(puzzle.title)
       .setRequired(true),
     new TextInputBuilder()
-      .setCustomId('start')
-      .setLabel('start time')
-      .setPlaceholder('e.g. "2023-05-06T10:00:00-07:00"')
+      .setCustomId('tab')
+      .setLabel('sheet tab')
+      .setPlaceholder('The tab name of the sheet')
       .setStyle(TextInputStyle.Short)
-      .setValue(puzzlehunt.getStartTime(false))
-      .setRequired(false),
-    new TextInputBuilder()
-      .setCustomId('end')
-      .setLabel('end time')
-      .setPlaceholder('e.g. "2023-05-06T10:00:00-07:00"')
-      .setStyle(TextInputStyle.Short)
-      .setValue(puzzlehunt.getEndTime(false))
-      .setRequired(false),
-    new TextInputBuilder()
-      .setCustomId('username')
-      .setLabel('username')
-      .setPlaceholder('The username to login to the puzzlehunt')
-      .setStyle(TextInputStyle.Short)
-      .setValue(puzzlehunt.username ?? '')
-      .setRequired(false),
-    new TextInputBuilder()
-      .setCustomId('password')
-      .setLabel('password')
-      .setPlaceholder('The password to login to the puzzlehunt')
-      .setStyle(TextInputStyle.Short)
-      .setValue(puzzlehunt.password ?? '')
-      .setRequired(false)
+      .setValue(puzzle.title)
+      .setRequired(true)
   ]
 
   modal.addComponents(
@@ -116,7 +94,7 @@ export async function bEditPuzzlehunt (i: ButtonInteraction): Promise<void> {
   await i.showModal(modal)
 }
 
-export const bCreatePuzzlehunt: IRF<ButtonInteraction> = async i => {
+export const bAddCreate: IRF<ButtonInteraction> = async i => {
   const { bot, channel, guild } = interactionFetch(i)
   const ph =
     bot.getPuzzlehunt(channel) ??
@@ -125,10 +103,13 @@ export const bCreatePuzzlehunt: IRF<ButtonInteraction> = async i => {
     say('The title of the puzzlehunt can not be empty.')
   }
   await i.deferUpdate()
-  const root = await getRootFolder(bot, guild)
-  if (root.err) say('Please use /root to set root folder first.')
-  const driveId = root.unwrap().id
-  const sheetId = GSpreadsheet.template.puzzles.id
+  const setting = bot.getSetting(guild)
+  const rootFolder = setting.drive
+  const driveId = rootFolder?.match(/\/folders\/([^/]+)/)?.at(1) ??
+    say('Please use /setting to set google drive first.')
+  const templateSheet = setting.sheet
+  const sheetId = templateSheet?.match(/\/d\/([^/]+)/)?.at(1) ??
+    say('Please use /setting to set template spreadsheet first.')
 
   const newFolder = await createFolder(ph.title, driveId)
   if (newFolder === '') say(`Unable to create folder "${ph.title}"`)
@@ -149,7 +130,7 @@ export const bCreatePuzzlehunt: IRF<ButtonInteraction> = async i => {
   await channel.messages.pin(m)
 }
 
-export const mEditPuzzlehunt: IRF<ModalSubmitInteraction> = async i => {
+export const mAddEdit: IRF<ModalSubmitInteraction> = async i => {
   const { bot, channel } = interactionFetch(i)
   const puzzlehunt =
     bot.getPuzzlehunt(channel) ??
@@ -171,5 +152,3 @@ export const mEditPuzzlehunt: IRF<ModalSubmitInteraction> = async i => {
     })
   }
 }
-
-export default { data, execute }

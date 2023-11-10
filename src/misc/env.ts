@@ -26,6 +26,7 @@ export const env = {
   GG: {
     /** Google Cloud Project ID */
     ID: required('GCLOUD_PROJECT'),
+    EMAIL: required('GOOGLE_EMAIL'),
     /** path to credentials (./secret/xxx.json) */
     PATH: required('GOOGLE_APPLICATION_CREDENTIALS')
   }

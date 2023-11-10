@@ -1,9 +1,13 @@
-import { Channel, Guild, TextChannel } from 'discord.js'
-import { Gsheet } from '../gsheet/gsheet.js'
-import { Bot } from './bot.js'
-import { Puzzlehunt } from '../puzzlehunt/puzzlehunt.js'
-import { Setting } from './commands/setting.js'
-import { say } from './error.js'
+import {
+  Channel,
+  Guild,
+  TextChannel
+} from 'discord.js'
+import { Gsheet } from '../../gsheet/gsheet.js'
+import { Bot } from '../bot.js'
+import { Puzzlehunt } from '../../puzzlehunt/puzzlehunt.js'
+import { Setting } from '../commands/setting.js'
+import { say } from '../error.js'
 
 declare module 'discord.js' {
   export interface Client {
@@ -32,7 +36,14 @@ export class Yuki extends Bot {
     return this.puzzlehunts[channel.id]
   }
 
-  async getPuzzlehuntFromSheet (channel: Channel): Promise<Puzzlehunt | undefined> {
+  async getPuzzlehuntFromSheet (
+    channel: Channel,
+    errIfEmpty: true
+  ): Promise<Puzzlehunt>
+  async getPuzzlehuntFromSheet (
+    channel: Channel,
+    errIfEmpty = false
+  ): Promise<Puzzlehunt | undefined> {
     if (this.puzzlehunts[channel.id] == null) {
       const sheet = await this.getSheet(channel)
       if (sheet != null) {
@@ -41,6 +52,9 @@ export class Yuki extends Bot {
           .unwrap()
         this.puzzlehunts[channel.id] = ph
       }
+    }
+    if (errIfEmpty && this.puzzlehunts[channel.id] == null) {
+      say('Puzzlehunt has not been set. Please use `/new` first.')
     }
     return this.puzzlehunts[channel.id]
   }

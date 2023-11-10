@@ -21,6 +21,7 @@
     "dotenv": "^16.0.3",
     "google-auth-library": "^8.7.0",
     "node-html-parser": "^6.1.5",
+    "puppeteer": "^20.2.1",
     "ts-results": "^3.3.0",
     "typescript": "^5.0.4"
   },

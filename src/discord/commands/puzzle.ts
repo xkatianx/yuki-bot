@@ -31,8 +31,7 @@ async function execute (
   const bot = interaction.client.mybot
   const channel = interaction.channel ??
     say('Unable to get the interacting channel.')
-  const ph = await bot.getPuzzlehuntFromSheet(channel) ??
-    say('Puzzlehunt has not been set. Use /new first.')
+  const ph = await bot.getPuzzlehuntFromSheet(channel, true)
   const url = interaction.options.getString('url') ?? say('Wrong input.')
   const title = interaction.options.getString('title') ?? undefined
   const tabName = await ph.appendPuzzle(url, title)

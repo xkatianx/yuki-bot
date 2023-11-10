@@ -13,6 +13,7 @@ import { fail } from '../../misc/cli.js'
 // implement commands in their own files in the same folder,
 // and import them here
 import test from './test.js'
+import root from './root.js'
 import stats from './stats.js'
 import sheet from './sheet.js'
 import puzzle from './puzzle.js'
@@ -21,6 +22,11 @@ import new_, {
   bCreatePuzzlehunt,
   mEditPuzzlehunt
 } from './new.js'
+import add, {
+  bAddCreate,
+  bAddEdit,
+  mAddEdit
+} from './add.js'
 import setting, {
   bSettingGoogle,
   bSettingRegister,
@@ -35,9 +41,11 @@ export type IRF<T extends Interaction> = (interaction: T) => Promise<void>
 export const MyCommands = {
   test,
   stats,
+  root,
   sheet,
   puzzle,
   new: new_,
+  add,
   setting
 }
 
@@ -47,12 +55,15 @@ export const MyIrfs = {
     bEditPuzzlehunt,
     bCreatePuzzlehunt,
     bSettingRegister,
-    bSettingGoogle
+    bSettingGoogle,
+    bAddCreate,
+    bAddEdit
   },
   modal: {
     mEditPuzzlehunt,
     mSettingRegister,
-    mSettingGoogle
+    mSettingGoogle,
+    mAddEdit
   }
 }
 

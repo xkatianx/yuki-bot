@@ -7,7 +7,7 @@ import {
 } from 'discord.js'
 import { fatal } from '../../misc/cli.js'
 import { say } from '../error.js'
-import { Yuki } from '../yuki'
+import { Yuki } from '../yuki/yuki.js'
 
 export async function commandPrecheck (
   interaction: ChatInputCommandInteraction

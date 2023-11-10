@@ -4,6 +4,9 @@ import { discordTime } from '../misc/time.js'
 import { Page, browse } from './browse.js'
 import { gphLogin, tokens } from './login.js'
 import pkg, { Result } from 'ts-results'
+import { Round } from './round.js'
+import { say } from '../discord/error.js'
+import { Puzzle } from './puzzle.js'
 const { Err, Ok } = pkg
 
 export class Puzzlehunt {
@@ -19,7 +22,9 @@ export class Puzzlehunt {
   ssheet?: Gsheet
   tokens?: tokens
   #isSet: boolean = false
-  puzzles: Record<string, Page> = {}
+  tmpPuzzles: Record<string, Puzzle> = {}
+  puzzles: Record<string, Puzzle> = {}
+  rounds: Record<string, Round> = {}
 
   constructor (url: string, username?: string, password?: string) {
     this.url = url
@@ -38,7 +43,7 @@ export class Puzzlehunt {
     const timestamps = this.mainPage.data.getElementsByTagName('time')
       .map(time => time.getAttribute('datetime') ?? '')
       .filter(v => v !== '')
-    if (timestamps.length === 2) {
+    if (timestamps.length >= 2) {
       this.setStartTime(timestamps[0])
       this.setEndTime(timestamps[1])
     }
@@ -127,8 +132,10 @@ export class Puzzlehunt {
   /** return tab name */
   async appendPuzzle (url: string, tabName?: string): Promise<string> {
     // TODO: detect dupe title
-    const page = await this.browse(url)
-    if (tabName == null) tabName = page.title
+    if (tabName == null) {
+      const page = await this.browse(url)
+      tabName = page.title
+    }
     let [hintUrl, ansUrl] = ['', '']
     // gph style
     if (url.match('/puzzle/') != null) {
@@ -136,17 +143,15 @@ export class Puzzlehunt {
       ansUrl = url.replace('/puzzle/', '/solve/')
     }
     const gid = await this.getSsheet().newFromTemplate(tabName)
-    const [data] = await this.getSsheet().readRanges(['INDEX!A:D'])
-    let row = data.values?.length ?? fatal()
-    row++
+    const [data] = await this.getSsheet().readRanges(['INDEX!A:A'])
+    const row = data.values?.length ?? fatal()
     const escapeTitle = tabName.replaceAll("'", "''")
     await this.getSsheet()
-      .writeCell(`INDEX!B${row}`, `=HYPERLINK("#gid=${gid}", "${tabName}")`)
-      .writeCell(`INDEX!C${row}`, `='${escapeTitle}'!B1`)
-      .writeCell(`INDEX!D${row}`, `='${escapeTitle}'!D1`)
-      .writeCell(`'${escapeTitle}'!F1`, `=HYPERLINK("${url}", "PUZZLE")`)
-      .writeCell(`'${escapeTitle}'!G1`, `=HYPERLINK("${hintUrl}", "HINT")`)
-      .writeCell(`'${escapeTitle}'!H1`, `=HYPERLINK("${ansUrl}", "ANSWER")`)
+      .writeCell(`INDEX!A${row + 1}`, `${gid}`)
+      .writeCell(`INDEX!B${row + 1}`, tabName)
+      .writeCell(`'${escapeTitle}'!A13`, `=HYPERLINK("${url}", "puzzle")`)
+      .writeCell(`'${escapeTitle}'!A14`, `=HYPERLINK("${hintUrl}", "hint")`)
+      .writeCell(`'${escapeTitle}'!A15`, `=HYPERLINK("${ansUrl}", "answer")`)
       .flushWrite()
     return tabName
   }
@@ -181,4 +186,16 @@ export class Puzzlehunt {
       else return Err(new Error('Unknown error.'))
     }
   }
+
+  async addRound (url: string, roundName?: string): Promise<[string, Round]> {
+    const r = await browse(url, this.tokens) as Round
+    roundName = roundName ?? r.title
+    if (roundName in this.rounds) say(`round ${roundName} is already added.`)
+    this.rounds[roundName] = r
+    return [roundName, r]
+  }
+/*
+  async addPuzzle (url: string, puzzleName?: string, roundName?: string) {
+
+  } */
 }

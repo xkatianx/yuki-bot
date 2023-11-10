@@ -4,14 +4,86 @@ import { sheets_v4 } from '@googleapis/sheets'
 import { fatal } from '../misc/cli.js'
 
 import * as dotenv from 'dotenv'
+import { GFolder } from './folder.js'
+import { Result } from '../misc/result.js'
 dotenv.config()
 
 const sheets = new sheets_v4.Sheets({})
 const scopes = ['https://www.googleapis.com/auth/spreadsheets']
 const AuthToken = await new GoogleAuth({ scopes }).getClient()
 
+export class GSheet {
+  id: string
+  spreadsheet: GSpreadsheet
+
+  constructor (spreadsheet: GSpreadsheet, id: string) {
+    this.spreadsheet = spreadsheet
+    this.id = id
+  }
+}
+
+export class GSpreadsheet {
+  #url?: string
+  #id?: string
+  requests: sheets_v4.Schema$Request[] = []
+  writes: sheets_v4.Schema$ValueRange[] = []
+
+  static template = {
+    settings: GSpreadsheet.fromId('1fLJPiEVf96dAr3mrBRf7ehUepkMCbLAyBYs6qUANVWM'),
+    puzzles: GSpreadsheet.fromId('1ASWv9mldgwN3CXQ4-tzWdxKMSB5kVabl7vOR9fJ2314')
+  }
+
+  static fromId (id: string): GSpreadsheet {
+    const ss = new GSpreadsheet()
+    ss.#id = id
+    return ss
+  }
+
+  static fromUrl (url: string): GSpreadsheet {
+    const ss = new GSpreadsheet()
+    ss.#url = url
+    return ss
+  }
+
+  get url (): string {
+    if (this.#url == null) {
+      if (this.#id == null) {
+        fatal('The spreadsheet is not correctly initiallized.')
+      }
+      this.#url = `https://docs.google.com/spreadsheets/d/${this.#id}`
+    }
+    return this.#url
+  }
+
+  get id (): string {
+    if (this.#id == null) {
+      this.#id =
+        (this.#url ?? '').match(
+          'https://docs.google.com/spreadsheets/d/(\\w+)'
+        )?.[1] ?? fatal('The folder is not correctly initiallized.')
+    }
+    return this.#id
+  }
+
+  async copyTo (folder: GFolder, rename?: string): Promise<Result<GSpreadsheet, number>> {
+    return await folder.pasteSpreadsheet(this, rename)
+  }
+
+  async flush (): Promise<sheets_v4.Schema$Response[] | undefined> {
+    const requests = this.requests
+    this.requests = []
+    const response = await sheets.spreadsheets.batchUpdate({
+      auth: AuthToken,
+      spreadsheetId: this.id,
+      requestBody: { requests }
+    })
+    return response.data.replies
+  }
+}
+
 // https://developers.google.com/sheets/api/samples
 // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/request
+
 export class Gsheet {
   auth: JSONClient | Compute
   /** spreadsheet ID */
@@ -150,3 +222,7 @@ export class Gsheet {
     return res.data
   }
 }
+
+export const DefaultSetting = GSpreadsheet.fromId(
+  '1fLJPiEVf96dAr3mrBRf7ehUepkMCbLAyBYs6qUANVWM'
+)
