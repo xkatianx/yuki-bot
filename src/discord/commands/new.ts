@@ -12,7 +12,11 @@ import {
   TextInputStyle
 } from 'discord.js'
 import { say } from '../error.js'
-import { copySsheetToFolder, createFolder } from '../../gsheet/folder.js'
+import {
+  GFolder,
+  copySsheetToFolder,
+  createFolder
+} from '../../gsheet/folder.js'
 import { Puzzlehunt } from '../../puzzlehunt/puzzlehunt.js'
 import { interactionFetch } from './_misc.js'
 import { IRF } from './_main.js'
@@ -36,8 +40,7 @@ async function execute (
   await interaction.deferReply()
 
   const url =
-    interaction.options.getString('url') ??
-    say('Please enter puzzlehunt url.')
+    interaction.options.getString('url') ?? say('Please enter puzzlehunt url.')
   const setting = bot.getSetting(guild)
   const puzzlehunt = new Puzzlehunt(url, setting.username, setting.password)
   await puzzlehunt.scan()
@@ -125,9 +128,18 @@ export const bCreatePuzzlehunt: IRF<ButtonInteraction> = async i => {
     say('The title of the puzzlehunt can not be empty.')
   }
   await i.deferUpdate()
-  const root = await getRootFolder(bot, guild)
-  if (root.err) say('Please use /root to set root folder first.')
-  const driveId = root.unwrap().id
+
+  // old method
+  const setting = bot.getSetting(guild)
+  const rootFolder = setting.drive
+  let driveId
+  if (rootFolder != null) {
+    driveId = GFolder.fromUrl(rootFolder).id
+  } else {
+    const root = await getRootFolder(bot, guild)
+    if (root.err) say('Please use /root to set root folder first.')
+    driveId = root.unwrap().id
+  }
   const sheetId = GSpreadsheet.template.puzzles.id
 
   const newFolder = await createFolder(ph.title, driveId)
