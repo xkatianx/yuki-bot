@@ -39,7 +39,7 @@ export class GFolder {
     if (this.#id == null) {
       this.#id =
         (this.#url ?? '').match(
-          'https://drive.google.com/drive/u/0/folders/(.+)'
+          'https://drive.google.com/drive/(?:u/0/)?folders/(.+)'
         )?.[1] ?? fatal('The folder is not correctly initiallized.')
     }
     return this.#id
