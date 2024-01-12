@@ -17,8 +17,8 @@ export class Gph {
     this.isStarted = true
     this.#browser = await puppeteer.launch({ headless: 'new' })
     this.#page = await this.browser.newPage()
-    // this.#page.setDefaultTimeout(60 * 1000)
-    // this.#page.setDefaultNavigationTimeout(60 * 1000)
+    this.#page.setDefaultTimeout(10 * 1000)
+    this.#page.setDefaultNavigationTimeout(10 * 1000)
     await this.page.setViewport({ width: 1280, height: 1024 })
     await this.page.goto(this.url.href)
   }
