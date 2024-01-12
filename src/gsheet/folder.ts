@@ -90,6 +90,26 @@ export class GFolder {
     return Ok(GFolder.fromId(id))
   }
 
+  async findFolder (name: string): Promise<Result<GFolder, string>> {
+    const response = await drive.files.list({
+      q: [
+        `name='${name}'`,
+        `'${this.id}' in parents`,
+        "mimeType='application/vnd.google-apps.folder'"
+      ].join(' and '),
+      fields: 'files(id, name)'
+    })
+    const files = response.data.files
+    // TODO deal with 2+ results
+    if (files?.[0] != null) {
+      const id = files[0].id
+      if (id == null) return Err('empty id')
+      return Ok(GFolder.fromId(id))
+    } else {
+      return Err('not found')
+    }
+  }
+
   async findSpreadSheet (name: string): Promise<Result<GSpreadsheet, string>> {
     const response = await drive.files.list({
       q: `name='${name}' and '${this.id}' in parents and mimeType='application/vnd.google-apps.spreadsheet'`,
@@ -104,6 +124,13 @@ export class GFolder {
     } else {
       return Err('not found')
     }
+  }
+
+  async createDefaultSpreadsheet (
+    name: string
+  ): Promise<Result<GSpreadsheet, number>> {
+    const ss = GSpreadsheet.template.puzzles
+    return await this.pasteSpreadsheet(ss, name)
   }
 
   async pasteSpreadsheet (

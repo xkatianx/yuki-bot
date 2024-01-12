@@ -1,13 +1,11 @@
-import {
-  Channel,
-  Guild,
-  TextChannel
-} from 'discord.js'
-import { Gsheet } from '../../gsheet/gsheet.js'
+import { Channel, Guild, TextBasedChannel, TextChannel } from 'discord.js'
+import { GSpreadsheet, Gsheet } from '../../gsheet/gsheet.js'
 import { Bot } from '../bot.js'
 import { Puzzlehunt } from '../../puzzlehunt/puzzlehunt.js'
 import { Setting } from '../commands/setting.js'
 import { say } from '../error.js'
+import { Gph } from '../../gph/main.js'
+import { Err, Ok, Result } from '../../misc/result.js'
 
 declare module 'discord.js' {
   export interface Client {
@@ -22,10 +20,85 @@ export class Yuki extends Bot {
   puzzlehunts: Record<string, Puzzlehunt> = {}
   /** guildID: Setting */
   settings: Record<string, Setting> = {}
+  #channelThings: {
+    [channelId: string]: {
+      spreadsheet: GSpreadsheet
+      // puzzlehunt: Puzzlehunt
+      browser: Gph
+    }
+  } = {}
 
   constructor (token: string) {
     super(token)
     this.client.mybot = this
+  }
+
+  setChannelThings (
+    channelId: string,
+    spreadsheet: GSpreadsheet,
+    browser: Gph
+  ): void {
+    this.#channelThings[channelId] = {
+      spreadsheet,
+      browser
+    }
+  }
+
+  async getChannelThings (channel: TextBasedChannel): Promise<
+  Result<
+  {
+    spreadsheet: GSpreadsheet
+    browser: Gph
+  },
+  string
+  >
+  > {
+    if (this.#channelThings[channel.id] == null) {
+      const pinned = await channel.messages.fetchPinned(true)
+      let ss
+      for (const m of pinned?.values() ?? []) {
+        if (m.author.id !== this.client.user?.id) continue
+        if (!m.content.startsWith('sheet:')) continue
+        const url = m.content.match(/http[^\b]+/)?.at(0)
+        if (url == null) continue
+        ss = GSpreadsheet.fromUrl(url)
+        break
+      }
+      if (ss == null) return Err('Please use `/new` to setup first.')
+      const site = (await ss.readIndexInfo()).website
+      const browser = new Gph(site)
+      await browser.start()
+      this.#channelThings[channel.id] = {
+        spreadsheet: ss,
+        browser
+      }
+    }
+    return Ok(this.#channelThings[channel.id])
+  }
+
+  /** assume `sheet: {url}` is posted by the bot and pinned */
+  async getSS (
+    channel: TextBasedChannel
+  ): Promise<Result<GSpreadsheet, string>> {
+    return (await this.getChannelThings(channel)).map(o => o.spreadsheet)
+  }
+
+  async scanTitle (channel: TextBasedChannel, url: string): Promise<string> {
+    const browser = (await this.getChannelThings(channel)).unwrapOrElse(
+      say
+    ).browser
+    await browser.browse(url)
+    return await browser.getTitle()
+  }
+
+  async appendPuzzle (
+    channel: TextBasedChannel,
+    url: string,
+    tabName: string
+  ): Promise<string> {
+    const ss = this.#channelThings[channel.id].spreadsheet
+    await ss.newPuzzleTab(url, tabName)
+    return tabName
   }
 
   setPuzzlehunt (channel: string, puzzlehunt: Puzzlehunt): void {

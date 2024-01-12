@@ -6,6 +6,7 @@ import { fatal } from '../misc/cli.js'
 import * as dotenv from 'dotenv'
 import { GFolder } from './folder.js'
 import { Result } from '../misc/result.js'
+import { Gph } from '../gph/main.js'
 dotenv.config()
 
 const sheets = new sheets_v4.Sheets({})
@@ -27,9 +28,12 @@ export class GSpreadsheet {
   #id?: string
   requests: sheets_v4.Schema$Request[] = []
   writes: sheets_v4.Schema$ValueRange[] = []
+  #gph?: Gph
 
   static template = {
-    settings: GSpreadsheet.fromId('1fLJPiEVf96dAr3mrBRf7ehUepkMCbLAyBYs6qUANVWM'),
+    settings: GSpreadsheet.fromId(
+      '1fLJPiEVf96dAr3mrBRf7ehUepkMCbLAyBYs6qUANVWM'
+    ),
     puzzles: GSpreadsheet.fromId('1ASWv9mldgwN3CXQ4-tzWdxKMSB5kVabl7vOR9fJ2314')
   }
 
@@ -59,13 +63,16 @@ export class GSpreadsheet {
     if (this.#id == null) {
       this.#id =
         (this.#url ?? '').match(
-          'https://docs.google.com/spreadsheets/d/(\\w+)'
+          'https://docs.google.com/spreadsheets/d/([^/]+)'
         )?.[1] ?? fatal('The folder is not correctly initiallized.')
     }
     return this.#id
   }
 
-  async copyTo (folder: GFolder, rename?: string): Promise<Result<GSpreadsheet, number>> {
+  async copyTo (
+    folder: GFolder,
+    rename?: string
+  ): Promise<Result<GSpreadsheet, number>> {
     return await folder.pasteSpreadsheet(this, rename)
   }
 
@@ -78,6 +85,141 @@ export class GSpreadsheet {
       requestBody: { requests }
     })
     return response.data.replies
+  }
+
+  async readIndexInfo (): Promise<{
+    website: string
+    username: string
+    password: string
+    folder: string
+  }> {
+    const res = await sheets.spreadsheets.values.batchGet({
+      ranges: ['website', 'username', 'password', 'folder'],
+      spreadsheetId: this.id,
+      auth: AuthToken
+    })
+    const arr = res.data.valueRanges
+    return {
+      website: arr?.[0].values?.[0]?.[0] ?? '',
+      username: arr?.[1].values?.[0]?.[0] ?? '',
+      password: arr?.[2].values?.[0]?.[0] ?? '',
+      folder: arr?.[3].values?.[0]?.[0] ?? ''
+    }
+  }
+
+  async initGph (): Promise<void> {
+    if (this.#gph != null) await this.#gph.stop()
+    const indexInfo = await this.readIndexInfo()
+    this.#gph = new Gph(indexInfo.website)
+    await this.#gph.start()
+    await this.#gph.login(indexInfo.username, indexInfo.password)
+  }
+
+  async scanPuzzles (url: string): Promise<string[]> {
+    if (this.#gph == null) await this.initGph()
+    if (this.#gph == null) fatal('unable to init gph')
+    await this.#gph.browse(url)
+    return await this.#gph.getPuzzles()
+  }
+
+  /** remember to call flushWrite() to actually write */
+  writeCell (range: string, value: string): this {
+    this.writes.push({
+      range,
+      values: [[value]]
+    })
+    return this
+  }
+
+  async flushWrite (): Promise<sheets_v4.Schema$BatchUpdateValuesResponse> {
+    const res = await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: this.id,
+      auth: AuthToken,
+      requestBody: {
+        valueInputOption: 'USER_ENTERED',
+        data: this.writes
+      }
+    })
+    this.writes = []
+    return res.data
+  }
+
+  async getSheet (
+    sheetName: string
+  ): Promise<sheets_v4.Schema$Sheet | undefined> {
+    const res = await sheets.spreadsheets.get({
+      ranges: [sheetName],
+      spreadsheetId: this.id,
+      auth: AuthToken
+    })
+    return res.data.sheets?.at(0)
+  }
+
+  dupe (sourceSheetId: number, newSheetName: string): this {
+    const duplicateSheet: sheets_v4.Schema$DuplicateSheetRequest = {
+      sourceSheetId,
+      insertSheetIndex: 2,
+      newSheetName
+    }
+    this.requests.push({ duplicateSheet })
+    return this
+  }
+
+  show (sheetId: number): this {
+    const updateSheetProperties: sheets_v4.Schema$UpdateSheetPropertiesRequest =
+      {
+        properties: {
+          sheetId,
+          hidden: false
+        },
+        fields: 'hidden'
+      }
+    this.requests.push({ updateSheetProperties })
+    return this
+  }
+
+  async readRanges (ranges: string[]): Promise<sheets_v4.Schema$ValueRange[]> {
+    const res = await sheets.spreadsheets.values.batchGet({
+      ranges,
+      spreadsheetId: this.id,
+      auth: AuthToken
+    })
+    return res.data.valueRanges ?? fatal()
+  }
+
+  /** return new sheet ID */
+  async newFromTemplate (sheetName: string): Promise<number> {
+    const template =
+      (await this.getSheet('TEMPLATE')) ??
+      fatal('Missing template in the spreadsheet.')
+    const templateId = template.properties?.sheetId ?? fatal()
+    const ress = await this.dupe(templateId, sheetName).flush()
+    const newSheetId =
+      ress?.at(0)?.duplicateSheet?.properties?.sheetId ?? fatal()
+    await this.show(newSheetId).flush()
+    return newSheetId
+  }
+
+  async newPuzzleTab (
+    url: string,
+    tabName: string
+  ): Promise<sheets_v4.Schema$BatchUpdateValuesResponse> {
+    let [hintUrl, ansUrl] = ['', '']
+    // gph style
+    if (url.match('/puzzle/') != null) {
+      hintUrl = url.replace('/puzzle/', '/hints/')
+      ansUrl = url.replace('/puzzle/', '/solve/')
+    }
+    const gid = await this.newFromTemplate(tabName)
+    const [data] = await this.readRanges(['INDEX!A:A'])
+    const row = data.values?.length ?? fatal()
+    const escapeTitle = tabName.replaceAll("'", "''")
+    return await this.writeCell(`INDEX!A${row + 1}`, `${gid}`)
+      .writeCell(`INDEX!B${row + 1}`, tabName)
+      .writeCell(`'${escapeTitle}'!A13`, `=HYPERLINK("${url}", "puzzle")`)
+      .writeCell(`'${escapeTitle}'!A14`, `=HYPERLINK("${hintUrl}", "hint")`)
+      .writeCell(`'${escapeTitle}'!A15`, `=HYPERLINK("${ansUrl}", "answer")`)
+      .flushWrite()
   }
 }
 

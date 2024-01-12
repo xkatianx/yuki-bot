@@ -20,8 +20,9 @@ const data = new SlashCommandBuilder()
     option
       .setName('title')
       .setDescription(
-        'The title of the puzzle. Default is the title of the given url.'
+        'The title of the puzzle, used as the sheet tab name.'
       )
+      .setRequired(true)
   )
 
 async function execute (

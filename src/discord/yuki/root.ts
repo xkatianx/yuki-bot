@@ -66,13 +66,15 @@ export async function getRootFolder (
   guild: Guild
 ): Promise<Result<GFolder, string>> {
   const message = await getPinned(bot, guild, PinFormat.Root)
-  if (message.length === 0) return Err('Root is not set yet.')
+  if (message.length === 0) {
+    return Err('Root is not set yet. Please use `/root` first.')
+  }
   const root = getPinArgument(message[0].content, PinFormat.Root)
   if (root.err) return root
   const url = root.unwrap()
   const folder = GFolder.fromUrl(url)
   const valid = await folder.checkWritePermission()
-  if (valid.err) return Err('Invalid root.')
+  if (valid.err) return Err('Invalid root. Please use `/root` first.')
   return Ok(folder)
 }
 

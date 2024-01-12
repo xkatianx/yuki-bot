@@ -23,6 +23,7 @@ import {
 } from './commands/_main.js'
 import { done, fail, warn } from '../misc/cli.js'
 import { say } from './error.js'
+import { InteractionHandler } from './commands/handler/interaction.js'
 
 export class Bot {
   #token: string
@@ -65,6 +66,7 @@ export class Bot {
           await command.execute(interaction)
         } else if (interaction.isButton()) {
           const method: IRF<ButtonInteraction> =
+            InteractionHandler.getButton(interaction.customId).unwrapOr(null) ??
             MyIrfs.button[interaction.customId as keyof typeof MyIrfs.button] ??
             say(`missing method: ${interaction.customId}`)
           await method(interaction)
@@ -72,6 +74,7 @@ export class Bot {
           // respond to the select menu
         } else if (interaction.isModalSubmit()) {
           const method: IRF<ModalSubmitInteraction> =
+            InteractionHandler.getModal(interaction.customId).unwrapOr(null) ??
             MyIrfs.modal[interaction.customId as keyof typeof MyIrfs.modal] ??
             say(`missing method: ${interaction.customId}`)
           await method(interaction)

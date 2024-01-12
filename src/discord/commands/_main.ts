@@ -18,16 +18,8 @@ import round from './round.js'
 import stats from './stats.js'
 import sheet from './sheet.js'
 import puzzle from './puzzle.js'
-import new_, {
-  bEditPuzzlehunt,
-  bCreatePuzzlehunt,
-  mEditPuzzlehunt
-} from './new.js'
-import add, {
-  bAddCreate,
-  bAddEdit,
-  mAddEdit
-} from './add.js'
+import new_ from './new.js'
+import add from './add.js'
 import setting, {
   bSettingGoogle,
   bSettingRegister,
@@ -54,18 +46,12 @@ export const MyCommands = {
 export const MyIrfs = {
   command: {},
   button: {
-    bEditPuzzlehunt,
-    bCreatePuzzlehunt,
     bSettingRegister,
-    bSettingGoogle,
-    bAddCreate,
-    bAddEdit
+    bSettingGoogle
   },
   modal: {
-    mEditPuzzlehunt,
     mSettingRegister,
-    mSettingGoogle,
-    mAddEdit
+    mSettingGoogle
   }
 }
 
@@ -74,14 +60,14 @@ export interface CommandObj {
   execute: IRF<ChatInputCommandInteraction>
 }
 
-declare module 'discord.js' {
-  interface ButtonBuilder {
-    setCustomId: (customId: keyof typeof MyIrfs.button) => this
-  }
-  interface ModalBuilder {
-    setCustomId: (customId: keyof typeof MyIrfs.modal) => this
-  }
-}
+// declare module 'discord.js' {
+//   interface ButtonBuilder {
+//     setCustomId: (customId: keyof typeof MyIrfs.button) => this
+//   }
+//   interface ModalBuilder {
+//     setCustomId: (customId: keyof typeof MyIrfs.modal) => this
+//   }
+// }
 
 export function newSlashCommand (
   name: string,
