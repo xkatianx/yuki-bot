@@ -20,6 +20,7 @@ import sheet from './sheet.js'
 import puzzle from './puzzle.js'
 import new_ from './new.js'
 import add from './add.js'
+import login from './login.js'
 import setting, {
   bSettingGoogle,
   bSettingRegister,
@@ -40,6 +41,7 @@ export const MyCommands = {
   puzzle,
   new: new_,
   add,
+  login,
   setting
 }
 
