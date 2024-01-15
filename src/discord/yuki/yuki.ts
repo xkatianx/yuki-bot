@@ -84,9 +84,16 @@ export class Yuki extends Bot {
   }
 
   async scanTitle (channel: TextBasedChannel, url: string): Promise<string> {
-    const browser = (await this.getChannelThings(channel)).unwrapOrElse(
-      say
-    ).browser
+    const { spreadsheet, browser } = (
+      await this.getChannelThings(channel)
+    ).unwrapOrElse(say)
+    if (!browser.isLogin) {
+      try {
+        const info = await spreadsheet.readIndexInfo()
+        const url = new URL('/login', info.website).href
+        await browser.login(info.username, info.password, url)
+      } catch (_) {}
+    }
     await browser.browse(url)
     return await browser.getTitle()
   }
