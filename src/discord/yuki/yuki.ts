@@ -6,6 +6,7 @@ import { Setting } from '../commands/setting.js'
 import { say } from '../error.js'
 import { Gph } from '../../gph/main.js'
 import { Err, Ok, Result } from '../../misc/result.js'
+import { fail } from '../../misc/cli.js'
 
 declare module 'discord.js' {
   export interface Client {
@@ -93,7 +94,11 @@ export class Yuki extends Bot {
         await browser.login(info.username, info.password, url)
       } catch (_) {}
     }
-    await browser.browse(url)
+    const res = await browser.browse(url)
+    if (res.err) {
+      fail(res.val)
+      return ''
+    }
     return (await browser.getTitle()).unwrap()
   }
 

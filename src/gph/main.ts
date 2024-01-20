@@ -87,8 +87,16 @@ export class Gph {
     await this.#page?.reload()
   }
 
-  async browse (url: string): Promise<void> {
-    await this.#page?.goto(url)
+  async browse (url: string): Promise<Result<null, string>> {
+    const page = this.page
+    if (page.err) return page
+    try {
+      await page.unwrap().goto(url)
+      return Ok(null)
+    } catch (e: any) {
+      if (e instanceof Error) return Err(e.message)
+      return Err(`Unknown error when browse to ${url}`)
+    }
   }
 
   async getPuzzles (): Promise<string[]> {
@@ -101,8 +109,9 @@ export class Gph {
     return links ?? []
   }
 
-  async getTitle (): Promise<Result<string, string>> {
+  async getTitle (url?: string): Promise<Result<string, string>> {
     if (this.page.err) return this.page
+
     return Ok(await this.page.unwrap().title())
   }
 

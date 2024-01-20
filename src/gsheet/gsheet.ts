@@ -116,7 +116,8 @@ export class GSpreadsheet {
   async scanPuzzles (url: string): Promise<string[]> {
     if (this.#gph == null) await this.initGph()
     if (this.#gph == null) fatal('unable to init gph')
-    await this.#gph.browse(url)
+    const res = await this.#gph.browse(url)
+    if (res.err) return []
     return await this.#gph.getPuzzles()
   }
 

@@ -7,3 +7,5 @@ dist/
 
 **/WIP*
 test.ts
+/test*
+todo*
