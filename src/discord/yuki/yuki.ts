@@ -66,8 +66,7 @@ export class Yuki extends Bot {
       }
       if (ss == null) return Err('Please use `/new` to setup first.')
       const site = (await ss.readIndexInfo()).website
-      const browser = new Gph(site)
-      await browser.start()
+      const browser = await Gph.new(site)
       this.#channelThings[channel.id] = {
         spreadsheet: ss,
         browser
@@ -95,7 +94,7 @@ export class Yuki extends Bot {
       } catch (_) {}
     }
     await browser.browse(url)
-    return await browser.getTitle()
+    return (await browser.getTitle()).unwrap()
   }
 
   async appendPuzzle (

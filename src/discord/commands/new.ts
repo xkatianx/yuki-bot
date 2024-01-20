@@ -32,10 +32,9 @@ async function execute (
     say('Please enter the puzzlehunt url.')
   const rootFolder = (await getRootFolder(bot, guild)).unwrapOrElse(say)
 
-  const browser = new Gph(url)
-  await browser.start()
-  const url2 = browser.getUrl()
-  const title = await browser.getTitle()
+  const browser = await Gph.new(url)
+  const url2 = browser.getUrl().unwrap()
+  const title = (await browser.getTitle()).unwrap()
   const folder = `[${moment().format('YYYY/MM')}] ${title}`
 
   const form = new Form()

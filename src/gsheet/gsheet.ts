@@ -108,10 +108,8 @@ export class GSpreadsheet {
   }
 
   async initGph (): Promise<void> {
-    if (this.#gph != null) await this.#gph.stop()
     const indexInfo = await this.readIndexInfo()
-    this.#gph = new Gph(indexInfo.website)
-    await this.#gph.start()
+    this.#gph = await Gph.new(indexInfo.website)
     await this.#gph.login(indexInfo.username, indexInfo.password)
   }
 
