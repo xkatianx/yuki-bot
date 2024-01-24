@@ -109,15 +109,16 @@ export class GSpreadsheet {
 
   async initGph (): Promise<void> {
     const indexInfo = await this.readIndexInfo()
-    this.#gph = await Gph.new(indexInfo.website)
-    await this.#gph.login(indexInfo.username, indexInfo.password)
+    this.#gph = (await Gph.new(indexInfo.website)).unwrap()
+    const loginPaage = new URL('/login', indexInfo.website)
+    await this.#gph.login(indexInfo.username, indexInfo.password, loginPaage.href)
   }
 
-  async scanPuzzles (url: string): Promise<string[]> {
+  async scanPuzzles (url: string): Promise<Result<string[], string>> {
     if (this.#gph == null) await this.initGph()
     if (this.#gph == null) fatal('unable to init gph')
     const res = await this.#gph.browse(url)
-    if (res.err) return []
+    if (res.err) return res
     return await this.#gph.getPuzzles()
   }
 
