@@ -1,8 +1,7 @@
-import { Channel, Guild, TextBasedChannel, TextChannel } from 'discord.js'
+import { Channel, TextBasedChannel, TextChannel } from 'discord.js'
 import { GSpreadsheet, Gsheet } from '../../gsheet/gsheet.js'
 import { Bot } from '../bot.js'
 import { Puzzlehunt } from '../../puzzlehunt/puzzlehunt.js'
-import { Setting } from '../commands/setting.js'
 import { say } from '../error.js'
 import { Gph } from '../../gph/main.js'
 import { Err, Ok, Result } from '../../misc/result.js'
@@ -19,8 +18,6 @@ export class Yuki extends Bot {
   sheets: Record<string, Gsheet> = {}
   /** channelID: Puzzlehunt */
   puzzlehunts: Record<string, Puzzlehunt> = {}
-  /** guildID: Setting */
-  settings: Record<string, Setting> = {}
   #channelThings: {
     [channelId: string]: {
       spreadsheet: GSpreadsheet
@@ -67,7 +64,7 @@ export class Yuki extends Bot {
       }
       if (ss == null) return Err('Please use `/new` to setup first.')
       const site = (await ss.readIndexInfo()).website
-      const browser = await Gph.new(site)
+      const browser = await (await Gph.new(site)).unwrap()
       this.#channelThings[channel.id] = {
         spreadsheet: ss,
         browser
@@ -141,14 +138,6 @@ export class Yuki extends Bot {
       say('Puzzlehunt has not been set. Please use `/new` first.')
     }
     return this.puzzlehunts[channel.id]
-  }
-
-  getSetting (guild: Guild | string): Setting {
-    if (typeof guild !== 'string') guild = guild.id
-    if (this.settings[guild] == null) {
-      this.settings[guild] = new Setting()
-    }
-    return this.settings[guild]
   }
 
   /** assume `sheet: {url}` is posted by the bot and pinned */
