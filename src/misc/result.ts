@@ -2,7 +2,7 @@
 import pkg from 'ts-results'
 const { Err, Ok, ErrImpl, OkImpl } = pkg
 ErrImpl.prototype.unwrapOrElse = function (fn: any) {
-  return fn()
+  return fn(this.val)
 }
 OkImpl.prototype.unwrapOrElse = function (_: any) {
   return this.val
