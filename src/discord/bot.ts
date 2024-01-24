@@ -17,7 +17,6 @@ import {
 import {
   CommandObj,
   errorHandler,
-  MyIrfs,
   MyCommands,
   IRF
 } from './commands/_main.js'
@@ -67,7 +66,6 @@ export class Bot {
         } else if (interaction.isButton()) {
           const method: IRF<ButtonInteraction> =
             InteractionHandler.getButton(interaction.customId).unwrapOr(null) ??
-            MyIrfs.button[interaction.customId as keyof typeof MyIrfs.button] ??
             say(`missing method: ${interaction.customId}`)
           await method(interaction)
         } else if (interaction.isStringSelectMenu()) {
@@ -75,7 +73,6 @@ export class Bot {
         } else if (interaction.isModalSubmit()) {
           const method: IRF<ModalSubmitInteraction> =
             InteractionHandler.getModal(interaction.customId).unwrapOr(null) ??
-            MyIrfs.modal[interaction.customId as keyof typeof MyIrfs.modal] ??
             say(`missing method: ${interaction.customId}`)
           await method(interaction)
         }

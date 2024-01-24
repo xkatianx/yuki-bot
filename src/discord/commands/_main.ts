@@ -16,17 +16,9 @@ import test from './test.js'
 import root from './root.js'
 import round from './round.js'
 import stats from './stats.js'
-import sheet from './sheet.js'
-import puzzle from './puzzle.js'
 import new_ from './new.js'
 import add from './add.js'
 import login from './login.js'
-import setting, {
-  bSettingGoogle,
-  bSettingRegister,
-  mSettingGoogle,
-  mSettingRegister
-} from './setting.js'
 
 /** interaction response function */
 export type IRF<T extends Interaction> = (interaction: T) => Promise<void>
@@ -37,39 +29,15 @@ export const MyCommands = {
   stats,
   root,
   round,
-  sheet,
-  puzzle,
   new: new_,
   add,
-  login,
-  setting
-}
-
-export const MyIrfs = {
-  command: {},
-  button: {
-    bSettingRegister,
-    bSettingGoogle
-  },
-  modal: {
-    mSettingRegister,
-    mSettingGoogle
-  }
+  login
 }
 
 export interface CommandObj {
   data: Omit<SlashCommandBuilder, 'addSubcommand' | 'addSubcommandGroup'>
   execute: IRF<ChatInputCommandInteraction>
 }
-
-// declare module 'discord.js' {
-//   interface ButtonBuilder {
-//     setCustomId: (customId: keyof typeof MyIrfs.button) => this
-//   }
-//   interface ModalBuilder {
-//     setCustomId: (customId: keyof typeof MyIrfs.modal) => this
-//   }
-// }
 
 export function newSlashCommand (
   name: string,
