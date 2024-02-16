@@ -26,11 +26,16 @@ export function interactionFetch (interaction: Interaction): {
   channel: TextBasedChannel
   guild: Guild
 } {
-  const bot = interaction.client.mybot ??
-    fatal('Missing yuki bot in the interaction.')
-  const channel = interaction.channel ??
-    say('This command is not available in this channel.')
-  const guild = interaction.guild ??
-    say('This command is not available outside a guild.')
+  const bot =
+    interaction.client.mybot ?? fatal('Missing yuki bot in the interaction.')
+  const channel =
+    interaction.channel ?? say('This command is not available in this channel.')
+  const guild =
+    interaction.guild ?? say('This command is not available outside a guild.')
   return { bot, channel, guild }
+}
+
+export function fetchTextChannel (interaction: Interaction): TextChannel {
+  if (interaction.channel instanceof TextChannel) return interaction.channel 
+  say('This command is not available in this channel.')
 }

@@ -5,7 +5,7 @@ import {
   TextInputStyle
 } from 'discord.js'
 import { say } from '../error.js'
-import { interactionFetch } from './_misc.js'
+import { fetchTextChannel, interactionFetch } from './_misc.js'
 import { Form } from './handler/form.js'
 import { IRF } from './_main.js'
 
@@ -22,12 +22,15 @@ const data = new SlashCommandBuilder()
   )
 
 const execute: IRF<ChatInputCommandInteraction> = async i => {
-  const { bot, channel } = interactionFetch(i)
-  const url = i.options.getString('url') ??
+  const { bot } = interactionFetch(i)
+  const channel = fetchTextChannel(i)
+  const url =
+    i.options.getString('url') ??
     say('Usage: `/add <url>`. Please enter a url.')
   await i.deferReply()
 
-  const title = await bot.scanTitle(channel, url)
+  const cm = (await bot.getChannelManager(channel)).unwrapOrElse(say)
+  const title = (await cm.scanTitle(url)).unwrapOrElse(say)
 
   const form = new Form()
     .addInput(
@@ -51,10 +54,14 @@ const execute: IRF<ChatInputCommandInteraction> = async i => {
     .setOnSubmit(async (form: Form) => {
       const url = form.get('url').unwrap()
       const title = form.get('title').unwrap()
-      const tabName = await bot.appendPuzzle(channel, url, title)
-      return `"${tabName}" added.`
+      await cm.appendPuzzle(url, title)
+      return `"${title}" added.`
     })
   await form.reply(i)
 }
 
 export default { data, execute }
+/* TODO
+- rename to puzzle
+- make "add" multiple usage with selections
+*/

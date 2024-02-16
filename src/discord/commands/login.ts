@@ -6,7 +6,7 @@ import {
   TextInputStyle
 } from 'discord.js'
 import { say } from '../error.js'
-import { interactionFetch } from './_misc.js'
+import { fetchTextChannel, interactionFetch } from './_misc.js'
 import { Form } from './handler/form.js'
 
 const data = new SlashCommandBuilder()
@@ -14,15 +14,18 @@ const data = new SlashCommandBuilder()
   .setDescription('Use this when the bot failed to auto-login.') // description here
 
 async function execute (
-  interaction: ChatInputCommandInteraction<CacheType>
+  i: ChatInputCommandInteraction<CacheType>
 ): Promise<void> {
-  const { bot, channel } = interactionFetch(interaction)
-  await interaction.deferReply()
+  const { bot } = interactionFetch(i)
+  const channel = fetchTextChannel(i)
+  // const { bot, channel, guild } = interactionFetch(interaction)
+  await i.deferReply()
 
-  const things = (await bot.getChannelThings(channel)).unwrapOrElse(say)
-  const ss = things.spreadsheet
-  const info = await ss.readIndexInfo()
-  const url = new URL('/login', info.website).href
+  const cm = (await bot.getChannelManager(channel)).unwrapOrElse(say)
+  const { username, password } = (await cm.getLoginInfo()).unwrapOr({
+    username: '',
+    password: ''
+  })
 
   const form = new Form()
     .addInput(
@@ -31,7 +34,7 @@ async function execute (
         .setLabel('URL')
         .setPlaceholder('The url of the login page')
         .setStyle(TextInputStyle.Short)
-        .setValue(url)
+        .setValue('')
         .setRequired(true)
     )
     .addInput(
@@ -40,7 +43,7 @@ async function execute (
         .setLabel('USERNAME')
         .setPlaceholder('The username to login to the puzzlehunt')
         .setStyle(TextInputStyle.Short)
-        .setValue(info.username)
+        .setValue(username)
         .setRequired(true)
     )
     .addInput(
@@ -49,7 +52,7 @@ async function execute (
         .setLabel('PASSWORD')
         .setPlaceholder('The password to login to the puzzlehunt')
         .setStyle(TextInputStyle.Short)
-        .setValue(info.password)
+        .setValue(password)
         .setRequired(true)
     )
     .setOnSubmit(async (form: Form) => {
@@ -58,12 +61,15 @@ async function execute (
         username: form.get('username').unwrap(),
         password: form.get('password').unwrap()
       }
-      things.browser.isLogin = false
-      await things.browser.login(args.username, args.password, args.url)
-      return 'done'
+      const res = await cm.login(args.username, args.password, args.url)
+      return res.isOk() ? 'done' : res.error.message
     })
 
-  await form.reply(interaction)
+  await form.reply(i)
 }
 
 export default { data, execute }
+
+/* TODO
+- make setOnSubmit accept Result
+*/

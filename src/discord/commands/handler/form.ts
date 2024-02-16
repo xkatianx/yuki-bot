@@ -5,7 +5,9 @@ import {
   ButtonStyle,
   CacheType,
   ChatInputCommandInteraction,
+  InteractionEditReplyOptions,
   Message,
+  MessagePayload,
   ModalBuilder,
   ModalSubmitInteraction,
   TextInputBuilder
@@ -22,7 +24,9 @@ export class Form {
   #text = ''
   #modal: ModalBuilder[] = []
   #buttons?: ActionRowBuilder<ButtonBuilder>
-  #onSubmit?: (form: Form) => Promise<string>
+  private onSubmit?: (
+    form: Form
+  ) => Promise<string | MessagePayload | InteractionEditReplyOptions>
   #afterSubmit?: () => Promise<void>
 
   getModal (idx: number): ModalBuilder {
@@ -47,9 +51,9 @@ export class Form {
       .setCustomId(uid)
       .setTitle(title)
       .addComponents(
-        ...this.#inputs.slice(idx * 5, idx * 5 + 5).map(v =>
-          new ActionRowBuilder<TextInputBuilder>().addComponents(v)
-        )
+        ...this.#inputs
+          .slice(idx * 5, idx * 5 + 5)
+          .map(v => new ActionRowBuilder<TextInputBuilder>().addComponents(v))
       )
   }
 
@@ -61,8 +65,8 @@ export class Form {
   }
 
   /** The returned string of `fn` will be the message showed after submit. */
-  setOnSubmit (fn: (form: Form) => Promise<string>): this {
-    this.#onSubmit = fn
+  setOnSubmit (fn: Exclude<typeof this.onSubmit, undefined>): this {
+    this.onSubmit = fn
     return this
   }
 
@@ -91,8 +95,8 @@ export class Form {
       await this.#interaction?.editReply({
         components: []
       })
-      if (this.#onSubmit == null) say('Missing submission function.')
-      const str = await this.#onSubmit(this)
+      if (this.onSubmit == null) say('Missing submission function.')
+      const str = await this.onSubmit(this)
       await i.editReply(str)
       await this.#afterSubmit?.()
     }
@@ -159,4 +163,7 @@ export class Form {
   }
 }
 
-// TODO make sheet url the desc of the channel
+/* TODO
+- Edit 1 -> Edit
+- "cancel" button
+*/

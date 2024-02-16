@@ -8,5 +8,6 @@
       "column": 80,
       "color": "#66ff6650"
     }
-  ]
+  ],
+  "standard.enable": false
 }

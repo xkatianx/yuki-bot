@@ -2,11 +2,13 @@ import { Guild, GuildBasedChannel, Message, ChannelType } from 'discord.js'
 import { Bot } from '../bot.js'
 import { GFolder } from '../../gsheet/folder.js'
 import { Err, Ok, Result } from '../../misc/result.js'
-// import { GSpreadsheet } from '../../gsheet/gsheet.js'
+import { Code, MyError, MyErrorCode, uid } from '../../error.js'
+import { GDriveError, GDriveErrorCode } from '../../gsheet/error.js'
 
 enum PinFormat {
   Root = 'Root folder: {}'
 }
+
 function setPinArgument (args: string[], format: PinFormat): string {
   let str: string = format
   args.forEach(arg => {
@@ -14,18 +16,15 @@ function setPinArgument (args: string[], format: PinFormat): string {
   })
   return str
 }
-function getPinArgument (
-  message: string,
-  format: PinFormat
-): Result<string, string> {
-  const re = new RegExp('^' + format.replace('{}', '(.*?)') + '$')
-  const res = message.match(re)
-  if (res == null) return Err(message)
-  return Ok(res[1])
+
+function getPinArgument (message: string, format: PinFormat) {
+  const re = new RegExp('^' + format.replaceAll('{}', '(.*?)') + '$')
+  return message.match(re)
 }
+
 function isPinFormat (message: Message, format: PinFormat): boolean {
   const res = getPinArgument(message.content, format)
-  return res.ok
+  return res != null
 }
 
 async function getPinned (
@@ -58,45 +57,70 @@ async function getPinned (
         search == null ||
         (v.author.id === bot.client.user?.id && isPinFormat(v, search))
     )
+    .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
   return results
+}
+
+export async function getRootFolderUrl (bot: Bot, guild: Guild) {
+  const lastMessage = (await getPinned(bot, guild, PinFormat.Root)).at(-1)
+  if (lastMessage == null)
+    return Err(
+      RootError.new(
+        RootErrorCode.MISSING_URL,
+        `Unable to find root url in ${guild}.`
+      )
+    )
+  const url = getPinArgument(lastMessage.content, PinFormat.Root)?.at(1)
+  if (url == null)
+    return Err(
+      MyError.unexpected(
+        'Wrong root url format in discord pinned message.',
+        lastMessage
+      )
+    )
+  return Ok(url)
 }
 
 export async function getRootFolder (
   bot: Bot,
   guild: Guild
-): Promise<Result<GFolder, string>> {
-  const message = await getPinned(bot, guild, PinFormat.Root)
-  if (message.length === 0) {
-    return Err('Root is not set yet. Please use `/root` first.')
-  }
-  const root = getPinArgument(message[0].content, PinFormat.Root)
-  if (root.err) return root
-  const url = root.unwrap()
-  const folder = GFolder.fromUrl(url)
-  const valid = await folder.checkWritePermission()
-  if (valid.err) return Err('Invalid root. Please use `/root` first.')
-  return Ok(folder)
+): Promise<
+  Result<
+    GFolder,
+    | MyError<MyErrorCode>
+    | GDriveError<GDriveErrorCode.INVALID_URL>
+    | GDriveError<GDriveErrorCode.CANNOT_WRITE>
+    | RootError<RootErrorCode.MISSING_URL>
+  >
+> {
+  return (await getRootFolderUrl(bot, guild)).andThenAsync(async url =>
+    (
+      await GFolder.fromUrl(url).andThenAsync(folder =>
+        folder.checkWritePermission()
+      )
+    ).mapErr(e => e)
+  )
 }
 
-export async function setRootFolder (
-  bot: Bot,
-  guild: Guild,
+export function rootFolderMessage (
   url: string
-): Promise<string> {
-  const folder = GFolder.fromUrl(url)
+): string {
+  // const res1 = GFolder.fromUrl(url)
+  // if (res1.isErr()) return res1
+  // const folder = res1.unwrap()
   // check valid
-  const valid = await folder.checkWritePermission()
-  if (valid.err) {
-    return 'The url is not valid or I do not have write permission to the folder.'
-  }
+  // const valid = await folder.checkWritePermission()
+  // if (valid.isErr()) {
+    // return 'The url is not valid or I do not have write permission to the folder.'
+  // }
   // remove old
-  await removeRootFolder(bot, guild)
+  // await removeRootFolder(bot, guild)
 
   // set new
 
   // read setting (set setting)
   // let settings: Result<GSpreadsheet, any> = await folder.findSpreadSheet('settings')
-  // if (settings.err) {
+  // if (settings.isErr()) {
   //   settings = await GSpreadsheet.template.settings.copyTo(folder, 'settings')
   // }
 
@@ -112,3 +136,22 @@ async function removeRootFolder (bot: Bot, guild: Guild): Promise<void> {
   const messages = await getPinned(bot, guild, PinFormat.Root)
   await Promise.all(messages.map(async m => await m.delete()))
 }
+
+export enum RootErrorCode {
+  MISSING_URL = uid()
+}
+
+export class RootError<T extends Code> extends MyError<T> {
+  private constructor (code: T, message: string) {
+    super(code, message)
+    this.name = 'RootError'
+  }
+
+  static new<T extends RootErrorCode> (code: T, message: string): RootError<T> {
+    return new RootError(code, message)
+  }
+}
+
+/* memo
+Here I simply pin "Root folder: {url}" is any discord channel.
+*/

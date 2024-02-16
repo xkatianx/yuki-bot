@@ -4,7 +4,7 @@ import {
   SlashCommandBuilder
 } from 'discord.js'
 import { say } from '../error.js'
-import { interactionFetch } from './_misc.js'
+import { fetchTextChannel, interactionFetch } from './_misc.js'
 
 const data = new SlashCommandBuilder()
   .setName('round') // command here, should be the same as the file name
@@ -19,14 +19,16 @@ const data = new SlashCommandBuilder()
   )
 
 async function execute (
-  interaction: ChatInputCommandInteraction<CacheType>
+  i: ChatInputCommandInteraction<CacheType>
 ): Promise<void> {
-  const { bot, channel } = interactionFetch(interaction)
-  await interaction.deferReply()
-  const ph = await bot.getPuzzlehuntFromSheet(channel, true)
-  const title = interaction.options.getString('title') ?? say('Wrong input.')
-  const name = await ph.appendRound(title)
-  await interaction.editReply(`Round \`${name}\` added.`)
+  const { bot } = interactionFetch(i)
+  const channel = fetchTextChannel(i)
+  await i.deferReply()
+  const title = i.options.getString('title') ?? ''
+  if (title === '') say('You have to input a non-empty title.')
+  const cm = (await bot.getChannelManager(channel)).unwrapOrElse(say)
+  await cm.appendRound(title)
+  await i.editReply(`Round \`${title}\` added.`)
 }
 
 export default { data, execute }

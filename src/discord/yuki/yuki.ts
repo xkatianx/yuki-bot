@@ -1,11 +1,18 @@
-import { Channel, TextBasedChannel, TextChannel } from 'discord.js'
-import { GSpreadsheet, Gsheet } from '../../gsheet/gsheet.js'
+import { Guild, TextChannel } from 'discord.js'
 import { Bot } from '../bot.js'
-import { Puzzlehunt } from '../../puzzlehunt/puzzlehunt.js'
-import { say } from '../error.js'
-import { Gph } from '../../gph/main.js'
-import { Err, Ok, Result } from '../../misc/result.js'
-import { fail } from '../../misc/cli.js'
+import { Result } from '../../misc/result.js'
+import { GFolder } from '../../gsheet/folder.js'
+import { RootError, RootErrorCode, getRootFolder } from './root.js'
+import { Cache } from '../../misc/cache.js'
+import {
+  Settings,
+  SettingsError,
+  SettingsErrorCode,
+  getSettings
+} from './settings.js'
+import { GDriveError, GDriveErrorCode } from '../../gsheet/error.js'
+import { MyError, MyErrorCode } from '../../error.js'
+import { ChannelManager } from './channelManager/channelManager.js'
 
 declare module 'discord.js' {
   export interface Client {
@@ -14,148 +21,91 @@ declare module 'discord.js' {
 }
 
 export class Yuki extends Bot {
-  /** channelID: Gsheet */
-  sheets: Record<string, Gsheet> = {}
-  /** channelID: Puzzlehunt */
-  puzzlehunts: Record<string, Puzzlehunt> = {}
-  #channelThings: {
-    [channelId: string]: {
-      spreadsheet: GSpreadsheet
-      // puzzlehunt: Puzzlehunt
-      browser: Gph
-    }
-  } = {}
+  roots = new Cache<GFolder>()
+  settings = new Cache<Settings>()
 
   constructor (token: string) {
     super(token)
     this.client.mybot = this
   }
 
-  setChannelThings (
-    channelId: string,
-    spreadsheet: GSpreadsheet,
-    browser: Gph
-  ): void {
-    this.#channelThings[channelId] = {
-      spreadsheet,
-      browser
-    }
+  async getRootFolder (guild: Guild) {
+    return await this.roots.getOrSet(
+      guild.id,
+      getRootFolder.bind(null, this, guild)
+    )
   }
 
-  async getChannelThings (channel: TextBasedChannel): Promise<
-  Result<
-  {
-    spreadsheet: GSpreadsheet
-    browser: Gph
-  },
-  string
-  >
+  async getSettings (guild: Guild) {
+    return await this.settings.getOrSet(guild.id, getSettings.bind(this, guild))
+  }
+
+  async getChannelManager (
+    channel: TextChannel
+  ): Promise<
+    Result<
+      ChannelManager,
+      | GDriveError<
+          | GDriveErrorCode.CANNOT_WRITE
+          | GDriveErrorCode.INVALID_URL
+          | GDriveErrorCode.MISSING_TEXT
+        >
+      | SettingsError<
+          SettingsErrorCode.CORRUPTED | SettingsErrorCode.MISSING_CHANNEL
+        >
+      | RootError<RootErrorCode.MISSING_URL>
+      | MyError<MyErrorCode>
+    >
   > {
-    if (this.#channelThings[channel.id] == null) {
-      const pinned = await channel.messages.fetchPinned(true)
-      let ss
-      for (const m of pinned?.values() ?? []) {
-        if (m.author.id !== this.client.user?.id) continue
-        if (!m.content.startsWith('sheet:')) continue
-        const url = m.content.match(/http[^\b]+/)?.at(0)
-        if (url == null) continue
-        ss = GSpreadsheet.fromUrl(url)
-        break
-      }
-      if (ss == null) return Err('Please use `/new` to setup first.')
-      const site = (await ss.readIndexInfo()).website
-      const browser = await (await Gph.new(site)).unwrap()
-      this.#channelThings[channel.id] = {
-        spreadsheet: ss,
-        browser
-      }
-    }
-    return Ok(this.#channelThings[channel.id])
+    return await (
+      await this.getSettings(channel.guild)
+    ).andThenAsync(settings => settings.getChannelManager(channel))
   }
 
-  /** assume `sheet: {url}` is posted by the bot and pinned */
-  async getSS (
-    channel: TextBasedChannel
-  ): Promise<Result<GSpreadsheet, string>> {
-    return (await this.getChannelThings(channel)).map(o => o.spreadsheet)
+  async scanTitle (channel: TextChannel, url: string) {
+    return (await this.getChannelManager(channel)).andThenAsync(cm =>
+      cm.scanTitle(url)
+    )
   }
 
-  async scanTitle (channel: TextBasedChannel, url: string): Promise<string> {
-    const { spreadsheet, browser } = (
-      await this.getChannelThings(channel)
-    ).unwrapOrElse(say)
-    if (!browser.isLogin) {
-      try {
-        const info = await spreadsheet.readIndexInfo()
-        const url = new URL('/login', info.website).href
-        await browser.login(info.username, info.password, url)
-      } catch (_) {}
-    }
-    const res = await browser.browse(url)
-    if (res.err) {
-      fail(res.val)
-      return ''
-    }
-    return (await browser.getTitle()).unwrap()
-  }
+  // async appendPuzzle (
+  //   channel: TextBasedChannel,
+  //   url: string,
+  //   tabName: string
+  // ): Promise<string> {
+  //   const ss = this.#channelThings[channel.id].spreadsheet
+  //   await ss.newPuzzleTab(url, tabName)
+  //   return tabName
+  // }
 
-  async appendPuzzle (
-    channel: TextBasedChannel,
-    url: string,
-    tabName: string
-  ): Promise<string> {
-    const ss = this.#channelThings[channel.id].spreadsheet
-    await ss.newPuzzleTab(url, tabName)
-    return tabName
-  }
+  // setPuzzlehunt (channel: string, puzzlehunt: Puzzlehunt): void {
+  //   this.puzzlehunts[channel] = puzzlehunt
+  // }
 
-  setPuzzlehunt (channel: string, puzzlehunt: Puzzlehunt): void {
-    this.puzzlehunts[channel] = puzzlehunt
-  }
+  // getPuzzlehunt (channel: Channel): Puzzlehunt | undefined {
+  //   return this.puzzlehunts[channel.id]
+  // }
 
-  getPuzzlehunt (channel: Channel): Puzzlehunt | undefined {
-    return this.puzzlehunts[channel.id]
-  }
-
-  async getPuzzlehuntFromSheet (
-    channel: Channel,
-    errIfEmpty: true
-  ): Promise<Puzzlehunt>
-  async getPuzzlehuntFromSheet (
-    channel: Channel,
-    errIfEmpty = false
-  ): Promise<Puzzlehunt | undefined> {
-    if (this.puzzlehunts[channel.id] == null) {
-      const sheet = await this.getSheet(channel)
-      if (sheet != null) {
-        const ph = (await Puzzlehunt.from(sheet))
-          .mapErr(_ => say('Failed to access to the spreadsheet.'))
-          .unwrap()
-        this.puzzlehunts[channel.id] = ph
-      }
-    }
-    if (errIfEmpty && this.puzzlehunts[channel.id] == null) {
-      say('Puzzlehunt has not been set. Please use `/new` first.')
-    }
-    return this.puzzlehunts[channel.id]
-  }
-
-  /** assume `sheet: {url}` is posted by the bot and pinned */
-  async getSheet (channel: Channel): Promise<Gsheet | undefined> {
-    const channelId = channel.id
-    if (this.sheets[channelId] == null) {
-      if (!(channel instanceof TextChannel)) {
-        say('This command is not available in this channel.')
-      }
-      const pinned = await channel.messages.fetchPinned(true)
-      for (const m of pinned?.values() ?? []) {
-        if (m.author.id !== this.client.user?.id) continue
-        if (!m.content.startsWith('sheet:')) continue
-        const url = m.content.match(/http[^\b]+/)?.at(0)
-        if (url == null) continue
-        this.sheets[channelId] = new Gsheet(url)
-      }
-    }
-    return this.sheets[channelId]
-  }
+  // async getPuzzlehuntFromSheet (
+  //   channel: Channel,
+  //   errIfEmpty: true
+  // ): Promise<Puzzlehunt>
+  // async getPuzzlehuntFromSheet (
+  //   channel: Channel,
+  //   errIfEmpty = false
+  // ): Promise<Puzzlehunt | undefined> {
+  //   if (this.puzzlehunts[channel.id] == null) {
+  //     const sheet = await this.getSheet(channel)
+  //     if (sheet != null) {
+  //       const ph = (await Puzzlehunt.from(sheet))
+  //         .mapErr(_ => say('Failed to access to the spreadsheet.'))
+  //         .unwrap()
+  //       this.puzzlehunts[channel.id] = ph
+  //     }
+  //   }
+  //   if (errIfEmpty && this.puzzlehunts[channel.id] == null) {
+  //     say('Puzzlehunt has not been set. Please use `/new` first.')
+  //   }
+  //   return this.puzzlehunts[channel.id]
+  // }
 }

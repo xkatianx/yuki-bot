@@ -1,16 +1,22 @@
 import {
-  CacheType,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonInteraction,
+  ButtonStyle,
   ChatInputCommandInteraction,
+  InteractionReplyOptions,
   SlashCommandBuilder,
+  TextChannel,
   TextInputBuilder,
   TextInputStyle
 } from 'discord.js'
 import { say } from '../error.js'
-import { interactionFetch } from './_misc.js'
+import { fetchTextChannel, interactionFetch } from './_misc.js'
 import { Form } from './handler/form.js'
-import { Gph } from '../../gph/main.js'
 import moment from 'moment'
-import { getRootFolder } from '../yuki/root.js'
+import { IRF } from './_main.js'
+import { InteractionHandler } from './handler/interaction.js'
+import { Browser } from '../yuki/channelManager/browser.js'
 
 const data = new SlashCommandBuilder()
   .setName('new') // command here, should be the same as the file name
@@ -22,19 +28,20 @@ const data = new SlashCommandBuilder()
       .setRequired(true)
   )
 
-async function execute (
-  interaction: ChatInputCommandInteraction<CacheType>
-): Promise<void> {
-  const { bot, channel, guild } = interactionFetch(interaction)
-  await interaction.deferReply()
+const execute: IRF<ChatInputCommandInteraction> = async i => {
+  const { bot, guild } = interactionFetch(i)
+  const channel = fetchTextChannel(i)
   const url =
-    interaction.options.getString('url') ??
-    say('Please enter the puzzlehunt url.')
-  const rootFolder = (await getRootFolder(bot, guild)).unwrapOrElse(say)
+    i.options.getString('url') ??
+    say('Usage: `/new <url>`. Please enter a url.')
+  await i.deferReply()
 
-  const browser = await Gph.new(url)
-  const url2 = browser.getUrl().unwrap()
-  const title = (await browser.getTitle()).unwrap()
+  const rootFolder = (await bot.getRootFolder(guild)).unwrapOrElse(say)
+  const settings = (await bot.getSettings(guild)).unwrapOrElse(say)
+
+  using browser = new Browser(url)
+  const url2 = (await browser.getUrl()).unwrapOr(url)
+  const title = (await browser.getTitle()).unwrapOr('<title>')
   const folder = `[${moment().format('YYYY/MM')}] ${title}`
 
   const form = new Form()
@@ -113,32 +120,65 @@ async function execute (
         username: form.get('username').unwrap(),
         password: form.get('password').unwrap()
       }
-      const folder = await (
-        await rootFolder.findFolder(args.folder)
-      ).unwrapOrElse(async _ => {
-        return (await rootFolder.newFolder(args.folder)).unwrapOrElse(_ =>
-          say('Unable to create a new folder.')
-        )
-      })
-      const ss = (await folder.createDefaultSpreadsheet(args.title))
+      // step 1: get or create a folder
+      const folder = (
+        await rootFolder.getOrCreateFolder(args.folder)
+      ).unwrapOrElse(say)
+
+      // step 2: copy-paste main spreadsheet and edit
+      const spreadsheet = (await folder.createDefaultSpreadsheet(args.title))
         .unwrapOrElse(_ => say('Unable to create a spreadsheet.'))
         .writeCell('folder', folder.url)
         .writeCell('username', args.username)
         .writeCell('password', args.password)
         .writeCell('website', args.url)
-      await ss.flushWrite()
-      bot.setChannelThings(channel.id, ss, browser)
-      return form.printToDiscord()
+      await spreadsheet.flushWrite()
+      // step 3: edit settings
+      ;(
+        await settings.setChannelManager(channel, folder, spreadsheet)
+      ).unwrapOrElse(say)
+      // step 4: edit channel manager
+
+      // step 5: done
+      return `Spreadsheet: ${spreadsheet.url}`
     })
   form.setAfterSubmit(async () => {
-    const ss = (await bot.getSS(channel)).unwrapOrElse(say)
-    const msg = await interaction.followUp(`sheet: ${ss.url}`)
-    await channel.messages.pin(msg)
-    // TODO make this with button
-    // await channel.setTopic(newDescription)
+    const url = (await settings.getChannelManager(channel)).unwrapOrElse(say)
+      .spreadsheet?.url
+    if (url == null) say('Unable to find the spreadsheet.')
+    await i.followUp(setTopicConfirm(channel, url))
   })
 
-  await form.reply(interaction)
+  await form.reply(i)
+}
+
+function setTopicConfirm (
+  channel: TextChannel,
+  topic: string
+): InteractionReplyOptions {
+  const text = `Do you want to set the topic of this channel to \`${topic}\`?`
+  const onYes: IRF<ButtonInteraction> = async i => {
+    await i.deferReply({ ephemeral: true })
+    await channel.setTopic(topic)
+    await i.editReply('done!')
+  }
+  const uid = InteractionHandler.setButton(onYes)
+  const yes = new ButtonBuilder()
+    .setCustomId(uid)
+    .setLabel('Yes')
+    .setStyle(ButtonStyle.Success)
+
+  const onNo: IRF<ButtonInteraction> = async i => {
+    await i.reply('okay.')
+  }
+  const uid2 = InteractionHandler.setButton(onNo)
+  const no = new ButtonBuilder()
+    .setCustomId(uid2)
+    .setLabel('No')
+    .setStyle(ButtonStyle.Danger)
+
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(yes, no)
+  return { content: text, components: [row], ephemeral: true }
 }
 
 export default { data, execute }
