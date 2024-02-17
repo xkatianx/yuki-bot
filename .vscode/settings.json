@@ -1,6 +1,4 @@
 {
-  "standard.autoFixOnSave": true,
-  "standard.engine": "ts-standard",
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.rulers": [
@@ -9,5 +7,14 @@
       "color": "#66ff6650"
     }
   ],
-  "standard.enable": false
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  },
+  "editor.formatOnSave": true,
+  // "prettier.singleQuote": true,
+  // "prettier.semi": false,
+  // "prettier.tabWidth": 2,
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }

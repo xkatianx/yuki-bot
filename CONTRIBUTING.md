@@ -2,13 +2,14 @@
 
 ## :art: Coding Style
 
-- ts-standard
-  ([github](https://github.com/standard/ts-standard))
-  ([vscode extension](https://marketplace.visualstudio.com/items?itemName=standard.vscode-standard))
 
-- prettier-standard
-  ([github](https://github.com/sheerun/prettier-standard))
-  ([vscode extension](https://marketplace.visualstudio.com/items?itemName=numso.prettier-standard-vscode))
+- prettier
+  ([github](https://github.com/prettier/prettier))
+  ([vscode extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode))
+
+- eslint
+  ([github](https://github.com/eslint/eslint))
+  ([vscode extension](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint))
 
 ## :mortar_board: How to
 
