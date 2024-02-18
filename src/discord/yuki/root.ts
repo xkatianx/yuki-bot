@@ -1,6 +1,6 @@
 import { Guild, GuildBasedChannel, Message, ChannelType } from "discord.js";
 import { Bot } from "../bot.js";
-import { GFolder } from "../../gsheet/folder.js";
+import { GFolder } from "../../google/folder.js";
 import { Err, Ok, asResult } from "../../misc/result.js";
 import { Code, MyError, uid } from "../../error.js";
 

@@ -3,7 +3,7 @@ import { say } from "../error.js";
 import { interactionFetch } from "./_misc.js";
 import { rootFolderMessage } from "../yuki/root.js";
 import { IRF } from "./_main.js";
-import { GDriveErrorCode } from "../../gsheet/error.js";
+import { GDriveErrorCode } from "../../google/error.js";
 
 const data = new SlashCommandBuilder()
   .setName("root") // command here, should be the same as the file name

@@ -1,7 +1,7 @@
 import { GoogleAuth } from "google-auth-library";
 import { drive_v3 } from "@googleapis/drive";
 import { Err, Ok, asResult } from "../misc/result.js";
-import { GSpreadsheet } from "./gsheet.js";
+import { GSpreadsheet } from "./spreadsheet.js";
 import { env } from "../misc/env.js";
 import { GDriveError, GDriveErrorCode } from "./error.js";
 import { MyErrorCode } from "../error.js";

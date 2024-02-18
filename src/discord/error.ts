@@ -1,5 +1,5 @@
 import { MyError } from "../error.js";
-import { GDriveErrorCode } from "../gsheet/error.js";
+import { GDriveErrorCode } from "../google/error.js";
 import { fail } from "../misc/cli.js";
 import { env } from "../misc/env.js";
 import { SettingsErrorCode } from "./yuki/settings.js";

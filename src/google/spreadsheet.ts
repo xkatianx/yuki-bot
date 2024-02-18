@@ -257,5 +257,4 @@ export class GSpreadsheet {
 /* TODO
 - wrap fns in Result
 - delete tmp named range
-- rename folder and file after commit
 */

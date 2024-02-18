@@ -1,7 +1,7 @@
 import { Guild, TextChannel } from "discord.js";
 import { Bot } from "../bot.js";
 import { asResult } from "../../misc/result.js";
-import { GFolder } from "../../gsheet/folder.js";
+import { GFolder } from "../../google/folder.js";
 import { getRootFolder } from "./root.js";
 import { Cache } from "../../misc/cache.js";
 import { Settings, getSettings } from "./settings.js";

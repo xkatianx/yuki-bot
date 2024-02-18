@@ -1,11 +1,11 @@
 import type { Channel, Guild, TextChannel } from "discord.js";
 import { Ok, Err, asResult, asResultFn } from "../../misc/result.js";
-import { GFolder } from "../../gsheet/folder.js";
+import { GFolder } from "../../google/folder.js";
 import { Cache } from "../../misc/cache.js";
-import { GSpreadsheet } from "../../gsheet/gsheet.js";
+import { GSpreadsheet } from "../../google/spreadsheet.js";
 import { ChannelManager } from "./channelManager/channelManager.js";
 import { type Code, MyError, uid } from "../../error.js";
-import { GDriveErrorCode } from "../../gsheet/error.js";
+import { GDriveErrorCode } from "../../google/error.js";
 import { type Yuki } from "./yuki.js";
 
 export class Settings {
