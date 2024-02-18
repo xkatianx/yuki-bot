@@ -1,71 +1,52 @@
-import { Guild, TextChannel } from 'discord.js'
-import { Bot } from '../bot.js'
-import { Result } from '../../misc/result.js'
-import { GFolder } from '../../gsheet/folder.js'
-import { RootError, RootErrorCode, getRootFolder } from './root.js'
-import { Cache } from '../../misc/cache.js'
-import {
-  Settings,
-  SettingsError,
-  SettingsErrorCode,
-  getSettings
-} from './settings.js'
-import { GDriveError, GDriveErrorCode } from '../../gsheet/error.js'
-import { MyError, MyErrorCode } from '../../error.js'
-import { ChannelManager } from './channelManager/channelManager.js'
+import { Guild, TextChannel } from "discord.js";
+import { Bot } from "../bot.js";
+import { asResult } from "../../misc/result.js";
+import { GFolder } from "../../gsheet/folder.js";
+import { getRootFolder } from "./root.js";
+import { Cache } from "../../misc/cache.js";
+import { Settings, getSettings } from "./settings.js";
 
-declare module 'discord.js' {
+declare module "discord.js" {
   export interface Client {
-    mybot: Yuki
+    mybot: Yuki;
   }
 }
 
 export class Yuki extends Bot {
-  roots = new Cache<GFolder>()
-  settings = new Cache<Settings>()
+  roots = new Cache<GFolder>();
+  settings = new Cache<Settings>();
 
-  constructor (token: string) {
-    super(token)
-    this.client.mybot = this
+  constructor(token: string) {
+    super(token);
+    this.client.mybot = this;
   }
 
-  async getRootFolder (guild: Guild) {
+  async getRootFolder(guild: Guild) {
     return await this.roots.getOrSet(
       guild.id,
       getRootFolder.bind(null, this, guild)
-    )
+    );
   }
 
-  async getSettings (guild: Guild) {
-    return await this.settings.getOrSet(guild.id, getSettings.bind(this, guild))
+  async getSettings(guild: Guild) {
+    return await this.settings.getOrSet(
+      guild.id,
+      getSettings.bind(this, guild)
+    );
   }
 
-  async getChannelManager (
-    channel: TextChannel
-  ): Promise<
-    Result<
-      ChannelManager,
-      | GDriveError<
-          | GDriveErrorCode.CANNOT_WRITE
-          | GDriveErrorCode.INVALID_URL
-          | GDriveErrorCode.MISSING_TEXT
-        >
-      | SettingsError<
-          SettingsErrorCode.CORRUPTED | SettingsErrorCode.MISSING_CHANNEL
-        >
-      | RootError<RootErrorCode.MISSING_URL>
-      | MyError<MyErrorCode>
-    >
-  > {
-    return await (
-      await this.getSettings(channel.guild)
-    ).andThenAsync(settings => settings.getChannelManager(channel))
+  async getChannelManager(channel: TextChannel) {
+    return asResult(
+      await (
+        await this.getSettings(channel.guild)
+      ).andThenAsync((settings) => settings.getChannelManager(channel))
+    );
   }
 
-  async scanTitle (channel: TextChannel, url: string) {
-    return (await this.getChannelManager(channel)).andThenAsync(cm =>
+  async scanTitle(channel: TextChannel, url: string) {
+    return (await this.getChannelManager(channel)).andThenAsync((cm) =>
       cm.scanTitle(url)
-    )
+    );
   }
 
   // async appendPuzzle (

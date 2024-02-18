@@ -2,73 +2,62 @@
 // for advanced usage.
 
 import {
-  CacheType,
   ChatInputCommandInteraction,
   Interaction,
-  SlashCommandBuilder
-} from 'discord.js'
-import { ELV, YukiError } from '../error.js'
-import { fail } from '../../misc/cli.js'
+  SlashCommandBuilder,
+} from "discord.js";
+import { ELV, YukiError } from "../error.js";
+import { fail } from "../../misc/cli.js";
 
 // implement commands in their own files in the same folder,
 // and import them here
-import test from './test.js'
-import root from './root.js'
-import round from './round.js'
-import stats from './stats.js'
-import new_ from './new.js'
-import add from './add.js'
-import login from './login.js'
-
-/** interaction response function */
-export type IRF<T extends Interaction> = (interaction: T) => Promise<void>
+import test from "./test.js";
+import root from "./root.js";
+import round from "./round.js";
+import new_ from "./new.js";
+import add from "./add.js";
+import login from "./login.js";
 
 // also remember to export them here
 export const MyCommands = {
   test,
-  stats,
   root,
   round,
   new: new_,
   add,
-  login
-}
+  login,
+};
+
+/** interaction response function */
+export type IRF<T extends Interaction> = (interaction: T) => Promise<void>;
 
 export interface CommandObj {
-  data: Omit<SlashCommandBuilder, 'addSubcommand' | 'addSubcommandGroup'>
-  execute: IRF<ChatInputCommandInteraction>
-}
-
-export function newSlashCommand (
-  name: string,
-  desc: string,
-  execute: (interaction: ChatInputCommandInteraction<CacheType>) => Promise<any>
-): CommandObj {
-  return {
-    data: new SlashCommandBuilder().setName(name).setDescription(desc),
-    execute
-  }
+  data: Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
+  execute: IRF<ChatInputCommandInteraction>;
 }
 
 /** This is called when a slash command has some error and fails to reply
  * to the user, this function will reply to the user instead.
  */
-export async function errorHandler (
+export async function errorHandler(
   interaction: Interaction,
-  e: Error
+  e: unknown
 ): Promise<void> {
-  let content = 'There was an error while executing this command!'
-  if (e instanceof YukiError && e.level === ELV.SAY) content = e.message
-  else fail(e)
+  let content = "There was an error while executing this command!";
+  if (e instanceof YukiError && e.level === ELV.SAY) content = e.message;
+  else fail(e);
   if (
     interaction.isChatInputCommand() ||
     interaction.isButton() ||
     interaction.isModalSubmit()
   ) {
     try {
-      await interaction.reply(content)
+      await interaction.reply(content);
     } catch (_) {
-      await interaction.editReply(content)
+      await interaction.editReply(content);
     }
   }
 }
+/* TODO
+- error handler
+*/
