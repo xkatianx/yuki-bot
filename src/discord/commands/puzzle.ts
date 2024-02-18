@@ -10,7 +10,7 @@ import { Form } from "./handler/form.js";
 import { IRF } from "./_main.js";
 
 const data = new SlashCommandBuilder()
-  .setName("add")
+  .setName("puzzle")
   .setDescription(
     "Add new puzzle tab to the solving spreadsheet of this channel."
   )
@@ -26,7 +26,7 @@ const execute: IRF<ChatInputCommandInteraction> = async (i) => {
   const channel = fetchTextChannel(i);
   const url =
     i.options.getString("url") ??
-    say("Usage: `/add <url>`. Please enter a url.");
+    say("Usage: `/puzzle <url>`. Please enter a url.");
   await i.deferReply();
 
   const cm = (await bot.getChannelManager(channel)).unwrapOrElse(say);
@@ -61,7 +61,3 @@ const execute: IRF<ChatInputCommandInteraction> = async (i) => {
 };
 
 export default { data, execute };
-/* TODO
-- rename to puzzle
-- make "add" multiple usage with selections
-*/

@@ -15,7 +15,7 @@ import test from "./test.js";
 import root from "./root.js";
 import round from "./round.js";
 import new_ from "./new.js";
-import add from "./add.js";
+import puzzle from "./puzzle.js";
 import login from "./login.js";
 
 // also remember to export them here
@@ -24,7 +24,7 @@ export const MyCommands = {
   root,
   round,
   new: new_,
-  add,
+  puzzle,
   login,
 };
 
