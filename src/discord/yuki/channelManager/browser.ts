@@ -97,7 +97,9 @@ class MyBrowser implements Disposable {
             await inputs[0].type(username);
             await inputs[1].type(password);
             // submit
-            const submit = await page.$$('button[type="submit"]');
+            const submit = await page.$$(
+              'button[type="submit"], input[type="submit"]'
+            );
             if (submit?.length !== 1)
               return Err(
                 BrowserError.new(
@@ -182,4 +184,6 @@ export class BrowserError<T extends Code> extends MyError<T> {
 
 /* memo
 - test timeout (browse 10.255.255.1)
+/new -> TimeoutError: Navigation timeout of 30000 ms exceeded
+/puzzle -> MyError: Navigation timeout of 30000 ms exceeded
 */
