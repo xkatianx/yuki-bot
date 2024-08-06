@@ -28,11 +28,13 @@ export class MyError<T extends Code> extends Error {
   }
 
   static fromError(e: Error) {
+    fail(e);
     return new MyError(MyErrorCode.OTHERS, e.message);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static fromAny(e: any) {
+    fail(e);
     return new MyError(MyErrorCode.UNKNOWN, String(e));
   }
 
