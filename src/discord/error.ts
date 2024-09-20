@@ -8,6 +8,8 @@ import { SettingsErrorCode } from "./yuki/settings.js";
 export enum ELV {
   /** just for debug */
   LOG,
+  /** some error messages show to discord but ephemeral */
+  PSS,
   /** some error messages show to discord */
   SAY,
   /** should not happen */
@@ -24,21 +26,25 @@ export class YukiError extends Error {
   }
 }
 
+function errorMessage(e: MyError<number>) {
+  switch (e.code) {
+    case SettingsErrorCode.MISSING_CHANNEL:
+      return `Please use \`/new <url>\` first it this channel.`;
+    case GDriveErrorCode.CANNOT_WRITE:
+      return `${e.message}\nPlease add \`${env.GG.EMAIL}\` as an editor.`;
+    default:
+      fail(e);
+      return e.message;
+  }
+}
+
+export function pss(e: string | MyError<number>): never {
+  const message = e instanceof MyError ? errorMessage(e) : e;
+  throw new YukiError(ELV.PSS, message);
+}
+
 export function say(e: string | MyError<number>): never {
-  let message = "";
-  if (e instanceof MyError) {
-    switch (e.code) {
-      case SettingsErrorCode.MISSING_CHANNEL:
-        message = `Please use \`/new <url>\` first it this channel.`;
-        break;
-      case GDriveErrorCode.CANNOT_WRITE:
-        message = `${e.message}\nPlease add \`${env.GG.EMAIL}\` as an editor.`;
-        break;
-      default:
-        fail(e);
-        message = e.message;
-    }
-  } else message = e;
+  const message = e instanceof MyError ? errorMessage(e) : e;
   throw new YukiError(ELV.SAY, message);
 }
 

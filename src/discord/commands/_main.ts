@@ -17,6 +17,7 @@ import round from "./round.js";
 import new_ from "./new.js";
 import puzzle from "./puzzle.js";
 import login from "./login.js";
+import settings from "./settings.js";
 
 // also remember to export them here
 export const MyCommands = {
@@ -26,6 +27,7 @@ export const MyCommands = {
   new: new_,
   puzzle,
   login,
+  settings,
 };
 
 /** interaction response function */
@@ -44,20 +46,36 @@ export async function errorHandler(
   e: unknown
 ): Promise<void> {
   let content = "There was an error while executing this command!";
-  if (e instanceof YukiError && e.level === ELV.SAY) content = e.message;
-  else fail(e);
+  let ephemeral = false;
+  if (e instanceof YukiError) {
+    switch (e.level) {
+      case ELV.LOG:
+        // TODO
+        break;
+      case ELV.PSS:
+        ephemeral = true;
+      // fallthrough
+      case ELV.SAY:
+        content = e.message;
+        break;
+      default:
+        fail(e);
+    }
+  } else fail(e);
+
   if (
     interaction.isChatInputCommand() ||
     interaction.isButton() ||
     interaction.isModalSubmit()
   ) {
     try {
-      await interaction.reply(content);
+      await interaction.reply({ content, ephemeral });
     } catch (_) {
       await interaction.editReply(content);
     }
   }
 }
+
 /* TODO
 - error handler
 */
