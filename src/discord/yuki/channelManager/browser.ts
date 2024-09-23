@@ -66,7 +66,9 @@ class MyBrowser implements Disposable {
 
   async browse(url: string) {
     return (await this.getPage()).andThenAsync(async (page) => {
-      await page.goto(url);
+      await page.goto(url, {
+        waitUntil: ["domcontentloaded", "networkidle0"],
+      });
       return Ok(this);
     });
   }
