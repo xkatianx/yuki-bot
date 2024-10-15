@@ -20,6 +20,8 @@ export class GSpreadsheet {
   requests: sheets_v4.Schema$Request[] = [];
   writes: sheets_v4.Schema$ValueRange[] = [];
 
+  static templateKey = { settings: "settings", puzzles: "puzzles" };
+
   static template = {
     settings: new GSpreadsheet("1fLJPiEVf96dAr3mrBRf7ehUepkMCbLAyBYs6qUANVWM"),
     puzzles: new GSpreadsheet("1ASWv9mldgwN3CXQ4-tzWdxKMSB5kVabl7vOR9fJ2314"),
