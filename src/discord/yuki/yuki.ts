@@ -5,6 +5,7 @@ import { GFolder } from "../../google/folder.js";
 import { getRootFolder } from "./root.js";
 import { Cache } from "../../misc/cache.js";
 import { Settings, getSettings } from "./settings.js";
+import { pss, say } from "../error.js";
 
 declare module "discord.js" {
   export interface Client {
@@ -48,6 +49,15 @@ export class Yuki extends Bot {
       cm.scanTitle(url)
     );
   }
+
+  /** Reply an non-ephemeral error message to Discord.
+   *  Ephemeral if after `deferReply({ ephemeral: true })`
+   */
+  say = say;
+  /** Reply an ephemeral error message to Discord.
+   *  Non-ephemeral if after `deferReply({ ephemeral: false })`
+   */
+  pss = pss;
 
   // async appendPuzzle (
   //   channel: TextBasedChannel,
