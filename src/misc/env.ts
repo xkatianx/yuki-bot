@@ -29,5 +29,7 @@ export const env = {
     EMAIL: required("GOOGLE_EMAIL"),
     /** path to credentials (./secret/xxx.json) */
     PATH: required("GOOGLE_APPLICATION_CREDENTIALS"),
+    // /** Owner of the copied spreadsheet. (xxx@gmail.com) */
+    // OWNER: required("GOOGLE_SHEET_OWNER"),
   },
 };

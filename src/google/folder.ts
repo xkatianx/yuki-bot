@@ -176,8 +176,8 @@ export class GFolder {
         },
       });
       const id = ss.data.id;
-      if (id != null) return Ok(new GSpreadsheet(id));
-      return Err(GDriveError.unexpected(ss));
+      if (id == null) return Err(GDriveError.unexpected(ss));
+      return Ok(new GSpreadsheet(id));
     });
   }
 
@@ -193,6 +193,20 @@ export class GFolder {
     ).map((ss) => SettingSheet.from(ss));
   }
 }
+
+// // This doesn't work but I'll leave this here.
+// function transferOwner(id: string) {
+//   if (env.GG.OWNER == null) return;
+//   return drive.permissions.create({
+//     fileId: id,
+//     transferOwnership: true,
+//     requestBody: {
+//       role: "owner",
+//       type: "user",
+//       emailAddress: env.GG.OWNER,
+//     },
+//   });
+// }
 
 /* TODO
 - build an add-on for spreadsheet in case bot doing weird
