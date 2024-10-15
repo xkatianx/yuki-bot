@@ -5,6 +5,7 @@ import { GSpreadsheet } from "./spreadsheet.js";
 import { env } from "../misc/env.js";
 import { GDriveError, GDriveErrorCode } from "./error.js";
 import { MyErrorCode } from "../error.js";
+import { SettingSheet } from "./settingSheet.js";
 
 const scopes = ["https://www.googleapis.com/auth/drive"];
 const AuthToken = await new GoogleAuth({ scopes }).getClient();
@@ -187,7 +188,9 @@ export class GFolder {
 
   async createDefaultSettings() {
     const ss = GSpreadsheet.template.settings;
-    return await this.pasteSpreadsheet(ss, "settings");
+    return (
+      await this.pasteSpreadsheet(ss, SettingSheet.templateKey.settings)
+    ).map((ss) => SettingSheet.from(ss));
   }
 }
 
