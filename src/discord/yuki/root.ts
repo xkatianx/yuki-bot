@@ -3,6 +3,8 @@ import { Bot } from "../bot.js";
 import { GFolder } from "../../google/folder.js";
 import { Err, Ok, asResult } from "../../misc/result.js";
 import { Code, MyError, uid } from "../../error.js";
+import { GSpreadsheet } from "../../google/spreadsheet.js";
+import { SettingSheet } from "../../google/settingSheet.js";
 
 enum PinFormat {
   Root = "Root folder: {}",
@@ -91,6 +93,25 @@ export async function getRootFolder(bot: Bot, guild: Guild) {
         )
     )
   );
+}
+
+export async function prepareRoot(url: string) {
+  const res1 = GFolder.fromUrl(url);
+  if (res1.isErr()) return res1;
+  const folder = res1.unwrap();
+
+  const res2 = await folder.checkWritePermission();
+  if (res2.isErr()) return res2;
+
+  // check existing settings / create settings
+  const res3 = await (
+    await folder.findSpreadsheet(GSpreadsheet.templateKey.settings)
+  )
+    .map((ss) => SettingSheet.from(ss))
+    .orElseAsync(async () => await folder.createDefaultSettings());
+  if (res3.isErr()) return res3;
+
+  return Ok({ root: folder, settings: res3.unwrap() });
 }
 
 export function rootFolderMessage(url: string): string {

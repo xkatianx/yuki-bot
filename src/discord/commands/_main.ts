@@ -17,7 +17,7 @@ import round from "./round.js";
 import new_ from "./new.js";
 import puzzle from "./puzzle.js";
 import login from "./login.js";
-import settings from "./settings.js";
+import init from "./init.js";
 
 // also remember to export them here
 export const MyCommands = {
@@ -27,7 +27,7 @@ export const MyCommands = {
   new: new_,
   puzzle,
   login,
-  settings,
+  init,
 };
 
 /** interaction response function */
