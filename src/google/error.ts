@@ -57,3 +57,14 @@ export class SettingSheetError<T extends Code> extends MyError<T> {
     return new SettingSheetError(code, message);
   }
 }
+
+/*
+  code: 400,
+  errors: [
+    {
+      message: 'Invalid requests[0].duplicateSheet: A sheet with the name "The Annual Massachusetts Spelling Bee" already exists. Please enter another name.',
+      domain: 'global',
+      reason: 'badRequest'
+    }
+  ]
+*/

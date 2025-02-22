@@ -1,7 +1,20 @@
 import puppeteer, { type Browser } from "puppeteer";
-import { Err, Ok, asResult, asResultFn } from "../../../misc/result.js";
-import { Code, MyError, uid } from "../../../error.js";
-import { LoginError, LoginErrorCode } from "./login.js";
+
+import {
+  Code,
+  MyError,
+  uid,
+} from "../../../error.js";
+import {
+  asResult,
+  asResultFn,
+  Err,
+  Ok,
+} from "../../../misc/result.js";
+import {
+  LoginError,
+  LoginErrorCode,
+} from "./login.js";
 
 /** a week in ms */
 const lifespan = 7 * 24 * 60 * 60 * 1000;
@@ -17,7 +30,7 @@ class MyBrowser implements Disposable {
 
   private async newBrowser() {
     return MyError.try(async () => {
-      const b = await puppeteer.launch({ headless: "new" });
+      const b = await puppeteer.launch();
       const p = await b.newPage();
       // p.setDefaultTimeout(10 * 1000)
       // p.setDefaultNavigationTimeout(10 * 1000)
@@ -56,11 +69,11 @@ class MyBrowser implements Disposable {
           return Err(
             BrowserError.new(
               BrowserErrorCode.MISSING_PAGE,
-              "My browser has all the pages closed."
-            )
+              "My browser has all the pages closed.",
+            ),
           );
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -77,7 +90,7 @@ class MyBrowser implements Disposable {
     return asResultFn(async () => {
       if (this.isLogin)
         return Err(
-          LoginError.new(LoginErrorCode.ALREADY_LOGIN, "already login")
+          LoginError.new(LoginErrorCode.ALREADY_LOGIN, "already login"),
         );
       return (
         await (
@@ -87,33 +100,33 @@ class MyBrowser implements Disposable {
         MyError.try(async () =>
           asResultFn(async () => {
             const inputs = await page.$$(
-              'input[type="text"], input[type="password"], input[name="username"]'
+              'input[type="text"], input[type="password"], input[name="username"]',
             );
             if (inputs?.length !== 2)
               return Err(
                 BrowserError.new(
                   BrowserErrorCode.INPUT_NOT_FOUND,
-                  "Unable to find input boxes."
-                )
+                  "Unable to find input boxes.",
+                ),
               );
             await inputs[0].type(username);
             await inputs[1].type(password);
             // submit
             const submit = await page.$$(
-              'button[type="submit"], input[type="submit"]'
+              'button[type="submit"], input[type="submit"]',
             );
             if (submit?.length !== 1)
               return Err(
                 BrowserError.new(
                   BrowserErrorCode.SUBMIT_NOT_FOUND,
-                  "Unable to find submit button."
-                )
+                  "Unable to find submit button.",
+                ),
               );
             await Promise.all([page.waitForNavigation(), submit[0].click()]);
             this.isLogin = true;
             return Ok(this);
-          })
-        )
+          }),
+        ),
       );
     });
   }
@@ -122,7 +135,7 @@ class MyBrowser implements Disposable {
     return asResult(
       await (
         await this.getPage()
-      ).andThenAsync((page) => MyError.try(async () => Ok(page.url())))
+      ).andThenAsync((page) => MyError.try(async () => Ok(page.url()))),
     );
   }
 
@@ -133,8 +146,8 @@ class MyBrowser implements Disposable {
       ).andThenAsync((page) =>
         MyError.try(async () => {
           return Ok(await page.title());
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -145,18 +158,18 @@ class MyBrowser implements Disposable {
         const links = await page.$$eval(selector, (elements) =>
           elements
             .map((element) => element.href)
-            .filter((v, i, a) => a.indexOf(v) === i)
+            .filter((v, i, a) => a.indexOf(v) === i),
         );
         return Ok(links);
-      })
+      }),
     );
   }
 
   async screenshot(filename = "test.png") {
     return (await this.getPage()).andThenAsync((page) =>
       MyError.try(async () =>
-        Ok(await page.screenshot({ path: filename, fullPage: true }))
-      )
+        Ok(await page.screenshot({ path: filename, fullPage: true })),
+      ),
     );
   }
 }
@@ -178,7 +191,7 @@ export class BrowserError<T extends Code> extends MyError<T> {
 
   static new<T extends BrowserErrorCode>(
     code: T,
-    message: string
+    message: string,
   ): BrowserError<T> {
     return new BrowserError(code, message);
   }

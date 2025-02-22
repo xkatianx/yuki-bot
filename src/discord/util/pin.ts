@@ -1,12 +1,18 @@
-import { Guild, GuildBasedChannel, Message, ChannelType } from "discord.js";
-import { Bot } from "../bot.js";
+import {
+  ChannelType,
+  Guild,
+  GuildBasedChannel,
+  Message,
+} from "discord.js";
+
 import { formatArgument } from "../../misc/format.js";
+import { Bot } from "../bot.js";
 
 /** sorted from old to new */
 export async function getPinned(
   bot: Bot,
   guildOrChannel: Guild | GuildBasedChannel,
-  searchFormat?: string
+  searchFormat?: string,
 ): Promise<Message[]> {
   let channels: GuildBasedChannel[];
   if (guildOrChannel instanceof Guild) {
@@ -20,7 +26,7 @@ export async function getPinned(
       try {
         const pinned = await channel.messages.fetchPinned(true);
         return [...pinned.values()];
-      } catch (_) {
+      } catch {
         return null;
       }
     } else return null;
@@ -33,7 +39,7 @@ export async function getPinned(
       (v) =>
         searchFormat == null ||
         (v.author.id === bot.client.user?.id &&
-          formatArgument(v.content, searchFormat) != null)
+          formatArgument(v.content, searchFormat) != null),
     )
     .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
   return results;

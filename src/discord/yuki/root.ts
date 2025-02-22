@@ -1,10 +1,24 @@
-import { Guild, GuildBasedChannel, Message, ChannelType } from "discord.js";
-import { Bot } from "../bot.js";
+import {
+  ChannelType,
+  Guild,
+  GuildBasedChannel,
+  Message,
+} from "discord.js";
+
+import {
+  Code,
+  MyError,
+  uid,
+} from "../../error.js";
 import { GFolder } from "../../google/folder.js";
-import { Err, Ok, asResult } from "../../misc/result.js";
-import { Code, MyError, uid } from "../../error.js";
-import { GSpreadsheet } from "../../google/spreadsheet.js";
 import { SettingSheet } from "../../google/settingSheet.js";
+import { GSpreadsheet } from "../../google/spreadsheet.js";
+import {
+  asResult,
+  Err,
+  Ok,
+} from "../../misc/result.js";
+import { Bot } from "../bot.js";
 
 enum PinFormat {
   Root = "Root folder: {}",
@@ -31,7 +45,7 @@ function isPinFormat(message: Message, format: PinFormat): boolean {
 async function getPinned(
   bot: Bot,
   guildOrChannel: Guild | GuildBasedChannel,
-  search?: PinFormat
+  search?: PinFormat,
 ): Promise<Message[]> {
   let channels: GuildBasedChannel[];
   if (guildOrChannel instanceof Guild) {
@@ -45,7 +59,7 @@ async function getPinned(
       try {
         const pinned = await channel.messages.fetchPinned(true);
         return [...pinned.values()];
-      } catch (_) {
+      } catch {
         return null;
       }
     } else return null;
@@ -56,7 +70,7 @@ async function getPinned(
     .filter(
       (v) =>
         search == null ||
-        (v.author.id === bot.client.user?.id && isPinFormat(v, search))
+        (v.author.id === bot.client.user?.id && isPinFormat(v, search)),
     )
     .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
   return results;
@@ -68,16 +82,16 @@ export async function getRootFolderUrl(bot: Bot, guild: Guild) {
     return Err(
       RootError.new(
         RootErrorCode.MISSING_URL,
-        `Unable to find root url in ${guild}.`
-      )
+        `Unable to find root url in ${guild}.`,
+      ),
     );
   const url = getPinArgument(lastMessage.content, PinFormat.Root)?.at(1);
   if (url == null)
     return Err(
       MyError.unexpected(
         "Wrong root url format in discord pinned message.",
-        lastMessage
-      )
+        lastMessage,
+      ),
     );
   return Ok(url);
 }
@@ -89,9 +103,9 @@ export async function getRootFolder(bot: Bot, guild: Guild) {
     ).andThenAsync(
       async (url) =>
         await GFolder.fromUrl(url).andThenAsync((folder) =>
-          folder.checkWritePermission()
-        )
-    )
+          folder.checkWritePermission(),
+        ),
+    ),
   );
 }
 

@@ -1,11 +1,7 @@
-.env
-secret/
-
 node_modules/
-
 dist/
 
+**/secret*
 **/WIP*
-test.ts
-/test*
-todo*
+
+.env

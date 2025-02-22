@@ -5,19 +5,23 @@ import {
   ChatInputCommandInteraction,
   Interaction,
   SlashCommandBuilder,
+  type SlashCommandOptionsOnlyBuilder,
 } from "discord.js";
-import { ELV, YukiError } from "../error.js";
-import { fail } from "../../misc/cli.js";
 
+import { fail } from "../../misc/cli.js";
+import {
+  ELV,
+  YukiError,
+} from "../error.js";
+import init from "./init.js";
+import login from "./login.js";
+import new_ from "./new.js";
+import puzzle from "./puzzle.js";
+import root from "./root.js";
+import round from "./round.js";
 // implement commands in their own files in the same folder,
 // and import them here
 import test from "./test.js";
-import root from "./root.js";
-import round from "./round.js";
-import new_ from "./new.js";
-import puzzle from "./puzzle.js";
-import login from "./login.js";
-import init from "./init.js";
 
 // also remember to export them here
 export const MyCommands = {
@@ -34,7 +38,9 @@ export const MyCommands = {
 export type IRF<T extends Interaction> = (interaction: T) => Promise<void>;
 
 export interface CommandObj {
-  data: Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
+  data:
+    | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">
+    | SlashCommandOptionsOnlyBuilder;
   execute: IRF<ChatInputCommandInteraction>;
 }
 
@@ -43,7 +49,7 @@ export interface CommandObj {
  */
 export async function errorHandler(
   interaction: Interaction,
-  e: unknown
+  e: unknown,
 ): Promise<void> {
   let content = "There was an error while executing this command!";
   let ephemeral = false;
@@ -70,7 +76,7 @@ export async function errorHandler(
   ) {
     try {
       await interaction.reply({ content, ephemeral });
-    } catch (_) {
+    } catch {
       await interaction.editReply(content);
     }
   }

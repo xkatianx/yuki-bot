@@ -1,6 +1,4 @@
 {
-  "editor.tabSize": 2,
-  "editor.insertSpaces": true,
   "editor.rulers": [
     {
       "column": 80,
@@ -11,9 +9,6 @@
     "source.fixAll.eslint": "always"
   },
   "editor.formatOnSave": true,
-  // "prettier.singleQuote": true,
-  // "prettier.semi": false,
-  // "prettier.tabWidth": 2,
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   }

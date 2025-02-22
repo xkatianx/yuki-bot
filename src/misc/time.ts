@@ -1,6 +1,6 @@
 /** Waiting 1.234 sec： await sleep(1234) */
-export async function sleep(ms: number): Promise<null> {
-  return await new Promise((resolve) => {
+export async function sleep(ms: number): Promise<void> {
+  return await new Promise<void>((resolve) => {
     setTimeout(resolve, ms);
   });
 }
