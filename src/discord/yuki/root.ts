@@ -10,7 +10,7 @@ import {
   MyError,
   uid,
 } from "../../error.js";
-import { GFolder } from "../../google/folder.js";
+import { GFolder } from "../../google/folder/folder.js";
 import { SettingSheet } from "../../google/settingSheet.js";
 import { GSpreadsheet } from "../../google/spreadsheet.js";
 import {
@@ -119,7 +119,7 @@ export async function prepareRoot(url: string) {
 
   // check existing settings / create settings
   const res3 = await (
-    await folder.findSpreadsheet(GSpreadsheet.templateKey.settings)
+    await folder.findUniqueSpreadsheet(GSpreadsheet.templateKey.settings)
   )
     .map((ss) => SettingSheet.from(ss))
     .orElseAsync(async () => await folder.createDefaultSettings());

@@ -1,19 +1,32 @@
 // https://developers.google.com/sheets/api/samples
 // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/request
 
-import { GoogleAuth } from "google-auth-library";
-import { sheets_v4 } from "@googleapis/sheets";
-import { fatal } from "../misc/cli.js";
-
 import * as dotenv from "dotenv";
-import { GDriveError, GDriveErrorCode } from "./error.js";
-import { Ok, Err } from "../misc/result.js";
-import { GFolder } from "./folder.js";
+import {
+  GoogleAuth,
+  type OAuth2Client,
+} from "google-auth-library";
+
+import { sheets_v4 } from "@googleapis/sheets";
+
+import { fatal } from "../misc/cli.js";
+import {
+  Err,
+  Ok,
+} from "../misc/result.js";
+import {
+  GSpreadsheetError,
+  GSpreadsheetErrorCode,
+} from "./error.js";
+import { GFolder } from "./folder/folder.js";
+
 dotenv.config();
 
 const sheets = new sheets_v4.Sheets({});
 const scopes = ["https://www.googleapis.com/auth/spreadsheets"];
-const AuthToken = await new GoogleAuth({ scopes }).getClient();
+const AuthToken = (await new GoogleAuth({
+  scopes,
+}).getClient()) as OAuth2Client;
 
 export class GSpreadsheet {
   #id: string;
@@ -37,10 +50,10 @@ export class GSpreadsheet {
       ?.at(1);
     if (id != null) return Ok(new GSpreadsheet(id));
     return Err(
-      GDriveError.new(
-        GDriveErrorCode.INVALID_URL,
-        `\`${url}\` is not a valid url.`
-      )
+      GSpreadsheetError.new(
+        GSpreadsheetErrorCode.INVALID_URL,
+        `\`${url}\` is not a valid url.`,
+      ),
     );
   }
 
@@ -138,7 +151,7 @@ export class GSpreadsheet {
   }
 
   async getSheet(
-    sheetName: string
+    sheetName: string,
   ): Promise<sheets_v4.Schema$Sheet | undefined> {
     const res = await sheets.spreadsheets.get({
       ranges: [sheetName],
@@ -227,7 +240,7 @@ export class GSpreadsheet {
 
   async newPuzzleTab(
     url: string,
-    tabName: string
+    tabName: string,
   ): Promise<sheets_v4.Schema$BatchUpdateValuesResponse> {
     let [hintUrl, ansUrl] = ["", ""];
     // gph style

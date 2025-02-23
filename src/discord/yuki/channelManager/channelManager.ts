@@ -1,8 +1,11 @@
-import { GFolder } from "../../../google/folder.js";
+import { GFolder } from "../../../google/folder/folder.js";
 import { GSpreadsheet } from "../../../google/spreadsheet.js";
 import { asResult } from "../../../misc/result.js";
 import { Browser } from "./browser.js";
-import { getLoginInfo, tryLogin } from "./login.js";
+import {
+  getLoginInfo,
+  tryLogin,
+} from "./login.js";
 
 export class ChannelManager {
   folder: GFolder;
@@ -39,7 +42,7 @@ export class ChannelManager {
     return asResult(
       await (
         await this.browse(url)
-      ).andThenAsync(async (browser) => await browser.getTitle())
+      ).andThenAsync(async (browser) => await browser.getTitle()),
     );
   }
 

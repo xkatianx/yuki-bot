@@ -1,5 +1,6 @@
+import { GFolderErrorCode } from "~/google/folder/error.js";
+
 import { MyError } from "../error.js";
-import { GDriveErrorCode } from "../google/error.js";
 import { fail } from "../misc/cli.js";
 import { env } from "../misc/env.js";
 import { SettingsErrorCode } from "./yuki/settings.js";
@@ -30,7 +31,7 @@ function errorMessage(e: MyError<number>) {
   switch (e.code) {
     case SettingsErrorCode.MISSING_CHANNEL:
       return `Please use \`/new <url>\` first it this channel.`;
-    case GDriveErrorCode.CANNOT_WRITE:
+    case GFolderErrorCode.CANNOT_WRITE:
       return `${e.message}\nPlease add \`${env.GG.EMAIL}\` as an editor.`;
     default:
       fail(e);

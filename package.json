@@ -1,14 +1,17 @@
 {
   "name": "yuki-bot",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "start": "tsc && node dist/index.js",
-    "slash": "tsc && node dist/discord/commands/_deploy.js",
+    "build": "tsc && tsc-alias",
+    "build:watch": "tsc && (concurrently \"tsc -w\" \"tsc-alias -w\")",
+    "start": "npm run build && node dist/index.js",
+    "slash": "npm run build && node dist/discord/commands/_deploy.js",
     "format": "prettier --check .",
     "test": "vitest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "check": "npm run format && npm run lint && npm run test"
   },
   "engines": {
     "node": "^22.6.0"
@@ -17,13 +20,13 @@
   "author": "katian",
   "license": "ISC",
   "dependencies": {
-    "@googleapis/drive": "~5.0.2",
-    "@googleapis/sheets": "~4.0.2",
+    "@googleapis/drive": "~8.14.0",
+    "@googleapis/sheets": "~9.3.0",
     "axios": "^1.3.2",
     "chalk": "^5.2.0",
     "discord.js": "~14.18.0",
     "dotenv": "^16.0.3",
-    "google-auth-library": "~8.7.0",
+    "google-auth-library": "~9.15.0",
     "moment": "^2.30.1",
     "puppeteer": "^24.2.1",
     "ts-results-es": "^5.0.1",
@@ -35,7 +38,9 @@
     "@types/node": "^22.6.0",
     "@types/uuid": "^9.0.7",
     "eslint": "^9.21.0",
+    "gaxios": "^6.7.1",
     "prettier": "^3.2.5",
+    "tsc-alias": "^1.8.10",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.24.1",
     "vitest": "^3.0.6"

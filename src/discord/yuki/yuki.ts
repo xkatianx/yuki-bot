@@ -1,11 +1,21 @@
-import { Guild, TextChannel } from "discord.js";
-import { Bot } from "../bot.js";
-import { asResult } from "../../misc/result.js";
-import { GFolder } from "../../google/folder.js";
-import { getRootFolder } from "./root.js";
+import {
+  Guild,
+  TextChannel,
+} from "discord.js";
+
+import { GFolder } from "../../google/folder/folder.js";
 import { Cache } from "../../misc/cache.js";
-import { Settings, getSettings } from "./settings.js";
-import { pss, say } from "../error.js";
+import { asResult } from "../../misc/result.js";
+import { Bot } from "../bot.js";
+import {
+  pss,
+  say,
+} from "../error.js";
+import { getRootFolder } from "./root.js";
+import {
+  getSettings,
+  Settings,
+} from "./settings.js";
 
 declare module "discord.js" {
   export interface Client {
@@ -25,14 +35,14 @@ export class Yuki extends Bot {
   async getRootFolder(guild: Guild) {
     return await this.roots.getOrSet(
       guild.id,
-      getRootFolder.bind(null, this, guild)
+      getRootFolder.bind(null, this, guild),
     );
   }
 
   async getSettings(guild: Guild) {
     return await this.settings.getOrSet(
       guild.id,
-      getSettings.bind(this, guild)
+      getSettings.bind(this, guild),
     );
   }
 
@@ -40,13 +50,13 @@ export class Yuki extends Bot {
     return asResult(
       await (
         await this.getSettings(channel.guild)
-      ).andThenAsync((settings) => settings.getChannelManager(channel))
+      ).andThenAsync((settings) => settings.getChannelManager(channel)),
     );
   }
 
   async scanTitle(channel: TextChannel, url: string) {
     return (await this.getChannelManager(channel)).andThenAsync((cm) =>
-      cm.scanTitle(url)
+      cm.scanTitle(url),
     );
   }
 

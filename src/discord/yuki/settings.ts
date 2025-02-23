@@ -1,11 +1,25 @@
-import type { Channel, Guild, TextChannel } from "discord.js";
-import { Ok, Err, asResult, asResultFn } from "../../misc/result.js";
-import { GFolder } from "../../google/folder.js";
-import { Cache } from "../../misc/cache.js";
+import type {
+  Channel,
+  Guild,
+  TextChannel,
+} from "discord.js";
+import { GFolderErrorCode } from "~/google/folder/error.js";
+
+import {
+  type Code,
+  MyError,
+  uid,
+} from "../../error.js";
+import { GFolder } from "../../google/folder/folder.js";
 import { GSpreadsheet } from "../../google/spreadsheet.js";
+import { Cache } from "../../misc/cache.js";
+import {
+  asResult,
+  asResultFn,
+  Err,
+  Ok,
+} from "../../misc/result.js";
 import { ChannelManager } from "./channelManager/channelManager.js";
-import { type Code, MyError, uid } from "../../error.js";
-import { GDriveErrorCode } from "../../google/error.js";
 import { type Yuki } from "./yuki.js";
 
 export class Settings {
@@ -36,7 +50,7 @@ export class Settings {
   static async newFromTemplate(rootFolder: GFolder) {
     const res1 = await GSpreadsheet.template.settings.copyTo(
       rootFolder,
-      Settings.FILENAME
+      Settings.FILENAME,
     );
     if (res1.isErr()) return res1;
     const spreadsheet = res1.unwrap();
@@ -50,8 +64,8 @@ export class Settings {
     return Err(
       SettingsError.new(
         SettingsErrorCode.CORRUPTED,
-        "The settings spreadsheet is corrupted."
-      )
+        "The settings spreadsheet is corrupted.",
+      ),
     );
   }
 
@@ -62,8 +76,8 @@ export class Settings {
     return Err(
       SettingsError.new(
         SettingsErrorCode.MISSING_CHANNEL,
-        `Unable to find channel \`${id}\`.`
-      )
+        `Unable to find channel \`${id}\`.`,
+      ),
     );
   }
 
@@ -74,8 +88,8 @@ export class Settings {
     return Err(
       SettingsError.new(
         SettingsErrorCode.MISSING_CHANNEL,
-        `Unable to find channel \`${id}\`.`
-      )
+        `Unable to find channel \`${id}\`.`,
+      ),
     );
   }
 
@@ -83,26 +97,26 @@ export class Settings {
     return await this.#cms.getOrSet(channel.id, async () =>
       asResultFn(async () => {
         const folderRes = this.getFolderId(channel).andThen((id) =>
-          Ok(new GFolder(id))
+          Ok(new GFolder(id)),
         );
         if (folderRes.isErr()) return folderRes;
         const spreadsheetRes = this.getSpreadsheetId(channel).andThen((id) =>
-          Ok(new GSpreadsheet(id))
+          Ok(new GSpreadsheet(id)),
         );
         if (spreadsheetRes.isErr()) return spreadsheetRes;
         return await this.setChannelManager(
           channel,
           folderRes.unwrap(),
-          spreadsheetRes.unwrap()
+          spreadsheetRes.unwrap(),
         );
-      })
+      }),
     );
   }
 
   async setChannelManager(
     channel: TextChannel,
     folder: GFolder,
-    spreadsheet: GSpreadsheet
+    spreadsheet: GSpreadsheet,
   ) {
     return asResult(
       await (
@@ -116,7 +130,7 @@ export class Settings {
         arr[this.idx.spreadsheetId] = spreadsheet.id;
 
         const row = this.#table.findIndex(
-          (row) => row[this.idx.channelId] === channel.id
+          (row) => row[this.idx.channelId] === channel.id,
         );
         if (row === -1) {
           this.#table.push(arr);
@@ -132,7 +146,7 @@ export class Settings {
           this.#cms.set(channel.id, cm);
           return Ok(cm);
         });
-      })
+      }),
     );
   }
 }
@@ -150,7 +164,7 @@ export class SettingsError<T extends Code> extends MyError<T> {
 
   static new<T extends SettingsErrorCode>(
     code: T,
-    message: string
+    message: string,
   ): SettingsError<T> {
     return new SettingsError(code, message);
   }
@@ -163,16 +177,16 @@ export async function getSettings(this: Yuki, guild: Guild) {
     ).andThenAsync(async (root) =>
       asResult(
         await (
-          await root.findSpreadsheet(Settings.FILENAME)
-        ).andThenAsync((spreadsheet) => Settings.fromSpreadsheet(spreadsheet))
+          await root.findUniqueSpreadsheet(Settings.FILENAME)
+        ).andThenAsync((spreadsheet) => Settings.fromSpreadsheet(spreadsheet)),
       ).orElseAsync(async (e) => {
         switch (e.code) {
-          case GDriveErrorCode.MISSING_FILE:
+          case GFolderErrorCode.MISSING_FILE:
             return await Settings.newFromTemplate(root);
           default:
             return Err(e);
         }
-      })
-    )
+      }),
+    ),
   );
 }

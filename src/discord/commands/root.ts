@@ -1,18 +1,22 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+} from "discord.js";
+import { GFolderErrorCode } from "~/google/folder/error.js";
+
 import { say } from "../error.js";
-import { interactionFetch } from "./_misc.js";
 import { rootFolderMessage } from "../yuki/root.js";
 import { IRF } from "./_main.js";
-import { GDriveErrorCode } from "../../google/error.js";
+import { interactionFetch } from "./_misc.js";
 
 const data = new SlashCommandBuilder()
   .setName("root") // command here, should be the same as the file name
   .setDescription(
     "Get/Set the root Google drive folder for the current discord guild. " +
-      "This command is owner-only."
+      "This command is owner-only.",
   )
   .addStringOption((option) =>
-    option.setName("url").setDescription("The url of the Google drive folder.")
+    option.setName("url").setDescription("The url of the Google drive folder."),
   );
 
 const execute: IRF<ChatInputCommandInteraction> = async (i) => {
@@ -27,16 +31,16 @@ const execute: IRF<ChatInputCommandInteraction> = async (i) => {
       .map((folder) => say(`The root folder for this server:\n${folder.url}`))
       .mapErr((e) => {
         switch (e.code) {
-          case GDriveErrorCode.CANNOT_WRITE:
+          case GFolderErrorCode.CANNOT_WRITE:
             say(
               `Error: ${e.message}\n` +
-                "Please give me the write permission to the root folder."
+                "Please give me the write permission to the root folder.",
             );
             break;
           default:
             say(
               "The root folder is not set yet. " +
-                "Please use `/root {url}` to set one."
+                "Please use `/root {url}` to set one.",
             );
         }
       });

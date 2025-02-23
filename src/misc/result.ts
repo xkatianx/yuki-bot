@@ -35,11 +35,6 @@ OkImpl.prototype.orElseAsync = function (_: any) {
 // };
 declare module "ts-results-es" {
   interface ErrImpl<E> {
-    orElseAsync<T2>(fn: (err: E) => Promise<OkImpl<T2>>): Promise<OkImpl<T2>>;
-    orElseAsync<E2>(fn: (err: E) => Promise<ErrImpl<E2>>): Promise<ErrImpl<E2>>;
-    orElseAsync<T2, E2>(
-      fn: (err: E) => Promise<Result<T2, E2>>,
-    ): Promise<Result<T2, E2>>;
     orElseAsync<R extends Result<OkContent<R>, ErrContent<R>>>(
       fn: (err: E) => Promise<R>,
     ): Promise<R>;
@@ -53,7 +48,7 @@ declare module "ts-results-es" {
     // unwrapOrElse<T2>(fn: (err: E) => T2): T2;
   }
   interface OkImpl<T> {
-    orElseAsync(fn: unknown): OkImpl<T>;
+    orElseAsync(fn: unknown): Ok<T>;
     andThenAsync<T2>(fn: (val: T) => Promise<OkImpl<T2>>): Promise<OkImpl<T2>>;
     andThenAsync<E2>(
       fn: (val: T) => Promise<ErrImpl<E2>>,

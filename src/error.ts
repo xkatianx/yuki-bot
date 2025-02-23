@@ -1,5 +1,11 @@
-import { ToLog, fail } from "./misc/cli.js";
-import { Ok, Err, Result, asResult } from "./misc/result.js";
+import {
+  fail,
+  ToLog,
+} from "./misc/cli.js";
+import {
+  Err,
+  Result,
+} from "./misc/result.js";
 
 const counter = { val: -1 };
 export type Code = number;
@@ -20,20 +26,19 @@ export enum MyErrorCode {
 }
 
 export class MyError<T extends Code> extends Error {
-  code: T;
+  readonly code: T;
   constructor(code: T, message: string) {
     super(message);
     this.name = "MyError";
     this.code = code;
   }
 
-  static fromError(e: Error) {
+  static fromError(e: Error): MyError<Code> {
     fail(e);
     return new MyError(MyErrorCode.OTHERS, e.message);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static fromAny(e: any) {
+  static fromAny(e: unknown) {
     fail(e);
     return new MyError(MyErrorCode.UNKNOWN, String(e));
   }
@@ -48,30 +53,33 @@ export class MyError<T extends Code> extends Error {
     throw new MyError(MyErrorCode.FATAL, "Fatal error.");
   }
 
-  static async try<T>(
-    fn: () => Promise<Ok<T>>
-  ): Promise<Result<T, MyError<MyErrorCode.OTHERS | MyErrorCode.UNKNOWN>>>;
-  static async try<E extends MyError<Code>>(
-    fn: () => Promise<Err<E>>
+  // static async try<T>(
+  //   fn: () => Promise<Ok<T>>,
+  // ): Promise<Result<T, MyError<MyErrorCode.OTHERS | MyErrorCode.UNKNOWN>>>;
+  // static async try<E extends MyError<Code>>(
+  //   fn: () => Promise<Err<E>>,
+  // ): Promise<
+  //   Result<never, E | MyError<MyErrorCode.OTHERS | MyErrorCode.UNKNOWN>>
+  // >;
+  // static async try<T, E extends MyError<Code>>(
+  //   fn: () => Promise<Result<T, E>>,
+  // ): Promise<Result<T, E | MyError<MyErrorCode.OTHERS | MyErrorCode.UNKNOWN>>>;
+  static async try<T, E extends MyError<Code>>(
+    fn: () => Promise<Result<T, E>>,
   ): Promise<
-    Result<never, E | MyError<MyErrorCode.OTHERS | MyErrorCode.UNKNOWN>>
-  >;
-  static async try<T, E extends MyError<Code>>(
-    fn: () => Promise<Result<T, E>>
-  ): Promise<Result<T, E | MyError<MyErrorCode.OTHERS | MyErrorCode.UNKNOWN>>>;
-  static async try<T, E extends MyError<Code>>(
-    fn: () => Promise<Result<T, E>>
-  ) {
-    return asResult(
-      await (async () => {
-        try {
-          return await fn();
-        } catch (e: unknown) {
-          if (e instanceof Error) return Err(MyError.fromError(e));
-          else return Err(MyError.fromAny(e));
-        }
-      })()
-    );
+    Result<
+      T,
+      E | ReturnType<typeof this.fromError> | ReturnType<typeof this.fromAny>
+    >
+  > {
+    return await (async () => {
+      try {
+        return await fn();
+      } catch (e: unknown) {
+        if (e instanceof Error) return Err(this.fromError(e));
+        else return Err(this.fromAny(e));
+      }
+    })();
   }
 }
 /* TODO
