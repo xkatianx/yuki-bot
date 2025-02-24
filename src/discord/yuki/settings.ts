@@ -3,22 +3,22 @@ import type {
   Guild,
   TextChannel,
 } from "discord.js";
-import { GFolderErrorCode } from "~/google/folder/error.js";
-
 import {
   type Code,
   MyError,
   uid,
-} from "../../error.js";
-import { GFolder } from "../../google/folder/folder.js";
-import { GSpreadsheet } from "../../google/spreadsheet.js";
-import { Cache } from "../../misc/cache.js";
+} from "~/error.js";
+import { GFolderErrorCode } from "~/google/folder/error.js";
+import { GFolder } from "~/google/folder/folder.js";
+import { GSpreadsheet } from "~/google/sheet/index.js";
+import { Cache } from "~/misc/cache.js";
 import {
   asResult,
   asResultFn,
   Err,
   Ok,
-} from "../../misc/result.js";
+} from "~/misc/result.js";
+
 import { ChannelManager } from "./channelManager/channelManager.js";
 import { type Yuki } from "./yuki.js";
 

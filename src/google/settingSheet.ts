@@ -1,6 +1,13 @@
-import { Err, Ok } from "../misc/result.js";
-import { SettingSheetError, SettingSheetErrorCode } from "./error.js";
-import { GSpreadsheet } from "./spreadsheet.js";
+import {
+  Err,
+  Ok,
+} from "~/misc/result.js";
+
+import {
+  SettingSheetError,
+  SettingSheetErrorCode,
+} from "./sheet/error.js";
+import { GSpreadsheet } from "./sheet/index.js";
 
 type GuildInfo = {
   guildId: string;
@@ -35,8 +42,8 @@ export class SettingSheet extends GSpreadsheet {
         return Err(
           SettingSheetError.new(
             SettingSheetErrorCode.UNKNOWN_VERSION,
-            `Unknown version: ${ver}`
-          )
+            `Unknown version: ${ver}`,
+          ),
         );
     }
     return Ok(this);

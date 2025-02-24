@@ -1,6 +1,13 @@
 import * as dotenv from "dotenv";
-import { fatal, warn } from "./cli.js";
-dotenv.config();
+
+import {
+  fatal,
+  warn,
+} from "./cli.js";
+
+dotenv.config({
+  path: [".env", ".env.local"],
+});
 
 function required(name: string): string {
   return process.env[name] ?? fatal(`in .env: missing "${name}"`);

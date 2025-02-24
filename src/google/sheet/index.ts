@@ -1,32 +1,19 @@
-// https://developers.google.com/sheets/api/samples
-// https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/request
-
-import * as dotenv from "dotenv";
-import {
-  GoogleAuth,
-  type OAuth2Client,
-} from "google-auth-library";
-
-import { sheets_v4 } from "@googleapis/sheets";
-
-import { fatal } from "../misc/cli.js";
+import { fatal } from "~/misc/cli.js";
 import {
   Err,
   Ok,
-} from "../misc/result.js";
+} from "~/misc/result.js";
+
+import { sheets_v4 } from "@googleapis/sheets";
+
+import { gClient } from "../auth/index.js";
+import { GFolder } from "../folder/folder.js";
 import {
   GSpreadsheetError,
   GSpreadsheetErrorCode,
 } from "./error.js";
-import { GFolder } from "./folder/folder.js";
 
-dotenv.config();
-
-const sheets = new sheets_v4.Sheets({});
-const scopes = ["https://www.googleapis.com/auth/spreadsheets"];
-const AuthToken = (await new GoogleAuth({
-  scopes,
-}).getClient()) as OAuth2Client;
+const sheets = new sheets_v4.Sheets({ auth: gClient });
 
 export class GSpreadsheet {
   #id: string;
@@ -73,7 +60,6 @@ export class GSpreadsheet {
     const requests = this.requests;
     this.requests = [];
     const response = await sheets.spreadsheets.batchUpdate({
-      auth: AuthToken,
       spreadsheetId: this.id,
       requestBody: { requests },
     });
@@ -89,7 +75,6 @@ export class GSpreadsheet {
     const res = await sheets.spreadsheets.values.batchGet({
       ranges: ["website", "username", "password", "folder"],
       spreadsheetId: this.id,
-      auth: AuthToken,
     });
     const arr = res.data.valueRanges;
     return {
@@ -140,7 +125,7 @@ export class GSpreadsheet {
   async flushWrite(): Promise<sheets_v4.Schema$BatchUpdateValuesResponse> {
     const res = await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId: this.id,
-      auth: AuthToken,
+
       requestBody: {
         valueInputOption: "USER_ENTERED",
         data: this.writes,
@@ -156,7 +141,6 @@ export class GSpreadsheet {
     const res = await sheets.spreadsheets.get({
       ranges: [sheetName],
       spreadsheetId: this.id,
-      auth: AuthToken,
     });
     return res.data.sheets?.at(0);
   }
@@ -202,7 +186,6 @@ export class GSpreadsheet {
     const res = await sheets.spreadsheets.values.get({
       range,
       spreadsheetId: this.id,
-      auth: AuthToken,
     });
     return res.data.values ?? fatal();
   }
@@ -211,7 +194,6 @@ export class GSpreadsheet {
     const res = await sheets.spreadsheets.values.batchGet({
       ranges,
       spreadsheetId: this.id,
-      auth: AuthToken,
     });
     return res.data.valueRanges ?? fatal();
   }
@@ -220,7 +202,6 @@ export class GSpreadsheet {
     const res = await sheets.spreadsheets.values.get({
       range: "INDEX!A:E",
       spreadsheetId: this.id,
-      auth: AuthToken,
     });
     return res.data.values ?? fatal();
   }

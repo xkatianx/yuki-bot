@@ -1,7 +1,3 @@
-import {
-  GoogleAuth,
-  type OAuth2Client,
-} from "google-auth-library";
 import { env } from "~/misc/env.js";
 import {
   asResult,
@@ -11,18 +7,15 @@ import {
 
 import { drive_v3 } from "@googleapis/drive";
 
+import { gClient } from "../auth/index.js";
 import { SettingSheet } from "../settingSheet.js";
-import { GSpreadsheet } from "../spreadsheet.js";
+import { GSpreadsheet } from "../sheet/index.js";
 import {
   GFolderError,
   GFolderErrorCode,
 } from "./error.js";
 
-const scopes = ["https://www.googleapis.com/auth/drive"];
-const AuthToken = (await new GoogleAuth({
-  scopes,
-}).getClient()) as OAuth2Client;
-const drive = new drive_v3.Drive({ auth: AuthToken });
+const drive = new drive_v3.Drive({ auth: gClient });
 
 export class GFolder {
   #id: string;

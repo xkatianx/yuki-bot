@@ -1,6 +1,7 @@
-import { GFolder } from "../../../google/folder/folder.js";
-import { GSpreadsheet } from "../../../google/spreadsheet.js";
-import { asResult } from "../../../misc/result.js";
+import { GFolder } from "~/google/folder/folder.js";
+import { GSpreadsheet } from "~/google/sheet/index.js";
+import { asResult } from "~/misc/result.js";
+
 import { Browser } from "./browser.js";
 import {
   getLoginInfo,

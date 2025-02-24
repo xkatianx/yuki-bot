@@ -4,20 +4,20 @@ import {
   GuildBasedChannel,
   Message,
 } from "discord.js";
-
 import {
   Code,
   MyError,
   uid,
-} from "../../error.js";
-import { GFolder } from "../../google/folder/folder.js";
-import { SettingSheet } from "../../google/settingSheet.js";
-import { GSpreadsheet } from "../../google/spreadsheet.js";
+} from "~/error.js";
+import { GFolder } from "~/google/folder/folder.js";
+import { SettingSheet } from "~/google/settingSheet.js";
+import { GSpreadsheet } from "~/google/sheet/index.js";
 import {
   asResult,
   Err,
   Ok,
-} from "../../misc/result.js";
+} from "~/misc/result.js";
+
 import { Bot } from "../bot.js";
 
 enum PinFormat {
