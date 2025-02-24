@@ -6,8 +6,8 @@ import {
 import {
   SettingSheetError,
   SettingSheetErrorCode,
-} from "./sheet/error.js";
-import { GSpreadsheet } from "./sheet/index.js";
+} from "./error.js";
+import { GSpreadsheet } from "./index.js";
 
 type GuildInfo = {
   guildId: string;

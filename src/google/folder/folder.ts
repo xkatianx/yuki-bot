@@ -8,8 +8,8 @@ import {
 import { drive_v3 } from "@googleapis/drive";
 
 import { gClient } from "../auth/index.js";
-import { SettingSheet } from "../settingSheet.js";
 import { GSpreadsheet } from "../sheet/index.js";
+import { SettingSheet } from "../sheet/settingSheet.js";
 import {
   GFolderError,
   GFolderErrorCode,

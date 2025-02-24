@@ -10,8 +10,8 @@ import {
   uid,
 } from "~/error.js";
 import { GFolder } from "~/google/folder/folder.js";
-import { SettingSheet } from "~/google/settingSheet.js";
 import { GSpreadsheet } from "~/google/sheet/index.js";
+import { SettingSheet } from "~/google/sheet/settingSheet.js";
 import {
   asResult,
   Err,
