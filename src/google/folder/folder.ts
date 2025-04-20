@@ -1,11 +1,22 @@
-import { asResult, Err, Ok } from "~/misc/result.js";
+import {
+  asResult,
+  Err,
+  Ok,
+} from "~/misc/result.js";
 
 import { drive_v3 } from "@googleapis/drive";
 
-import { gClient, myGoogleInfo } from "../auth/index.js";
+import {
+  gClient,
+  myGoogleInfo,
+} from "../auth/index.js";
 import { GSpreadsheet } from "../sheet/index.js";
+import { PuzzleSheet } from "../sheet/puzzleSheet.js";
 import { SettingSheet } from "../sheet/settingSheet.js";
-import { GFolderError, GFolderErrorCode } from "./error.js";
+import {
+  GFolderError,
+  GFolderErrorCode,
+} from "./error.js";
 
 const drive = new drive_v3.Drive({ auth: gClient });
 
@@ -213,7 +224,9 @@ export class GFolder {
 
   async createDefaultSpreadsheet(name: string) {
     const ss = GSpreadsheet.template.puzzles;
-    return await this.pasteSpreadsheet(ss, name);
+    return (await this.pasteSpreadsheet(ss, name)).map((ss) =>
+      PuzzleSheet.from(ss),
+    );
   }
 
   async createDefaultSettings() {

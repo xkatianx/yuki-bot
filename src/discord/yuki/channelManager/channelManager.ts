@@ -1,5 +1,5 @@
 import { GFolder } from "~/google/folder/folder.js";
-import { GSpreadsheet } from "~/google/sheet/index.js";
+import { PuzzleSheet } from "~/google/sheet/puzzleSheet.js";
 import { asResult } from "~/misc/result.js";
 
 import { Browser } from "./browser.js";
@@ -10,10 +10,10 @@ import {
 
 export class ChannelManager {
   folder: GFolder;
-  spreadsheet: GSpreadsheet;
+  spreadsheet: PuzzleSheet;
   protected browser?: Browser;
 
-  constructor(folder: GFolder, spreadsheet: GSpreadsheet) {
+  constructor(folder: GFolder, spreadsheet: PuzzleSheet) {
     this.folder = folder;
     this.spreadsheet = spreadsheet;
   }

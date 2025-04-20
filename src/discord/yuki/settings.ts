@@ -11,6 +11,7 @@ import {
 import { GFolderErrorCode } from "~/google/folder/error.js";
 import { GFolder } from "~/google/folder/folder.js";
 import { GSpreadsheet } from "~/google/sheet/index.js";
+import { PuzzleSheet } from "~/google/sheet/puzzleSheet.js";
 import { Cache } from "~/misc/cache.js";
 import {
   asResult,
@@ -101,7 +102,7 @@ export class Settings {
         );
         if (folderRes.isErr()) return folderRes;
         const spreadsheetRes = this.getSpreadsheetId(channel).andThen((id) =>
-          Ok(new GSpreadsheet(id)),
+          Ok(new PuzzleSheet(id)),
         );
         if (spreadsheetRes.isErr()) return spreadsheetRes;
         return await this.setChannelManager(
@@ -116,7 +117,7 @@ export class Settings {
   async setChannelManager(
     channel: TextChannel,
     folder: GFolder,
-    spreadsheet: GSpreadsheet,
+    spreadsheet: PuzzleSheet,
   ) {
     return asResult(
       await (
