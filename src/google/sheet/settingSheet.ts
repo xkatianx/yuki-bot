@@ -24,7 +24,7 @@ export class SettingSheet extends GSpreadsheet {
   }
 
   async getVersion() {
-    return (await this.readRange("version"))[0][0] as string;
+    return (await this.readRange("version")).unwrap()[0][0] as string;
   }
 
   async setGuildInfo(info: Partial<GuildInfo>) {

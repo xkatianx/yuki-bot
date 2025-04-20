@@ -1,17 +1,12 @@
 import { fatal } from "~/misc/cli.js";
-import {
-  Err,
-  Ok,
-} from "~/misc/result.js";
+import { Err, Ok } from "~/misc/result.js";
+import { result } from "~/misc/result/result.js";
 
 import { sheets_v4 } from "@googleapis/sheets";
 
 import { gClient } from "../auth/index.js";
 import { GFolder } from "../folder/folder.js";
-import {
-  GSpreadsheetError,
-  GSpreadsheetErrorCode,
-} from "./error.js";
+import { GSpreadsheetError, GSpreadsheetErrorCode } from "./error.js";
 
 const sheets = new sheets_v4.Sheets({ auth: gClient });
 
@@ -182,12 +177,16 @@ export class GSpreadsheet {
     return this;
   }
 
-  async readRange(range: string): Promise<unknown[][]> {
-    const res = await sheets.spreadsheets.values.get({
-      range,
-      spreadsheetId: this.id,
+  async readRange(range: string) {
+    return result.wrapAsync(async () => {
+      const res = await sheets.spreadsheets.values.get({
+        range,
+        spreadsheetId: this.id,
+      });
+      const contents = res.data.values;
+      if (contents == null) throw new Error("No contents");
+      return contents as string[][];
     });
-    return res.data.values ?? fatal();
   }
 
   async readRanges(ranges: string[]): Promise<sheets_v4.Schema$ValueRange[]> {

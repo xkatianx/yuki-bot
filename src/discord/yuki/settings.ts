@@ -59,7 +59,7 @@ export class Settings {
 
   static async fromSpreadsheet(spreadsheet: GSpreadsheet) {
     const index = await spreadsheet.readRange("INDEX!A:E");
-    const settings = new Settings(spreadsheet, index);
+    const settings = new Settings(spreadsheet, index.unwrap());
     if (settings.#ready) return Ok(settings);
     return Err(
       SettingsError.new(
