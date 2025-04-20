@@ -10,6 +10,5 @@
 - Google Sheets API
 
 4. Create a new service account
-5. Set the environment variable `GOOGLE_EMAIL` to the e-mail of the service account
-6. Download the credentials file and save it as `credentials.json`
-7. Set the environment variable `GOOGLE_APPLICATION_CREDENTIALS` to the path of the credentials file (preferably `./secret/credentials.json`)
+5. Download the credentials file and save it as `credentials.json`
+6. Set the environment variable `GOOGLE_APPLICATION_CREDENTIALS` to the path of the credentials file (preferably `./secret/credentials.json`)

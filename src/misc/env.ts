@@ -1,9 +1,6 @@
 import * as dotenv from "dotenv";
 
-import {
-  fatal,
-  warn,
-} from "./cli.js";
+import { fatal, warn } from "./cli.js";
 
 dotenv.config({
   path: [".env", ".env.local"],
@@ -31,9 +28,6 @@ export const env = {
     CID: optional("id_of_dubugging_channel"),
   },
   GG: {
-    /** Google Cloud Project ID */
-    ID: required("GCLOUD_PROJECT"),
-    EMAIL: required("GOOGLE_EMAIL"),
     /** path to credentials (./secret/xxx.json) */
     PATH: required("GOOGLE_APPLICATION_CREDENTIALS"),
     // /** Owner of the copied spreadsheet. (xxx@gmail.com) */

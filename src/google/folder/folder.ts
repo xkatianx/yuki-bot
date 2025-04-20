@@ -1,19 +1,11 @@
-import { env } from "~/misc/env.js";
-import {
-  asResult,
-  Err,
-  Ok,
-} from "~/misc/result.js";
+import { asResult, Err, Ok } from "~/misc/result.js";
 
 import { drive_v3 } from "@googleapis/drive";
 
-import { gClient } from "../auth/index.js";
+import { gClient, myGoogleInfo } from "../auth/index.js";
 import { GSpreadsheet } from "../sheet/index.js";
 import { SettingSheet } from "../sheet/settingSheet.js";
-import {
-  GFolderError,
-  GFolderErrorCode,
-} from "./error.js";
+import { GFolderError, GFolderErrorCode } from "./error.js";
 
 const drive = new drive_v3.Drive({ auth: gClient });
 
@@ -74,7 +66,7 @@ export class GFolder {
           const userPermission = res.data.permissions?.find(
             (permission) =>
               permission.type === "user" &&
-              permission.emailAddress === env.GG.EMAIL &&
+              permission.emailAddress === myGoogleInfo.email &&
               ["writer", "owner"].includes(permission.role ?? ""),
           );
           if (userPermission != null) return Ok(this);
