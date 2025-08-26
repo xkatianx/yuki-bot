@@ -1,20 +1,8 @@
 import puppeteer, { type Browser } from "puppeteer";
 
-import {
-  Code,
-  MyError,
-  uid,
-} from "../../../error.js";
-import {
-  asResult,
-  asResultFn,
-  Err,
-  Ok,
-} from "../../../misc/result.js";
-import {
-  LoginError,
-  LoginErrorCode,
-} from "./login.js";
+import { Code, MyError, uid } from "../../../error.js";
+import { asResult, asResultFn, Err, Ok } from "../../../misc/result.js";
+import { LoginError, LoginErrorCode } from "./login.js";
 
 /** a week in ms */
 const lifespan = 7 * 24 * 60 * 60 * 1000;
@@ -165,7 +153,12 @@ class MyBrowser implements Disposable {
     );
   }
 
-  async screenshot(filename = "test.png") {
+  async screenshot(
+    filename:
+      | `${string}.png`
+      | `${string}.jpeg`
+      | `${string}.webp` = "test.png",
+  ) {
     return (await this.getPage()).andThenAsync((page) =>
       MyError.try(async () =>
         Ok(await page.screenshot({ path: filename, fullPage: true })),
