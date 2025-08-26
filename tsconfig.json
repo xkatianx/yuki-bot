@@ -2,7 +2,7 @@
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
     "target": "ES2022",
-    "lib": ["ES2022", "ESNext.Disposable"],
+    "lib": ["ES2022", "ESNext.Disposable", "DOM"],
     "module": "NodeNext",
     "rootDir": "./src",
     "moduleResolution": "NodeNext",
