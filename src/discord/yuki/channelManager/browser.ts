@@ -135,11 +135,15 @@ class MyBrowser implements Disposable {
         MyError.try(async () => {
           // Wait for the title to change after page load for 2 seconds
           const initialTitle = await page.evaluate(() => document.title);
-          await page.waitForFunction(
-            (oldTitle) => document.title !== oldTitle,
-            { timeout: 2000 },
-            initialTitle,
-          );
+          try {
+            await page.waitForFunction(
+              (oldTitle) => document.title !== oldTitle,
+              { timeout: 2000 },
+              initialTitle,
+            );
+          } catch {
+            // ignore
+          }
           const newTitle = await page.evaluate(() => document.title);
           return Ok(newTitle);
         }),
