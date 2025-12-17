@@ -1,0 +1,83 @@
+import { GaxiosError } from "gaxios"
+import { fail } from "~misc/cli.js"
+import { MyError, MyErrorBase } from "../../error/index.js"
+
+export enum GSheetErrorCode {
+  NO_FILE_ACCESS,
+  CANNOT_WRITE,
+  INVALID_URL,
+  NO_CONTENTS,
+  DUPLICATE_SHEET,
+  UNKNOWN,
+}
+
+export class GSheetError<T extends GSheetErrorCode> extends MyErrorBase<T> {
+  constructor(code: T, message: string) {
+    super(code, message)
+    this.name = "GSheetError"
+  }
+
+  static new<T extends GSheetErrorCode>(
+    code: T,
+    message: string
+  ): GSheetError<T> {
+    return new GSheetError(code, message)
+  }
+
+  static override fromError(error: Error) {
+    const message = error.message
+    if (error instanceof GaxiosError) {
+      if (message.startsWith("File not found:")) {
+        return GSheetError.new(GSheetErrorCode.NO_FILE_ACCESS, message)
+      } else if (message.startsWith("Invalid requests[0].duplicateSheet:")) {
+        return GSheetError.new(GSheetErrorCode.DUPLICATE_SHEET, message)
+      }
+    }
+    fail(error)
+    return GSheetError.new(GSheetErrorCode.UNKNOWN, message)
+  }
+
+  static override fromAny(e: unknown) {
+    return MyError.fromAny(e)
+  }
+}
+
+export enum PuzzleSheetErrorCode {
+  MISSING_TEMPLATE,
+}
+
+export class PuzzleSheetError<
+  T extends PuzzleSheetErrorCode,
+> extends MyErrorBase<T> {
+  constructor(code: T, message: string) {
+    super(code, message)
+    this.name = "PuzzleSheetError"
+  }
+
+  static new<T extends PuzzleSheetErrorCode>(
+    code: T,
+    message: string
+  ): PuzzleSheetError<T> {
+    return new PuzzleSheetError(code, message)
+  }
+}
+
+export enum SettingSheetErrorCode {
+  UNKNOWN_VERSION,
+}
+
+export class SettingSheetError<
+  T extends SettingSheetErrorCode,
+> extends MyErrorBase<T> {
+  constructor(code: T, message: string) {
+    super(code, message)
+    this.name = "SettingSheetError"
+  }
+
+  static new<T extends SettingSheetErrorCode>(
+    code: T,
+    message: string
+  ): SettingSheetError<T> {
+    return new SettingSheetError(code, message)
+  }
+}

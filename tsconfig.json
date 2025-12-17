@@ -1,21 +1,34 @@
 {
   "compilerOptions": {
-    /* Visit https://aka.ms/tsconfig to read more about this file */
-    "target": "ES2022",
-    "lib": ["ES2022", "ESNext.Disposable", "DOM"],
-    "module": "NodeNext",
-    "rootDir": "./src",
-    "moduleResolution": "NodeNext",
-    "baseUrl": "./",
-    "paths": {
-      "~/*": ["./src/*"]
-    },
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["ESNext", "dom"],
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
     "outDir": "./dist",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "rootDir": "./src",
     "strict": true,
-    "skipLibCheck": true
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "exactOptionalPropertyTypes": true,
+    "allowSyntheticDefaultImports": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
+    "baseUrl": ".",
+    "paths": {
+      "~util/*": ["./src/util/*"],
+      "~misc/*": ["./src/misc/*"]
+    }
   },
-  "include": ["./src/**/*.ts"],
-  "exclude": ["./node_modules", "**/WIP*"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

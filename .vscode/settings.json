@@ -6,10 +6,21 @@
     }
   ],
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "always"
+    "source.fixAll.eslint": "always",
+    "source.organizeImports": "always"
   },
   "editor.formatOnSave": true,
+  "typescript.tsdk": "node_modules\\typescript\\lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.preferences.useAliasesForRenames": true,
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "typescript.preferences.preferTypeOnlyAutoImports": true,
+  "cSpell.words": [
+    "Gaxios",
+    "puzzlehunt",
+    "Yuki"
+  ],
 }

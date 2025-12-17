@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["ESNext"],
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "resolvePackageJsonExports": true,
+    "resolvePackageJsonImports": true
+  },
+  "include": ["eslint.config.js", "vitest.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

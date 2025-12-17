@@ -1,6 +1,4 @@
-import { Yuki } from "./discord/yuki/yuki.js";
-import { env } from "./misc/env.js";
-import { polyfill } from "./polyfill.js";
+import { env } from "~misc/env.js"
+import { Yuki } from "./yuki/yuki.js"
 
-polyfill();
-new Yuki(env.DC.TOKEN).login();
+new Yuki(env.DC.TOKEN).login()

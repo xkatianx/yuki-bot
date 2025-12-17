@@ -1,36 +1,43 @@
-import * as dotenv from "dotenv";
+import { config } from "dotenv"
+import { fatal } from "./cli.js"
 
-import { fatal, warn } from "./cli.js";
-
-dotenv.config({
-  path: [".env", ".env.local"],
-});
+// Load .env first, then .env.local to allow local overrides.
+config({ path: ".env" })
+config({ path: ".env.local" })
 
 function required(name: string): string {
-  return process.env[name] ?? fatal(`in .env: missing "${name}"`);
+  return process.env[name] ?? fatal(`in .env: missing "${name}"`)
 }
 
 function optional(name: string): string | undefined {
-  return (
-    process.env[name] ?? warn(`in .env: missing "${name}"`) ?? process.env[name]
-  );
+  const value = process.env[name]
+  // if (value == null) warn(`in .env: missing "${name}"`)
+  return value
 }
 
 export const env = {
+  /** The name of the template settings spreadsheet */
+  settingsName: required("TEMPLATE_SETTINGS_SHEET_NAME"),
+  /** The ID of the template settings spreadsheet */
+  settingsId: required("TEMPLATE_SETTINGS_SHEET_ID"),
+  /** The name of the template puzzles spreadsheet */
+  puzzlesName: required("TEMPLATE_PUZZLES_SHEET_NAME"),
+  /** The ID of the template puzzles spreadsheet */
+  puzzlesId: required("TEMPLATE_PUZZLES_SHEET_ID"),
   DC: {
     /** Discord Bot CLIENT ID */
-    ID: required("id_of_discord_client"),
+    ID: required("DISCORD_BOT_ID"),
     /** Discord server ID */
     GID: optional("id_of_discord_server"),
     /** Discord Bot TOKEN */
-    TOKEN: required("token_of_discord_bot"),
-    /** Discord channel ID for debuging log */
-    CID: optional("id_of_dubugging_channel"),
+    TOKEN: required("DISCORD_BOT_TOKEN"),
+    /** Discord channel ID for debugging log */
+    CID: optional("id_of_debugging_channel"),
   },
-  GG: {
-    /** path to credentials (./secret/xxx.json) */
-    PATH: required("GOOGLE_APPLICATION_CREDENTIALS"),
-    // /** Owner of the copied spreadsheet. (xxx@gmail.com) */
-    // OWNER: required("GOOGLE_SHEET_OWNER"),
-  },
-};
+  // GG: {
+  //   /** path to credentials (./secret/xxx.json) */
+  //   PATH: required("GOOGLE_APPLICATION_CREDENTIALS"),
+  //   // /** Owner of the copied spreadsheet. (xxx@gmail.com) */
+  //   // OWNER: required("GOOGLE_SHEET_OWNER"),
+  // },
+}
