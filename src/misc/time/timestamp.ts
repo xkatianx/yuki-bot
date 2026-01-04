@@ -10,16 +10,32 @@ export function YYYY$MM() {
   return `${today.year.toString()}/${String(today.month).padStart(2, "0")}`
 }
 
+/**
+ * Get the current time in the specified timezone and locale.
+ * @param tz the timezone to use. If not provided, the local timezone is used.
+ * @param locale the locale to use. If not provided, the ISO format is used.
+ * @returns the current time in the specified timezone and locale.
+ */
+export function now(tz?: string, locale?: string): string {
+  if (locale) {
+    const dateTime = Temporal.Now.plainDateTimeISO(tz)
+    return dateTime.toLocaleString(locale)
+  }
+  const zonedDateTime = Temporal.Now.zonedDateTimeISO(tz)
+  return zonedDateTime.toString({
+    fractionalSecondDigits: 0,
+    timeZoneName: "never",
+  })
+}
+
 /** current time in Taiwan. example output: '2022/9/5 下午2:40:00' */
 export function twNow(): string {
-  const now = Temporal.Now.plainDateTimeISO("Asia/Taipei")
-  return now.toLocaleString("zh-tw")
+  return now("Asia/Taipei", "zh-tw")
 }
 
 /** current time in Japan. example output: '2022/9/5 15:40:00' */
 export function jpNow(): string {
-  const now = Temporal.Now.plainDateTimeISO("Asia/Tokyo")
-  return now.toLocaleString("ja")
+  return now("Asia/Tokyo", "ja")
 }
 
 type discordTimeFlag = "f" | "F" | "d" | "D" | "t" | "T" | "R"

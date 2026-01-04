@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { Temporal } from "./temporal.js"
-import { discordTime, jpNow, twNow, YYYY$MM } from "./timestamp.js"
+import { YYYY$MM, discordTime, jpNow, now, twNow } from "./timestamp.js"
 
 let timer: ReturnType<typeof vi.useFakeTimers>
 
@@ -55,6 +55,30 @@ describe("timestamp", () => {
     it(`should return '${out2}' if it is currently ${in2}`, () => {
       timer.setSystemTime(new Date(in2))
       expect(jpNow()).toBe(out2)
+    })
+  })
+
+  describe("now", () => {
+    it("should respect timezone and locale", () => {
+      const time = "2022-09-05T14:40:00Z"
+      timer.setSystemTime(new Date(time))
+
+      // Taiwan
+      expect(now("Asia/Taipei", "zh-tw")).toBe("2022/9/5 下午10:40:00")
+      // Japan
+      expect(now("Asia/Tokyo", "ja")).toBe("2022/9/5 23:40:00")
+      // US
+      expect(now("America/New_York", "en-US")).toBe("9/5/2022, 10:40:00 AM")
+    })
+
+    it("should return ISO format with - when locale is missing", () => {
+      const time = "2022-09-05T14:40:00Z"
+      timer.setSystemTime(new Date(time))
+
+      // Taiwan: UTC+8 -> 22:40:00
+      expect(now("Asia/Taipei")).toBe("2022-09-05T22:40:00+08:00")
+      // UTC
+      expect(now("UTC")).toBe("2022-09-05T14:40:00+00:00")
     })
   })
 

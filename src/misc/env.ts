@@ -16,6 +16,11 @@ function optional(name: string): string | undefined {
 }
 
 export const env = {
+  /** The timezone to use for logs. Default is system local. */
+  logTimezone: optional("LOG_TIMEZONE"),
+  /** The locale to use for logs. Default is system local. */
+  logLocale: optional("LOG_LOCALE"),
+
   /** The name of the template settings spreadsheet */
   settingsName: required("TEMPLATE_SETTINGS_SHEET_NAME"),
   /** The ID of the template settings spreadsheet */
@@ -24,6 +29,7 @@ export const env = {
   puzzlesName: required("TEMPLATE_PUZZLES_SHEET_NAME"),
   /** The ID of the template puzzles spreadsheet */
   puzzlesId: required("TEMPLATE_PUZZLES_SHEET_ID"),
+
   DC: {
     /** Discord Bot CLIENT ID */
     ID: required("DISCORD_BOT_ID"),

@@ -1,5 +1,6 @@
 import chalk from "chalk"
-import { twNow } from "~misc/time/index.js"
+import { now } from "~misc/time/index.js"
+import { env } from "./env"
 
 const WARN = chalk.black.bgYellowBright(" WARN ")
 const DONE = chalk.white.bgGreen(" DONE ")
@@ -10,7 +11,7 @@ const DEBUG = chalk.red(" DEBUG ")
 export type ToLog = Parameters<typeof console.log>
 
 function timestamp(): string {
-  return twNow()
+  return now(env.logTimezone, env.logLocale)
 }
 
 export function debug(...args: ToLog): void {

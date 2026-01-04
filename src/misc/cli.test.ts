@@ -7,6 +7,7 @@ import {
   vi,
   type Mock,
 } from "vitest"
+import { now } from "~misc/time/index.js"
 import { debug, done, fail, fatal, info, warn } from "./cli.js"
 
 describe("cli", () => {
@@ -34,7 +35,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[0]).toContain("[2022/9/5")
+      expect(callArgs?.[0]).toBe(`[${now()}]`)
       expect(callArgs?.[1]).toContain("DEBUG") // DEBUG colored prefix
       expect(callArgs?.[2]).toBe("test message")
     })
@@ -45,7 +46,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[0]).toContain("[2022/9/5")
+      expect(callArgs?.[0]).toBe(`[${now()}]`)
       expect(callArgs?.[1]).toContain("DEBUG") // DEBUG colored prefix
       expect(callArgs?.[2]).toBe("message")
       expect(callArgs?.[3]).toBe(123)
@@ -60,7 +61,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[0]).toContain("[2022/9/5")
+      expect(callArgs?.[0]).toBe(`[${now()}]`)
       expect(callArgs?.[1]).toContain("DONE") // DONE colored prefix
       expect(callArgs?.[2]).toBe("success message")
     })
@@ -71,7 +72,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[0]).toContain("[2022/9/5")
+      expect(callArgs?.[0]).toBe(`[${now()}]`)
       expect(callArgs?.[1]).toContain("DONE") // DONE colored prefix
       expect(callArgs?.[2]).toBe("task")
       expect(callArgs?.[3]).toBe("completed")
@@ -85,7 +86,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[0]).toContain("[2022/9/5")
+      expect(callArgs?.[0]).toBe(`[${now()}]`)
       expect(callArgs?.[1]).toContain("INFO") // INFO colored prefix
       expect(callArgs?.[2]).toBe("info message")
     })
@@ -96,7 +97,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[0]).toContain("[2022/9/5")
+      expect(callArgs?.[0]).toBe(`[${now()}]`)
       expect(callArgs?.[1]).toContain("INFO") // INFO colored prefix
       expect(callArgs?.[2]).toBe("info")
       expect(callArgs?.[3]).toBe(42)
@@ -110,7 +111,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[0]).toContain("[2022/9/5")
+      expect(callArgs?.[0]).toBe(`[${now()}]`)
       expect(callArgs?.[1]).toContain("WARN") // WARN colored prefix
       expect(callArgs?.[2]).toBe("warning message")
     })
@@ -121,7 +122,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[0]).toContain("[2022/9/5")
+      expect(callArgs?.[0]).toBe(`[${now()}]`)
       expect(callArgs?.[1]).toContain("WARN") // WARN colored prefix
       expect(callArgs?.[2]).toBe("warning")
       expect(callArgs?.[3]).toBe("deprecated")
@@ -135,7 +136,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[0]).toContain("[2022/9/5")
+      expect(callArgs?.[0]).toBe(`[${now()}]`)
       expect(callArgs?.[1]).toContain("FAIL") // FAIL colored prefix
       expect(callArgs?.[2]).toBe("error message")
     })
@@ -146,7 +147,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[0]).toContain("[2022/9/5")
+      expect(callArgs?.[0]).toBe(`[${now()}]`)
       expect(callArgs?.[1]).toContain("FAIL") // FAIL colored prefix
       expect(callArgs?.[2]).toBe("error")
       expect(callArgs?.[3]).toBe("occurred")
@@ -161,7 +162,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[0]).toContain("[2022/9/5")
+      expect(callArgs?.[0]).toBe(`[${now()}]`)
       expect(callArgs?.[1]).toContain("FAIL") // FAIL colored prefix
       expect(callArgs?.[2]).toBe("fatal error")
     })
@@ -173,7 +174,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[0]).toContain("[2022/9/5")
+      expect(callArgs?.[0]).toBe(`[${now()}]`)
       expect(callArgs?.[1]).toContain("FAIL") // FAIL colored prefix
       expect(callArgs?.[2]).toBe("fatal")
       expect(callArgs?.[3]).toBe("error")
@@ -206,7 +207,7 @@ describe("cli", () => {
       // All calls should include the timestamp
       for (let i = 0; i < 5; i++) {
         const callArgs = consoleLogSpy.mock.calls[i]
-        expect(callArgs?.[0]).toContain("[1999/10/11")
+        expect(callArgs?.[0]).toBe(`[${now()}]`)
       }
     })
   })
