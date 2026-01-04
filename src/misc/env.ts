@@ -28,16 +28,8 @@ export const env = {
     /** Discord Bot CLIENT ID */
     ID: required("DISCORD_BOT_ID"),
     /** Discord server ID */
-    GID: optional("id_of_discord_server"),
+    GID: optional("DISCORD_SERVER_ID"),
     /** Discord Bot TOKEN */
     TOKEN: required("DISCORD_BOT_TOKEN"),
-    /** Discord channel ID for debugging log */
-    CID: optional("id_of_debugging_channel"),
   },
-  // GG: {
-  //   /** path to credentials (./secret/xxx.json) */
-  //   PATH: required("GOOGLE_APPLICATION_CREDENTIALS"),
-  //   // /** Owner of the copied spreadsheet. (xxx@gmail.com) */
-  //   // OWNER: required("GOOGLE_SHEET_OWNER"),
-  // },
 }

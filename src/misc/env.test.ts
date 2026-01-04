@@ -1,3 +1,4 @@
+import type { DotenvConfigOptions } from "dotenv"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 // Mock fatal before any imports
@@ -6,11 +7,7 @@ const fatalMock = vi.fn().mockImplementation((message: string) => {
 })
 
 // Mock dotenv config function
-const configMock = vi.fn((_options?: { path?: string | string[] }) => {
-  // Simulate dotenv behavior: when path is an array, load files in order
-  // Later files override earlier ones
-  // Note: In real usage, dotenv would load files sequentially and merge them
-  // For testing, we verify the order is correct and test override behavior separately
+const configMock = vi.fn((_options?: DotenvConfigOptions) => {
   return {}
 })
 
@@ -154,54 +151,21 @@ describe("env", () => {
       expect(env.DC.ID).toBe("test-client-id")
       expect(env.DC.TOKEN).toBe("test-token")
       expect(env.DC.GID).toBeUndefined()
-      expect(env.DC.CID).toBeUndefined()
       expect(fatalMock).not.toHaveBeenCalled()
     })
 
-    it("should include optional id_of_discord_server when provided", async () => {
+    it("should include optional DISCORD_SERVER_ID when provided", async () => {
       vi.stubEnv("TEMPLATE_SETTINGS_SHEET_NAME", "test-settings")
       vi.stubEnv("TEMPLATE_SETTINGS_SHEET_ID", "test-id")
       vi.stubEnv("TEMPLATE_PUZZLES_SHEET_NAME", "test-puzzles")
       vi.stubEnv("TEMPLATE_PUZZLES_SHEET_ID", "test-puzzles-id")
       vi.stubEnv("DISCORD_BOT_ID", "test-client-id")
-      vi.stubEnv("id_of_discord_server", "test-server-id")
+      vi.stubEnv("DISCORD_SERVER_ID", "test-server-id")
       vi.stubEnv("DISCORD_BOT_TOKEN", "test-token")
 
       const { env } = await import("./env.js")
 
       expect(env.DC.GID).toBe("test-server-id")
-      expect(fatalMock).not.toHaveBeenCalled()
-    })
-
-    it("should include optional id_of_debugging_channel when provided", async () => {
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_NAME", "test-settings")
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_ID", "test-id")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_NAME", "test-puzzles")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_ID", "test-puzzles-id")
-      vi.stubEnv("DISCORD_BOT_ID", "test-client-id")
-      vi.stubEnv("id_of_debugging_channel", "test-channel-id")
-      vi.stubEnv("DISCORD_BOT_TOKEN", "test-token")
-
-      const { env } = await import("./env.js")
-
-      expect(env.DC.CID).toBe("test-channel-id")
-      expect(fatalMock).not.toHaveBeenCalled()
-    })
-
-    it("should include all optional variables when provided", async () => {
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_NAME", "test-settings")
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_ID", "test-id")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_NAME", "test-puzzles")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_ID", "test-puzzles-id")
-      vi.stubEnv("DISCORD_BOT_ID", "test-client-id")
-      vi.stubEnv("id_of_discord_server", "test-server-id")
-      vi.stubEnv("id_of_debugging_channel", "test-channel-id")
-      vi.stubEnv("DISCORD_BOT_TOKEN", "test-token")
-
-      const { env } = await import("./env.js")
-
-      expect(env.DC.GID).toBe("test-server-id")
-      expect(env.DC.CID).toBe("test-channel-id")
       expect(fatalMock).not.toHaveBeenCalled()
     })
   })
@@ -255,22 +219,6 @@ describe("env", () => {
 
       expect(configMock).toHaveBeenCalledTimes(2)
       expect(configMock).toHaveBeenNthCalledWith(1, { path: ".env" })
-      expect(configMock).toHaveBeenNthCalledWith(2, { path: ".env.local" })
-    })
-
-    it("should load files in correct order (.env first, then .env.local)", async () => {
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_NAME", "test-settings")
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_ID", "test-id")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_NAME", "test-puzzles")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_ID", "test-puzzles-id")
-      vi.stubEnv("DISCORD_BOT_ID", "test-client-id")
-      vi.stubEnv("DISCORD_BOT_TOKEN", "test-token")
-
-      await import("./env.js")
-
-      // Verify .env is called first
-      expect(configMock).toHaveBeenNthCalledWith(1, { path: ".env" })
-      // Verify .env.local is called second
       expect(configMock).toHaveBeenNthCalledWith(2, { path: ".env.local" })
     })
   })
