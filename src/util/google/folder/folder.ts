@@ -10,10 +10,21 @@ const drive = google.drive({ version: "v3", auth: myGoogleInfo.auth })
 export class GFolder {
   #id: string
 
+  /**
+   * Create a new folder instance.
+   * @param id - The ID of the folder.
+   * @throws never
+   */
   constructor(id: string) {
     this.#id = id
   }
 
+  /**
+   * Create a new folder from a url.
+   * @param url - The url of the folder to create.
+   * @returns The created folder.
+   * @throws never
+   */
   static fromUrl<T extends typeof GFolder>(this: T, url: string) {
     const id = /https:\/\/drive.google.com\/drive\/(?:u\/0\/)?folders\/([^/?]+)/
       .exec(url)
@@ -27,10 +38,20 @@ export class GFolder {
     )
   }
 
+  /**
+   * Get the URL of the folder.
+   * @returns The URL of the folder.
+   * @throws never
+   */
   get url(): string {
     return `https://drive.google.com/drive/u/0/folders/${this.#id}`
   }
 
+  /**
+   * Get the ID of the folder.
+   * @returns The ID of the folder.
+   * @throws never
+   */
   get id(): string {
     return this.#id
   }
@@ -38,6 +59,7 @@ export class GFolder {
   /**
    * Get the name of the current folder.
    * @returns The folder name.
+   * @throws never
    */
   getName() {
     return GFolderError.try(async () => {
@@ -59,6 +81,7 @@ export class GFolder {
   /**
    * Check if the current folder has write permission.
    * @returns The current folder.
+   * @throws never
    */
   checkWritePermission() {
     return GFolderError.try(async () => {
@@ -86,6 +109,7 @@ export class GFolder {
    * Create a new folder with the given name in the current folder.
    * @param name - The name of the folder to create.
    * @returns The created folder.
+   * @throws never
    */
   newFolder(name: string) {
     return GFolderError.try(async () => {
@@ -109,6 +133,7 @@ export class GFolder {
    * Find folders with the given name in the current folder.
    * @param name - The name of the folders to find.
    * @returns The folders found.
+   * @throws never
    */
   findFolders(name: string) {
     return GFolderError.try(async () => {
@@ -138,6 +163,7 @@ export class GFolder {
    * Find the unique folder with the given name in the current folder.
    * @param name - The name of the folder to find.
    * @returns The folder found.
+   * @throws never
    */
   findUniqueFolder(name: string) {
     return this.findFolders(name).andThen((folders) => {
@@ -157,6 +183,7 @@ export class GFolder {
    * Get or create a folder with the given name in the current folder.
    * @param name - The name of the folder to get or create.
    * @returns The folder found or created.
+   * @throws never
    */
   getOrCreateFolder(name: string) {
     return this.findUniqueFolder(name).orElse(async (e) => {
@@ -173,6 +200,7 @@ export class GFolder {
    * Find spreadsheets with the given name in the current folder.
    * @param name - The name of the spreadsheets to find.
    * @returns The spreadsheets found.
+   * @throws never
    */
   findSpreadsheets(name: string) {
     return GFolderError.try(async () => {
@@ -203,6 +231,7 @@ export class GFolder {
    * Find the unique spreadsheet with the given name in the current folder.
    * @param name - The name of the spreadsheet to find.
    * @returns The spreadsheet found.
+   * @throws never
    */
   findUniqueSpreadsheet(name: string) {
     return this.findSpreadsheets(name).andThen((sheets) => {
@@ -223,6 +252,7 @@ export class GFolder {
    * @param spreadsheet - The spreadsheet to paste.
    * @param rename - The new name of the spreadsheet.
    * @returns The pasted spreadsheet.
+   * @throws never
    */
   pasteSpreadsheet(spreadsheet: GSpreadsheet, rename?: string) {
     return GFolderError.try(async () => {

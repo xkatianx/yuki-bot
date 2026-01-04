@@ -14,6 +14,12 @@ export class Settings {
 
   /** key = channel id */
   readonly #cms = new Cache<ChannelManager>()
+
+  /**
+   * Create a new settings instance.
+   * @param spreadsheet - The spreadsheet of the settings.
+   * @throws never
+   */
   constructor(protected spreadsheet: SettingsSheet) {}
 
   async getChannelManager(channel: TextChannel) {

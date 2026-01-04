@@ -7,12 +7,30 @@ export enum PinFormat {
   Root = "Root folder: {url}",
 }
 
+/**
+ * Check if a message matches a pin format.
+ * @param message - The message to check
+ * @param format - The format to check
+ * @returns True if the message matches the format, false otherwise
+ * @throws never
+ */
 function isPinFormat(message: Message, format: PinFormat): boolean {
-  const res = parseString(format, message.content)
-  return res != null
+  try {
+    const res = parseString(format, message.content)
+    return res != null
+  } catch {
+    return false
+  }
 }
 
-/** sorted from old to new */
+/**
+ * Get the pinned messages from a bot from a guild or channel.
+ * @param guildOrChannel - The guild or channel to get the pinned messages from
+ * @param bot - The bot to get the pinned messages from
+ * @param search - The format to search for
+ * @returns The pinned messages, sorted from old to new
+ * @throws never
+ */
 export async function getPinned(
   guildOrChannel: Guild | GuildBasedChannel,
   bot: Bot,

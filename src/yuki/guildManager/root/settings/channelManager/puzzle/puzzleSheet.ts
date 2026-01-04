@@ -9,10 +9,22 @@ import { GSpreadsheet } from "~util/google/sheet/sheet.js"
 import { err, ok } from "~util/result/index.js"
 
 export class PuzzleSheet extends GSpreadsheet {
+  /**
+   * Create a new PuzzleSheet instance.
+   * @param spreadsheet - The spreadsheet of the PuzzleSheet.
+   * @throws never
+   */
   static from(this: void, spreadsheet: GSpreadsheet) {
     return new PuzzleSheet(spreadsheet.id)
   }
 
+  /**
+   * Create a new PuzzleSheet instance from the template.
+   * @param rootFolder - The root folder to create the PuzzleSheet in.
+   * @param name - The name of the PuzzleSheet.
+   * @returns The new PuzzleSheet.
+   * @throws never
+   */
   static newFromTemplate(rootFolder: GFolder, name?: string) {
     return new GSpreadsheet(env.puzzlesId)
       .copyTo(rootFolder, name ?? env.puzzlesName)
@@ -23,6 +35,7 @@ export class PuzzleSheet extends GSpreadsheet {
    * Read the index information from the spreadsheet,
    * based on the named ranges "website", "username", "password", "folder".
    * @returns The index information.
+   * @throws never
    */
   readIndexInfo() {
     return this.readRanges(["website", "username", "password", "folder"])
@@ -33,10 +46,6 @@ export class PuzzleSheet extends GSpreadsheet {
         password: arr[2] ?? "",
         folder: arr[3] ?? "",
       }))
-  }
-
-  readIndex() {
-    return this.readRange("INDEX!A:E")
   }
 
   // async initGph (): Promise<void> {
@@ -62,6 +71,7 @@ export class PuzzleSheet extends GSpreadsheet {
    * Create a new sheet from the template.
    * @param sheetName - The name of the new sheet.
    * @returns The new sheet ID.
+   * @throws never
    */
   newFromTemplate(sheetName: string) {
     return this.getSheet("TEMPLATE")
@@ -102,6 +112,7 @@ export class PuzzleSheet extends GSpreadsheet {
    * @param url - The URL of the puzzle.
    * @param tabName - The name of the new tab.
    * @returns The new sheet ID.
+   * @throws never
    */
   newPuzzleTab(url: string, tabName: string) {
     let [hintUrl, ansUrl] = ["", ""]
@@ -141,6 +152,7 @@ export class PuzzleSheet extends GSpreadsheet {
    * Create a new round in the spreadsheet.
    * @param name - The name of the round.
    * @returns The result of the operation.
+   * @throws never
    */
   newRound(name: string) {
     return this.readRange("INDEX!A:A").andThen((data) => {

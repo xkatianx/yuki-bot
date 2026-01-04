@@ -13,6 +13,7 @@ export class RootFolder extends GFolder {
    * Get the cached settings for the root folder,
    * or create one if it doesn't exist.
    * @returns The settings for the root folder.
+   * @throws never
    */
   async getSettings() {
     return RootFolder.settingsMap.getOrSet(this.id, () =>

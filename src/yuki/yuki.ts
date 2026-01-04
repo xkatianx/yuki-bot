@@ -1,6 +1,7 @@
 import type { Client, Guild, TextChannel } from "discord.js"
 import { GatewayIntentBits } from "discord.js"
 import { Cache } from "~misc/cache.js"
+import { lines } from "~misc/format.js"
 import { Temporal } from "~misc/time/index.js"
 import { Bot } from "~util/discord/bot.js"
 import type { Code, MyErrorBase } from "~util/error/index.js"
@@ -10,7 +11,6 @@ import { AsyncResult } from "~util/result/index.js"
 import * as YukiCommands from "./discord/commands.js"
 import { getRootFolder } from "./guildManager/root/root.js"
 import type { RootFolder } from "./guildManager/root/rootFolder.js"
-import type { Settings } from "./guildManager/root/settings/settings.js"
 declare module "discord.js" {
   export interface Client {
     mybot: Yuki
@@ -26,9 +26,12 @@ const intents = [
 
 export class Yuki extends Bot {
   /** key = guild.id */
-  roots = new Cache<RootFolder>()
-  settings = new Cache<Settings>()
-  readyTime = Temporal.Now.instant()
+  readonly roots = new Cache<RootFolder>()
+  #readyTime = Temporal.Now.instant()
+
+  get readyTime() {
+    return this.#readyTime
+  }
 
   constructor(token: string) {
     super(
@@ -39,10 +42,30 @@ export class Yuki extends Bot {
     this.client.mybot = this
   }
 
-  override onReady(readyClient: Client<true>): void {
+  protected override onReady(readyClient: Client<true>): void {
     // TODO: maybe fetch all log channels on ready
+    this.#readyTime = Temporal.Now.instant()
     super.onReady(readyClient)
-    this.readyTime = Temporal.Now.instant()
+  }
+
+  static override errorToMessage(e: MyErrorBase<Code>): string {
+    if (e instanceof GFolderError) {
+      const code = e.code as GFolderErrorCode
+      if (code === GFolderErrorCode.CANNOT_WRITE) {
+        const email = myGoogleInfo.email
+        const target = email == null ? "me" : `\`${email}\``
+        return `${e.message}\nPlease add ${target} as an editor.`
+      }
+      if (code === GFolderErrorCode.MISSING_FILE) {
+        const email = myGoogleInfo.email
+        const target = email == null ? "me" : `\`${email}\``
+        return lines(
+          e.message,
+          `Please make sure the file exists or add ${target} as a viewer.`
+        )
+      }
+    }
+    return super.errorToMessage(e)
   }
 
   /**
@@ -50,6 +73,7 @@ export class Yuki extends Bot {
    * or create one from the pinned message if it doesn't exist.
    * @param guild - The guild to get the root folder for.
    * @returns The writable root folder for the guild.
+   * @throws never
    */
   getRootFolder(guild: Guild) {
     return AsyncResult.from(async () =>
@@ -62,6 +86,7 @@ export class Yuki extends Bot {
    * or create one if it doesn't exist.
    * @param guild - The guild to get the settings for.
    * @returns The settings for the guild.
+   * @throws never
    */
   getSettings(guild: Guild) {
     return this.getRootFolder(guild).andThen((root) => root.getSettings())
@@ -77,29 +102,5 @@ export class Yuki extends Bot {
     return this.getSettings(channel.guild).andThen((settings) =>
       settings.getChannelManager(channel)
     )
-  }
-
-  scanTitle(channel: TextChannel, url: string) {
-    return this.getChannelManager(channel).andThen((cm) => cm.scanTitle(url))
-  }
-
-  static override errorToMessage(e: MyErrorBase<Code>): string {
-    if (e instanceof GFolderError) {
-      const code = e.code as GFolderErrorCode
-      if (code === GFolderErrorCode.CANNOT_WRITE) {
-        const email = myGoogleInfo.email
-        const target = email == null ? "me" : `\`${email}\``
-        return `${e.message}\nPlease add ${target} as an editor.`
-      }
-      if (code === GFolderErrorCode.MISSING_FILE) {
-        const email = myGoogleInfo.email
-        const target = email == null ? "me" : `\`${email}\``
-        return [
-          e.message,
-          `Please make sure the file exists or add ${target} as a viewer.`,
-        ].join("\n")
-      }
-    }
-    return super.errorToMessage(e)
   }
 }

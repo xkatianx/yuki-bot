@@ -27,10 +27,10 @@ A discord bot for managing google spreadsheets of puzzlehunts.
     pnpm install
     ```
 
-1. Build the project:
+1. Register slash commands:
 
     ```bash
-    pnpm build
+    pnpm slash
     ```
 
 1. Run the bot:

@@ -18,6 +18,7 @@ const validVersions = ["1.0.0"] as const
 /**
  * Get the version of the setting sheet.
  * @returns The version.
+ * @throws never
  */
 function getVersion(sheet: GSpreadsheet) {
   return sheet.readRange("version").andThen((arr) => {
@@ -34,6 +35,12 @@ function getVersion(sheet: GSpreadsheet) {
   })
 }
 
+/**
+ * Get the information of the guild from the spreadsheet.
+ * @param sheet - The spreadsheet to get the information from.
+ * @returns The information of the guild.
+ * @throws never
+ */
 function getInfo_1_0_0(sheet: GSpreadsheet) {
   return sheet
     .readRanges([
@@ -70,6 +77,13 @@ function getInfo_1_0_0(sheet: GSpreadsheet) {
     })
 }
 
+/**
+ * Get the information of the guild from the spreadsheet.
+ * @param sheet - The spreadsheet to get the information from.
+ * @param version - The version of the spreadsheet.
+ * @returns The information of the guild.
+ * @throws never
+ */
 function getInfo(sheet: GSpreadsheet, version: (typeof validVersions)[number]) {
   return (() => {
     switch (version) {

@@ -36,6 +36,7 @@ export class Cache<V> {
    * Note: with async suppliers, concurrent `getOrSet` calls for the same `key`
    * may each invoke `fn`; only the first successful result is stored,
    * and later ones will see (and return) the value that ended up in the cache.
+   * @throws inherits
    */
   getOrSet<E>(key: string, fn: () => Result<V, E>): Result<V, E>
   getOrSet<E>(

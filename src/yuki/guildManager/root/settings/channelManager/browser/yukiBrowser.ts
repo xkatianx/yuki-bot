@@ -13,6 +13,12 @@ export class YukiBrowser extends MyBrowser {
     super(browser)
   }
 
+  /**
+   * Create a new YukiBrowser instance.
+   * @param url - The main URL for this browser.
+   * @returns The new YukiBrowser instance.
+   * @throws never
+   */
   static override new(url: string) {
     return MyError.try(async () => {
       const mainUrl = MyBrowser.parseUrl(url)

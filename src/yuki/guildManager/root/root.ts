@@ -18,6 +18,7 @@ import { RootFolder } from "./rootFolder.js"
  * @param bot - The bot instance.
  * @param guild - The guild instance.
  * @returns The root folder url.
+ * @throws never
  */
 export function getRootFolderUrl(bot: Yuki, guild: Guild) {
   return AsyncResult.from(async () => {
@@ -70,6 +71,7 @@ export function setRootFolderUrl(url: string) {
  * @param bot - The bot instance.
  * @param guild - The guild instance.
  * @returns The writable root folder.
+ * @throws never
  */
 export function getRootFolder(bot: Yuki, guild: Guild) {
   return getRootFolderUrl(bot, guild)

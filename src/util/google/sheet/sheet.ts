@@ -12,10 +12,21 @@ export class GSpreadsheet {
   requests: sheets_v4.Schema$Request[] = []
   writes: sheets_v4.Schema$ValueRange[] = []
 
+  /**
+   * Create a new spreadsheet from an ID.
+   * @param id - The ID of the spreadsheet.
+   * @throws never
+   */
   constructor(id: string) {
     this.#id = id
   }
 
+  /**
+   * Create a new spreadsheet from a URL.
+   * @param url - The URL of the spreadsheet.
+   * @returns The new spreadsheet.
+   * @throws never
+   */
   static fromUrl(url: string) {
     const id = /https:\/\/docs.google.com\/spreadsheets\/d\/([^/?]+)/
       .exec(url)
@@ -29,10 +40,20 @@ export class GSpreadsheet {
     )
   }
 
+  /**
+   * Get the URL of the spreadsheet.
+   * @returns The URL of the spreadsheet.
+   * @throws never
+   */
   get url(): string {
     return `https://docs.google.com/spreadsheets/d/${this.#id}`
   }
 
+  /**
+   * Get the ID of the spreadsheet.
+   * @returns The ID of the spreadsheet.
+   * @throws never
+   */
   get id(): string {
     return this.#id
   }
@@ -42,6 +63,7 @@ export class GSpreadsheet {
    * @param folder - The folder to copy the spreadsheet to.
    * @param rename - The new name of the spreadsheet.
    * @returns The pasted spreadsheet.
+   * @throws never
    */
   copyTo(folder: GFolder, rename?: string) {
     return folder.pasteSpreadsheet(this, rename)
@@ -50,6 +72,7 @@ export class GSpreadsheet {
   /**
    * Flush pending writes to the spreadsheet.
    * @returns The response from the spreadsheet.
+   * @throws never
    */
   flushWrite() {
     return GSheetError.try(async () => {
@@ -72,6 +95,7 @@ export class GSpreadsheet {
    * @param range - The range to write to.
    * @param values - The values to write to the range.
    * @returns This spreadsheet.
+   * @throws never
    */
   writeRange(range: string, values: unknown[][]): this {
     this.writes.push({
@@ -87,6 +111,7 @@ export class GSpreadsheet {
    * @param range - The range of the cell to write to.
    * @param value - The value to write to the cell.
    * @returns This spreadsheet.
+   * @throws never
    */
   writeCell(range: string, value: string): this {
     return this.writeRange(range, [[value]])
@@ -96,6 +121,7 @@ export class GSpreadsheet {
    * Get the first sheet with the given name.
    * @param sheetName - The name of the sheet to get.
    * @returns The sheet.
+   * @throws never
    */
   getSheet(sheetName: string) {
     return GSheetError.try(async () => {
@@ -107,7 +133,11 @@ export class GSpreadsheet {
     })
   }
 
-  /** flush the requests to the spreadsheet */
+  /**
+   * Flush the requests to the spreadsheet.
+   * @returns The response from the spreadsheet.
+   * @throws never
+   */
   flush() {
     return GSheetError.try(async () => {
       const requests = this.requests
@@ -125,6 +155,7 @@ export class GSpreadsheet {
    * Pending requests until `flush()` is called.
    * @param title - The title of the new sheet.
    * @returns This spreadsheet.
+   * @throws never
    */
   newSheet(title: string): this {
     const addSheet: sheets_v4.Schema$AddSheetRequest = {
@@ -146,6 +177,7 @@ export class GSpreadsheet {
    * @param sourceSheetId - The ID of the sheet to duplicate.
    * @param newSheetName - The name of the new sheet.
    * @returns This spreadsheet.
+   * @throws never
    */
   dupe(sourceSheetId: number, newSheetName: string): this {
     const duplicateSheet: sheets_v4.Schema$DuplicateSheetRequest = {
@@ -162,6 +194,7 @@ export class GSpreadsheet {
    * Pending requests until `flush()` is called.
    * @param sheetId - The ID of the sheet to show.
    * @returns This spreadsheet.
+   * @throws never
    */
   show(sheetId: number): this {
     const updateSheetProperties: sheets_v4.Schema$UpdateSheetPropertiesRequest =
@@ -180,6 +213,7 @@ export class GSpreadsheet {
    * Read the contents of the given range.
    * @param range - The range to read.
    * @returns The contents of the range.
+   * @throws never
    */
   readRange(range: string) {
     return GSheetError.try(async () => {
@@ -203,6 +237,7 @@ export class GSpreadsheet {
    * Read the contents of the given ranges.
    * @param ranges - The ranges to read.
    * @returns The contents of the ranges.
+   * @throws never
    */
   readRanges(ranges: string[]) {
     return GSheetError.try(async () => {
@@ -220,6 +255,11 @@ export class GSpreadsheet {
     })
   }
 
+  /**
+   * Convert the spreadsheet to a string.
+   * @returns The string representation of the spreadsheet.
+   * @throws never
+   */
   toString() {
     return `GSpreadsheet(${this.id})`
   }

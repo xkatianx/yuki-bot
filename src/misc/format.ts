@@ -22,9 +22,10 @@ export function formatString(
 
 /**
  * Parses a formatted string based on a template and returns an object of extracted data.
- * @param {string} template - The template string with {keys}.
- * @param {string} formattedString - The fully formatted string.
- * @returns {object|null} A dictionary of keys and values, or null if the string doesn't match the template.
+ * @param template - The template string with {keys}.
+ * @param formattedString - The fully formatted string.
+ * @returns A dictionary of keys and values, or null if the string doesn't match the template.
+ * @throws never
  * @example
  * const template = "Hello, {user}. You look {status} today {user}!";
  * const formatted = "Hello, Mark. You look great today Mark!";
@@ -86,6 +87,7 @@ export function parseString(
  * Join a list of strings with a newline character.
  * @param lines - The list of strings to join.
  * @returns The joined string.
+ * @throws never
  * @example
  * lines("Hello", "World")
  * // "Hello\nWorld"

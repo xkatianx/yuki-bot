@@ -58,7 +58,7 @@ export class Bot {
     // })
   }
 
-  onReady(readyClient: Client<true>) {
+  protected onReady(readyClient: Client<true>) {
     done(`Ready! Logged in as ${readyClient.user.tag}`)
   }
 
@@ -80,7 +80,10 @@ export class Bot {
    * This is called when a slash command has some error and fails to reply
    * to the user, this function will reply to the user instead.
    */
-  async handleError(interaction: Interaction, e: unknown): Promise<void> {
+  protected async handleError(
+    interaction: Interaction,
+    e: unknown
+  ): Promise<void> {
     let content = "There was an error while executing this command!"
     let reply = false
     let ephemeral = false
@@ -124,6 +127,12 @@ export class Bot {
     }
   }
 
+  /**
+   * Convert an error to a message to display to the user.
+   * @param e - The error to convert to a message
+   * @returns The message to display to the user
+   * @throws never
+   */
   static errorToMessage(e: MyErrorBase<Code>): string {
     if (e instanceof BotError) {
       const code = e.code as BotErrorCode
@@ -180,7 +189,7 @@ export class Bot {
    * @param i - The interaction to handle
    * @throws freely
    */
-  async handleInteraction(i: Interaction): Promise<void> {
+  protected async handleInteraction(i: Interaction): Promise<void> {
     try {
       if (i.isChatInputCommand()) await this.actionCommand(i)
       else if (i.isButton()) await this.actionButton(i)
@@ -191,28 +200,28 @@ export class Bot {
     }
   }
 
-  async actionCommand(interaction: ChatInputCommandInteraction) {
+  protected async actionCommand(interaction: ChatInputCommandInteraction) {
     const command = this.commands.get(interaction.commandName)
     if (command == null)
       throw BotError.new(BotErrorCode.UNKNOWN_COMMAND, interaction.commandName)
     await command.execute(interaction)
   }
 
-  async actionButton(interaction: ButtonInteraction) {
+  protected async actionButton(interaction: ButtonInteraction) {
     const method = InteractionHandler.getButton(interaction.customId)
       .mapErr((e) => BotError.new(BotErrorCode.UNKNOWN_BUTTON, e))
       .unwrap()
     await method(interaction)
   }
 
-  async actionModal(interaction: ModalSubmitInteraction) {
+  protected async actionModal(interaction: ModalSubmitInteraction) {
     const method = InteractionHandler.getModal(interaction.customId)
       .mapErr((e) => BotError.new(BotErrorCode.UNKNOWN_MODAL, e))
       .unwrap()
     await method(interaction)
   }
 
-  async actionSelectMenu(_interaction: StringSelectMenuInteraction) {
+  protected async actionSelectMenu(_interaction: StringSelectMenuInteraction) {
     // respond to the select menu
   }
 
@@ -223,6 +232,7 @@ export class Bot {
    * @param guildId - The ID of the guild
    * @param channel - The channel to log to
    * @returns This bot instance
+   * @throws never
    */
   setLogChannel(guildId: string, channel: Channel) {
     if (channel.type !== ChannelType.GuildText) {
@@ -242,7 +252,7 @@ export class Bot {
    * @param message - The message to log
    * @param guildId - The ID of the guild
    * @returns The message, or null if the guild does not have a log channel
-   * @throws panic
+   * @throws never
    */
   logToGuild(message: string | MessagePayload, guildId: string) {
     const channel = this.logChannel.get(guildId)
@@ -255,7 +265,7 @@ export class Bot {
    * @param message - The message to log
    * @param channel - The channel to log to
    * @returns The message
-   * @throws panic
+   * @throws never
    */
   logToChannel(message: string | MessagePayload, channel: TextChannel) {
     return MyError.try(async () => ok(await channel.send(message)))

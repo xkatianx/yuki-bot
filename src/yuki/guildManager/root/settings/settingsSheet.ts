@@ -23,6 +23,15 @@ const indexCol = {
 export class SettingsSheet extends GSpreadsheet {
   // private readonly cms = new Cache<ChannelManager>()
   protected guildInfo: Partial<GuildInfo> = {}
+
+  /**
+   * Create a new setting sheet.
+   * @param id - The ID of the spreadsheet.
+   * @param version - The version of the setting sheet.
+   * @param table - The table of the setting sheet.
+   * @param infos - The information in the setting sheet.
+   * @throws never
+   */
   protected constructor(
     id: string,
     protected version: (typeof util.validVersions)[number],
@@ -37,6 +46,7 @@ export class SettingsSheet extends GSpreadsheet {
    * and copy it to the root folder.
    * @param rootFolder - The root folder to create the setting sheet in.
    * @returns The setting sheet.
+   * @throws never
    */
   static newFromTemplate(rootFolder: GFolder) {
     return new GSpreadsheet(env.settingsId)
@@ -48,6 +58,7 @@ export class SettingsSheet extends GSpreadsheet {
    * Read a spreadsheet as a setting sheet.
    * @param spreadsheet - The spreadsheet object to read as a setting sheet.
    * @returns The setting sheet.
+   * @throws never
    */
   static fromSpreadsheet(this: void, spreadsheet: GSpreadsheet) {
     return util
@@ -68,6 +79,12 @@ export class SettingsSheet extends GSpreadsheet {
     return util.setInfo.call(this, this.version, info)
   }
 
+  /**
+   * Get the folder ID for a channel.
+   * @param channel - The channel to get the folder ID for.
+   * @returns The folder ID.
+   * @throws never
+   */
   getFolderId(channel: Channel) {
     const id = channel.id
     const row = this.table.find((row) => row[indexCol.channelId] === id)
@@ -81,6 +98,12 @@ export class SettingsSheet extends GSpreadsheet {
     )
   }
 
+  /**
+   * Get the spreadsheet ID for a channel.
+   * @param channel - The channel to get the spreadsheet ID for.
+   * @returns The spreadsheet ID.
+   * @throws never
+   */
   getSpreadsheetId(channel: Channel) {
     const id = channel.id
     const row = this.table.find((row) => row[indexCol.channelId] === id)

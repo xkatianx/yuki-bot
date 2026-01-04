@@ -6,25 +6,35 @@ import { AsyncResult, err, ok, result } from "~util/result/index.js"
 
 class MyBrowser implements AsyncDisposable {
   TIMEOUT_SECONDS = 12
+
+  /**
+   * Create a new MyBrowser instance.
+   * @param browser - The underlying puppeteer browser.
+   * @throws never
+   */
   constructor(public readonly browser: Browser) {}
 
   /**
    * Parse a URL string into a URL object.
    * @param url - The URL string to parse.
-   * @returns A Result containing the parsed URL or an error.
-   * @throws panic
+   * @returns A URL object.
+   * @throws never
    */
   static parseUrl(url: string) {
-    try {
-      return ok(new URL(url))
-    } catch {
-      return err(
+    return result
+      .parseUrl(url)
+      .mapErr(() =>
         BrowserError.new(BrowserErrorCode.INVALID_URL, `Invalid URL: ${url}`)
       )
-    }
   }
 
   // The signature is for YukiBrowser to extend
+  /**
+   * Create a new MyBrowser instance.
+   * @param _url - The main URL for this browser.
+   * @returns A MyBrowser instance.
+   * @throws never
+   */
   static new(_url?: string): AsyncResult<MyBrowser, MyError<Code>> {
     return MyError.try(async () => {
       const b = await puppeteer.launch()
@@ -32,11 +42,25 @@ class MyBrowser implements AsyncDisposable {
     })
   }
 
+  /**
+   * Dispose the browser.
+   * @throws never
+   */
   async [Symbol.asyncDispose]() {
-    await this.browser.close()
+    try {
+      await this.browser.close()
+    } catch {
+      // TODO: maybe do something here
+    }
   }
 
-  async listenWS(page: Page) {
+  /**
+   * Listen to the WebSocket for the given page.
+   * TODO: verify if this works
+   * @param page - The page to listen to.
+   * @throws any
+   */
+  protected async listenWS(page: Page) {
     const session = await page.createCDPSession()
     await session.send("Network.enable")
     session.on("Network.webSocketFrameReceived", (event) => {
@@ -44,6 +68,11 @@ class MyBrowser implements AsyncDisposable {
     })
   }
 
+  /**
+   * Get the "second" page or create a new one if it doesn't exist.
+   * @returns The second page.
+   * @throws never
+   */
   protected getPage() {
     return MyError.try(async () => {
       const pages = await this.browser.pages()
@@ -59,6 +88,13 @@ class MyBrowser implements AsyncDisposable {
     })
   }
 
+  /**
+   * Browse to the given URL.
+   * @param url - The URL to browse to.
+   * @param page - The page used to browse to the URL.
+   * @returns The HTTP response.
+   * @throws any
+   */
   private async _browse(url: URL, page: Page) {
     try {
       const res = await page.goto(url.href, {
@@ -85,27 +121,38 @@ class MyBrowser implements AsyncDisposable {
     }
   }
 
+  /**
+   * Browse to the given URL.
+   * @param url - The URL to browse to.
+   * @returns The HTTP response.
+   * @throws never
+   */
   browse(url: string) {
     return AsyncResult.merge([
-      AsyncResult.from(
-        result
-          .parseUrl(url)
-          .mapErr((e) =>
-            BrowserError.new(BrowserErrorCode.INVALID_URL, e.message)
-          )
-      ),
+      AsyncResult.from(MyBrowser.parseUrl(url)),
       this.getPage(),
     ]).andThen(([url, page]) =>
-      MyError.try(async () => AsyncResult.from(this._browse(url, page)))
+      MyError.try(async () => this._browse(url, page))
     )
   }
 
+  /**
+   * Get the URL of the current page.
+   * @returns The URL of the current page.
+   * @throws never
+   */
   getUrl() {
     return this.getPage().andThen(async (page) =>
       MyError.try(() => ok(page.url()))
     )
   }
 
+  /**
+   * Get the title of the current page.
+   * This will wait for the title to change after page load for 2 seconds.
+   * @returns The title of the current page.
+   * @throws never
+   */
   getTitle() {
     return this.getPage().andThen(async (page) =>
       MyError.try(async () => {
@@ -131,7 +178,7 @@ class MyBrowser implements AsyncDisposable {
    * @param filename - The filename of the screenshot.
    * It must match the pattern `[a-zA-Z0-9_-]+\.(png|jpeg|webp)`.
    * @returns the buffer of the screenshot.
-   * @throws panic
+   * @throws never
    */
   async screenshot(
     filename: `${string}.png` | `${string}.jpeg` | `${string}.webp` = "test.png"
