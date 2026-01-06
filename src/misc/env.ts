@@ -1,9 +1,8 @@
 import { config } from "dotenv"
 import { fatal } from "./cli.js"
 
-// Load .env first, then .env.local to allow local overrides.
 config({ path: ".env" })
-config({ path: ".env.local" })
+config({ path: ".env.local", override: true })
 
 function required(name: string): string {
   return process.env[name] ?? fatal(`in .env: missing "${name}"`)
