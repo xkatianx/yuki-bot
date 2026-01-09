@@ -1,6 +1,8 @@
 import type { ChatInputCommandInteraction } from "discord.js"
 import { SlashCommandBuilder } from "discord.js"
 import { Bot } from "~util/discord/bot.js"
+import { DiscordError } from "~util/discord/error.js"
+import { pin } from "~util/discord/util/pin.js"
 import { setRootFolderUrl } from "../../guildManager/root/root.js"
 import { YukiBaseCommand } from "./_base.js"
 
@@ -35,8 +37,19 @@ class RootCommand extends YukiBaseCommand {
       // set root folder url by pinning certain message
       const reply = setRootFolderUrl(newRootUrl).unwrapOrElse((e) => Bot.say(e))
       const m = await interaction.editReply(reply)
-      await channel.messages.pin(m)
-      bot.roots.reset(guild.id)
+      const res = await pin(channel, m)
+        .inspect(() => {
+          bot.roots.reset(guild.id)
+        })
+        .mapErr((e) => {
+          if (e instanceof DiscordError) {
+            return e.changeMessage(
+              "Failed: Please grant me permission to pin messages."
+            )
+          }
+          return e
+        })
+      res.unwrapOrElse((e) => Bot.say(e))
     }
   }
 }

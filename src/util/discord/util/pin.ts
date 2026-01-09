@@ -1,7 +1,9 @@
-import type { GuildBasedChannel, Message } from "discord.js"
+import type { GuildBasedChannel, Message, TextBasedChannel } from "discord.js"
 import { ChannelType, Guild } from "discord.js"
 import { parseString } from "~misc/format.js"
+import { AsyncResult, err, ok } from "~util/result/index.js"
 import type { Bot } from "../bot.js"
+import { DiscordError, DiscordErrorCode } from "../error.js"
 
 export enum PinFormat {
   Root = "Root folder: {url}",
@@ -31,40 +33,83 @@ function isPinFormat(message: Message, format: PinFormat): boolean {
  * @returns The pinned messages, sorted from old to new
  * @throws never
  */
-export async function getPinned(
+export function getPinned(
   guildOrChannel: Guild | GuildBasedChannel,
   bot: Bot,
   search?: PinFormat
 ) {
   let channels: GuildBasedChannel[]
   if (guildOrChannel instanceof Guild) {
+    // NOTE: this includes every channel
     channels = [...guildOrChannel.channels.cache.values()]
   } else {
     channels = [guildOrChannel]
   }
 
-  const pss = channels.map(async (channel) => {
-    if (channel.type === ChannelType.GuildText) {
-      try {
-        const pinned = await channel.messages.fetchPins()
-        return pinned.items.map((v) => ({
-          message: v.message,
-          pinnedTimestamp: v.pinnedTimestamp,
-          channel: channel,
-        }))
-      } catch {
-        return []
-      }
-    } else return []
-  })
-  const results = (await Promise.all(pss))
-    .flat()
-    .filter(
-      (v) =>
-        search == null ||
-        (v.message.author.id === bot.client.user?.id &&
-          isPinFormat(v.message, search))
+  const pss = channels
+    .filter((v) => v.type === ChannelType.GuildText)
+    .map((channel) =>
+      fetchPins(channel)
+        .map((res) =>
+          res.items.map((v) => ({
+            message: v.message,
+            pinnedTimestamp: v.pinnedTimestamp,
+            channel: channel,
+          }))
+        )
+        .orElse((e) => {
+          if (
+            e instanceof DiscordError &&
+            e.code === DiscordErrorCode.NO_ACCESS_FETCH_PINS
+          ) {
+            return ok([])
+          }
+          return err(e)
+        })
     )
-    .sort((a, b) => a.pinnedTimestamp - b.pinnedTimestamp)
-  return results
+
+  return AsyncResult.merge(pss).map((arr) =>
+    arr
+      .flat()
+      .filter(
+        (v) =>
+          search == null ||
+          (v.message.author.id === bot.client.user?.id &&
+            isPinFormat(v.message, search))
+      )
+      .sort((a, b) => a.pinnedTimestamp - b.pinnedTimestamp)
+  )
+}
+
+/**
+ * Pin a message.
+ * @param channel - The channel to pin the message in
+ * @param message - The message to pin
+ * @throws never
+ */
+export function pin(channel: TextBasedChannel, message: Message) {
+  return DiscordError.try(async () => {
+    await channel.messages.pin(message)
+    return ok(undefined)
+  })
+}
+
+function fetchPins(channel: TextBasedChannel) {
+  return DiscordError.try(async () => {
+    const pinned = await channel.messages.fetchPins()
+    return ok(pinned)
+  }).mapErr((e) => {
+    if (e instanceof DiscordError) {
+      if (e.code === DiscordErrorCode.NO_ACCESS) {
+        return DiscordError.new(
+          DiscordErrorCode.NO_ACCESS_FETCH_PINS,
+          "Missing permissions to fetch pinned messages in a certain channel.",
+          e.cause
+        )
+      } else {
+        return DiscordError.new(DiscordErrorCode.UNKNOWN, e.message, e.cause)
+      }
+    }
+    return e
+  })
 }

@@ -20,6 +20,9 @@ export abstract class BaseCommand {
   /**
    * Execute the command when invoked.
    * This method must be implemented by subclasses.
+   *
+   * If this method throws an error, it should be a BotLogError.
+   * TODO: make the return type AsyncResult<void, BotLogError>
    */
   abstract execute(interaction: ChatInputCommandInteraction): Promise<void>
 

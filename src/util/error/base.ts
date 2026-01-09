@@ -14,6 +14,11 @@ export class MyErrorBase<T extends Code> extends Error {
     this.code = code
   }
 
+  changeMessage(message: string | ((message: string) => string)): this {
+    this.message = message instanceof Function ? message(this.message) : message
+    return this
+  }
+
   static fromError(e: Error): MyErrorBase<Code> {
     fail(e)
     const err = new MyErrorBase(0, e.message)

@@ -3,20 +3,16 @@ import type {
   Channel,
   ChatInputCommandInteraction,
   GatewayIntentBits,
+  Interaction,
   MessagePayload,
   ModalSubmitInteraction,
   StringSelectMenuInteraction,
   TextChannel,
 } from "discord.js"
-import {
-  ChannelType,
-  Client,
-  Collection,
-  Events,
-  type Interaction,
-} from "discord.js"
+import { ChannelType, Client, Collection, Events } from "discord.js"
 import { done, fail, info, warn } from "~misc/cli.js"
 import { displayCodeBlock, lines } from "~misc/format.js"
+import { Temporal } from "~misc/time/index.js"
 import { noDefault } from "~misc/type.js"
 import type { Code } from "~util/error/index.js"
 import { MyError, MyErrorBase } from "~util/error/index.js"
@@ -29,10 +25,15 @@ export class Bot {
   readonly client: Client
   protected logChannel = new Collection<string, TextChannel>()
   protected commands = new Collection<string, BaseCommand>()
+  #readyTime = Temporal.Now.instant()
+
+  get readyTime() {
+    return this.#readyTime
+  }
 
   constructor(
     protected readonly token: string,
-    intents: GatewayIntentBits[],
+    intents: readonly GatewayIntentBits[],
     commands: BaseCommand[]
   ) {
     this.client = new Client({
@@ -59,6 +60,7 @@ export class Bot {
   }
 
   protected onReady(readyClient: Client<true>) {
+    this.#readyTime = Temporal.Now.instant()
     done(`Ready! Logged in as ${readyClient.user.tag}`)
   }
 

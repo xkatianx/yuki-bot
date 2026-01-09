@@ -9,7 +9,7 @@ import { warn } from "~misc/cli.js"
 import { displayCode, formatString, parseString } from "~misc/format.js"
 import { getPinned, PinFormat } from "~util/discord/util/pin.js"
 import { MyError, MyErrorBase } from "~util/error/index.js"
-import { AsyncResult, err, ok, result } from "~util/result/index.js"
+import { err, ok, result } from "~util/result/index.js"
 import type { Yuki } from "../../yuki.js"
 import { RootFolder } from "./rootFolder.js"
 
@@ -21,8 +21,8 @@ import { RootFolder } from "./rootFolder.js"
  * @throws never
  */
 export function getRootFolderUrl(bot: Yuki, guild: Guild) {
-  return AsyncResult.from(async () => {
-    const lastMessage = (await getPinned(guild, bot, PinFormat.Root)).pop()
+  return getPinned(guild, bot, PinFormat.Root).andThen((messages) => {
+    const lastMessage = messages.pop()
     if (lastMessage == null)
       return err(
         RootError.new(

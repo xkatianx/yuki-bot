@@ -2,7 +2,6 @@ import type { Client, Guild, TextChannel } from "discord.js"
 import { GatewayIntentBits } from "discord.js"
 import { Cache } from "~misc/cache.js"
 import { lines } from "~misc/format.js"
-import { Temporal } from "~misc/time/index.js"
 import { Bot } from "~util/discord/bot.js"
 import type { Code, MyErrorBase } from "~util/error/index.js"
 import { myGoogleInfo } from "~util/google/auth/auth.js"
@@ -11,6 +10,7 @@ import { AsyncResult } from "~util/result/index.js"
 import * as YukiCommands from "./discord/commands.js"
 import { getRootFolder } from "./guildManager/root/root.js"
 import type { RootFolder } from "./guildManager/root/rootFolder.js"
+
 declare module "discord.js" {
   export interface Client {
     mybot: Yuki
@@ -22,16 +22,11 @@ const intents = [
   GatewayIntentBits.GuildMessages,
   GatewayIntentBits.GuildMessageReactions,
   GatewayIntentBits.MessageContent,
-]
+] as const
 
 export class Yuki extends Bot {
   /** key = guild.id */
   readonly roots = new Cache<RootFolder>()
-  #readyTime = Temporal.Now.instant()
-
-  get readyTime() {
-    return this.#readyTime
-  }
 
   constructor(token: string) {
     super(
@@ -44,7 +39,6 @@ export class Yuki extends Bot {
 
   protected override onReady(readyClient: Client<true>): void {
     // TODO: maybe fetch all log channels on ready
-    this.#readyTime = Temporal.Now.instant()
     super.onReady(readyClient)
   }
 
