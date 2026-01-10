@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "description": "A discord bot for managing google spreadsheets of puzzlehunts.",
   "scripts": {
+    "prepare": "puppeteer browsers install chrome",
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "tsx src/index.ts",

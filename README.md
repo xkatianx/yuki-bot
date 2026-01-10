@@ -27,6 +27,12 @@ A discord bot for managing google spreadsheets of puzzlehunts.
     pnpm install
     ```
 
+1. Install browser for puppeteer:
+
+    ```bash
+    pnpm prepare
+    ```
+
 1. Register slash commands:
 
     ```bash
