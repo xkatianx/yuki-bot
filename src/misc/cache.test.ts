@@ -76,6 +76,26 @@ describe("Cache", () => {
         expect(cache.get("key1")).toBeNull()
       })
 
+      it("should single-flight concurrent async calls", async () => {
+        const cache = new Cache<number>()
+        let callCount = 0
+
+        const fn = async () => {
+          callCount++
+          await new Promise((resolve) => setTimeout(resolve, 10))
+          return ok(42)
+        }
+
+        const [result1, result2] = await Promise.all([
+          cache.getOrSet("key1", fn),
+          cache.getOrSet("key1", fn),
+        ])
+
+        expect(result1.isOk() && result1.unwrap()).toBe(42)
+        expect(result2.isOk() && result2.unwrap()).toBe(42)
+        expect(callCount).toBe(1)
+      })
+
       it("should handle race condition - first call sets, second gets cached", async () => {
         const cache = new Cache<number>()
         let callCount = 0
@@ -93,9 +113,8 @@ describe("Cache", () => {
         // Both should get the same value
         expect(result1.isOk() && result1.unwrap()).toBe(42)
         expect(result2.isOk() && result2.unwrap()).toBe(42)
-        // Function should only be called once (or twice if race condition)
-        expect(callCount).toBeGreaterThanOrEqual(1)
-        expect(callCount).toBeLessThanOrEqual(2)
+        // Function should ONLY be called once due to single-flighting
+        expect(callCount).toBe(1)
       })
     })
 

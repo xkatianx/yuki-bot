@@ -18,13 +18,16 @@ import { AsyncResult, ok } from "~util/result/index.js"
  */
 export class Cache<V> {
   #map = new Map<string, V>()
+  #pending = new Map<string, Promise<Result<V, unknown>>>()
 
   /**
    * Get a cached value, or compute and cache it on miss.
    *
    * - If `key` is already present, returns `Ok(cachedValue)` immediately
    *   without calling `fn`, regardless of whether `fn` would return `Ok` or `Err`.
-   * - If `key` is missing, it calls `fn` and:
+   * - If `key` is missing and an async supplier is already running for this `key`,
+   *   returns the **same promise** (single-flighting).
+   * - If `key` is missing and no supplier is running, it calls `fn` and:
    *   - on `Ok(v)`: stores `v` under `key` and returns `Ok(v)`
    *   - on `Err(e)`: **does not** cache anything and returns `Err(e)`
    *
@@ -33,9 +36,6 @@ export class Cache<V> {
    * - an async `() => Promise<Result<V, E>>`
    * - an async `() => AsyncResult<V, E>`
    *
-   * Note: with async suppliers, concurrent `getOrSet` calls for the same `key`
-   * may each invoke `fn`; only the first successful result is stored,
-   * and later ones will see (and return) the value that ended up in the cache.
    * @throws inherits
    */
   getOrSet<E>(key: string, fn: () => Result<V, E>): Result<V, E>
@@ -50,16 +50,22 @@ export class Cache<V> {
     const cached = this.#map.get(key)
     if (cached != null) return ok(cached)
 
+    const pending = this.#pending.get(key)
+    if (pending != null) return pending as Promise<Result<V, E>>
+
     const res1 = fn()
     if (res1 instanceof Promise || res1 instanceof AsyncResult) {
-      return res1.then((res2) =>
-        res2.map((v) => {
+      const promise = Promise.resolve(res1).then((res2: Result<V, E>) => {
+        this.#pending.delete(key)
+        return res2.map((v) => {
           const cached = this.#map.get(key)
           if (cached != null) return cached
           this.#map.set(key, v)
           return v
         })
-      )
+      })
+      this.#pending.set(key, promise as Promise<Result<V, unknown>>)
+      return promise
     } else {
       return res1.map((v) => {
         const cached = this.#map.get(key)
