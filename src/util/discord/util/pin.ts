@@ -47,7 +47,12 @@ export function getPinned(
   }
 
   const pss = channels
-    .filter((v) => v.type === ChannelType.GuildText)
+    .filter(
+      (v): v is TextBasedChannel & GuildBasedChannel =>
+        v.type === ChannelType.GuildText &&
+        v.lastPinTimestamp != null &&
+        v.lastPinTimestamp > 0
+    )
     .map((channel) =>
       fetchPins(channel)
         .map((res) =>
