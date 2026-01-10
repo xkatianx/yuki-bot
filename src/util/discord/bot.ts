@@ -124,7 +124,11 @@ export class Bot {
       try {
         await interaction.reply({ content, ephemeral })
       } catch {
-        await interaction.editReply(content)
+        try {
+          await interaction.editReply(content)
+        } catch {
+          // TODO: this happens when the message is gone or it's been too long
+        }
       }
     }
   }
