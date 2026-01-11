@@ -20,6 +20,9 @@ export const env = {
   /** The locale to use for logs. Default is system local. */
   logLocale: optional("LOG_LOCALE"),
 
+  /** Arguments for puppeteer launch, separated by space. */
+  puppeteerLaunchArgs: optional("PUPPETEER_LAUNCH_ARGS"),
+
   /** The name of the template settings spreadsheet */
   settingsName: required("TEMPLATE_SETTINGS_SHEET_NAME"),
   /** The ID of the template settings spreadsheet */

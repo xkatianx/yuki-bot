@@ -1,5 +1,6 @@
 import puppeteer, { TimeoutError, type Browser, type Page } from "puppeteer"
 import { info } from "~misc/cli.js"
+import { env } from "~misc/env.js"
 import type { Code } from "~util/error/index.js"
 import { MyError, MyErrorBase } from "~util/error/index.js"
 import { AsyncResult, err, ok, result } from "~util/result/index.js"
@@ -37,7 +38,8 @@ class MyBrowser implements AsyncDisposable {
    */
   static new(_url?: string): AsyncResult<MyBrowser, MyError<Code>> {
     return MyError.try(async () => {
-      const b = await puppeteer.launch()
+      const args = env.puppeteerLaunchArgs?.split(" ") ?? []
+      const b = await puppeteer.launch({ args })
       return ok(new MyBrowser(b))
     })
   }

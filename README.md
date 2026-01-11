@@ -21,6 +21,11 @@ A discord bot for managing google spreadsheets of puzzlehunts.
    - [Google](./src/util/google/readme.md)
    - [Discord](./src/util/discord/readme.md)
 
+    > [!NOTE]
+    > If you are running on Heroku, you may need to add `PUPPETEER_LAUNCH_ARGS=--no-sandbox` to [.env.local](.env.local).
+    >
+    > see: https://pptr.dev/troubleshooting
+
 1. Install dependencies:
 
     ```bash

@@ -1,4 +1,5 @@
 import puppeteer, { type Browser, type Page } from "puppeteer"
+import { env } from "~misc/env.js"
 import MyBrowser from "~util/browser/browser.js"
 import { MyError, MyErrorBase } from "~util/error/index.js"
 import { err, ok } from "~util/result/index.js"
@@ -23,7 +24,8 @@ export class YukiBrowser extends MyBrowser {
     return MyError.try(async () => {
       const mainUrl = MyBrowser.parseUrl(url)
       if (mainUrl.isErr()) return mainUrl
-      const b = await puppeteer.launch()
+      const args = env.puppeteerLaunchArgs?.split(" ") ?? []
+      const b = await puppeteer.launch({ args })
       const browser = new YukiBrowser(b, mainUrl.value)
       return ok(browser)
     })
