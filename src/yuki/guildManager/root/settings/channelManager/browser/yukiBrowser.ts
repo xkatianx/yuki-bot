@@ -89,7 +89,9 @@ function findLoginElements(page: Page) {
       'input[type="text"], input[type="password"], input[name="username"]'
     )
     if (inputs.length < 2)
-      inputs = await page.$$('input[type="email"], input[type="password"]')
+      inputs = await page.$$(
+        'input[name="id"], input[type="email"], input[type="password"]'
+      )
     if (inputs.length !== 2)
       return err(
         YukiBrowserError.new(
