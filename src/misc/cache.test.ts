@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { AsyncResult, err, ok } from "~util/result"
+import { AsyncResult, err, ok } from "always-panic"
 import { Cache } from "./cache"
 
 describe("Cache", () => {

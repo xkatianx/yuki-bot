@@ -1,12 +1,12 @@
 import { env } from "~misc/env.js"
-import { MyError } from "~util/error/index.js"
+import { unexpectedMyError } from "~misc/resultExtras.js"
 import type { GFolder } from "~util/google/folder/folder"
 import {
   PuzzleSheetError,
   PuzzleSheetErrorCode,
 } from "~util/google/sheet/error.js"
 import { GSpreadsheet } from "~util/google/sheet/sheet.js"
-import { err, ok } from "~util/result/index.js"
+import { err, ok } from "always-panic"
 
 export class PuzzleSheet extends GSpreadsheet {
   /**
@@ -88,7 +88,7 @@ export class PuzzleSheet extends GSpreadsheet {
         if (templateId != null)
           return await this.dupe(templateId, sheetName).flush()
         return err(
-          MyError.unexpected(
+          unexpectedMyError(
             `Unable to get id of TEMPLATE in ${this.toString()}`
           )
         )
@@ -97,7 +97,7 @@ export class PuzzleSheet extends GSpreadsheet {
         const newSheetId = res?.at(0)?.duplicateSheet?.properties?.sheetId
         if (newSheetId == null)
           return err(
-            MyError.unexpected(
+            unexpectedMyError(
               `Unable to get id of or create \`${sheetName}\` in ${this.toString()}`
             )
           )

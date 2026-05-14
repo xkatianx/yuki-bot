@@ -1,6 +1,6 @@
+import { MyError, MyErrorBase } from "always-panic"
 import { GaxiosError } from "gaxios"
 import { fail } from "~misc/cli.js"
-import { MyError, MyErrorBase } from "~util/error/index.js"
 
 export enum GFolderErrorCode {
   CANNOT_WRITE,
@@ -28,19 +28,16 @@ export class GFolderError<T extends GFolderErrorCode> extends MyErrorBase<T> {
     return new GFolderError(code, message)
   }
 
-  static override fromError(error: Error) {
-    const message = error.message
-    if (error instanceof GaxiosError) {
-      if (message.startsWith("File not found:")) {
-        return new GFolderError(GFolderErrorCode.MISSING_FILE, message)
-      }
-    }
-    fail(error)
-    // Fall back to base error when we can't handle it
-    return MyError.fromError(error)
-  }
-
   static override fromAny(e: unknown) {
+    if (e instanceof Error) {
+      const message = e.message
+      if (e instanceof GaxiosError) {
+        if (message.startsWith("File not found:")) {
+          return new GFolderError(GFolderErrorCode.MISSING_FILE, message)
+        }
+      }
+      fail(e)
+    }
     return MyError.fromAny(e)
   }
 }

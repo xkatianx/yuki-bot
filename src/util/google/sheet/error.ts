@@ -1,6 +1,6 @@
+import { MyError, MyErrorBase } from "always-panic"
 import { GaxiosError } from "gaxios"
 import { fail } from "~misc/cli.js"
-import { MyError, MyErrorBase } from "../../error/index.js"
 
 export enum GSheetErrorCode {
   NO_FILE_ACCESS,
@@ -24,20 +24,18 @@ export class GSheetError<T extends GSheetErrorCode> extends MyErrorBase<T> {
     return new GSheetError(code, message)
   }
 
-  static override fromError(error: Error) {
-    const message = error.message
-    if (error instanceof GaxiosError) {
-      if (message.startsWith("File not found:")) {
-        return GSheetError.new(GSheetErrorCode.NO_FILE_ACCESS, message)
-      } else if (message.startsWith("Invalid requests[0].duplicateSheet:")) {
-        return GSheetError.new(GSheetErrorCode.DUPLICATE_SHEET, message)
-      }
-    }
-    fail(error)
-    return GSheetError.new(GSheetErrorCode.UNKNOWN, message)
-  }
-
   static override fromAny(e: unknown) {
+    if (e instanceof Error) {
+      const message = e.message
+      if (e instanceof GaxiosError) {
+        if (message.startsWith("File not found:")) {
+          return GSheetError.new(GSheetErrorCode.NO_FILE_ACCESS, message)
+        } else if (message.startsWith("Invalid requests[0].duplicateSheet:")) {
+          return GSheetError.new(GSheetErrorCode.DUPLICATE_SHEET, message)
+        }
+      }
+      fail(e)
+    }
     return MyError.fromAny(e)
   }
 }

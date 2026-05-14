@@ -7,9 +7,9 @@
 import type { Guild } from "discord.js"
 import { warn } from "~misc/cli.js"
 import { displayCode, formatString, parseString } from "~misc/format.js"
+import { parseUrlResult, unexpectedMyError } from "~misc/resultExtras.js"
 import { getPinned, PinFormat } from "~util/discord/util/pin.js"
-import { MyError, MyErrorBase } from "~util/error/index.js"
-import { err, ok, result } from "~util/result/index.js"
+import { MyErrorBase, err, ok } from "always-panic"
 import type { Yuki } from "../../yuki.js"
 import { RootFolder } from "./rootFolder.js"
 
@@ -39,7 +39,7 @@ export function getRootFolderUrl(bot: Yuki, guild: Guild) {
     )
     if (url == null)
       return err(
-        MyError.unexpected(
+        unexpectedMyError(
           "Wrong root url format in discord pinned message.",
           lastMessage
         )
@@ -55,8 +55,7 @@ export function getRootFolderUrl(bot: Yuki, guild: Guild) {
  * @returns The reply message.
  */
 export function setRootFolderUrl(url: string) {
-  return result
-    .parseUrl(url)
+  return parseUrlResult(url)
     .map((url) => formatString(PinFormat.Root, { url: url.href }))
     .mapErr(() =>
       RootError.new(

@@ -2,7 +2,7 @@ import type { Channel, TextChannel } from "discord.js"
 import { env } from "~misc/env.js"
 import type { GFolder } from "~util/google/folder/folder.js"
 import { GSpreadsheet } from "~util/google/sheet/sheet.js"
-import { err, ok } from "~util/result/index.js"
+import { err, ok } from "always-panic"
 import type { PuzzleSheet } from "./channelManager/puzzle/puzzleSheet.js"
 import util, {
   SettingsSheetError,

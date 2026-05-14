@@ -1,5 +1,5 @@
-import type { Result } from "~util/result/index.js"
-import { AsyncResult, ok } from "~util/result/index.js"
+import type { Result } from "always-panic"
+import { AsyncResult, ok } from "always-panic"
 
 /**
  * A small, in‑memory cache keyed by `string`.

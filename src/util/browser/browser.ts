@@ -1,9 +1,9 @@
+import type { Code } from "always-panic"
+import { AsyncResult, MyError, MyErrorBase, err, ok } from "always-panic"
 import puppeteer, { TimeoutError, type Browser, type Page } from "puppeteer"
 import { info } from "~misc/cli.js"
 import { env } from "~misc/env.js"
-import type { Code } from "~util/error/index.js"
-import { MyError, MyErrorBase } from "~util/error/index.js"
-import { AsyncResult, err, ok, result } from "~util/result/index.js"
+import { parseUrlResult } from "~misc/resultExtras.js"
 
 class MyBrowser implements AsyncDisposable {
   TIMEOUT_SECONDS = 12
@@ -22,11 +22,9 @@ class MyBrowser implements AsyncDisposable {
    * @throws never
    */
   static parseUrl(url: string) {
-    return result
-      .parseUrl(url)
-      .mapErr(() =>
-        BrowserError.new(BrowserErrorCode.INVALID_URL, `Invalid URL: ${url}`)
-      )
+    return parseUrlResult(url).mapErr(() =>
+      BrowserError.new(BrowserErrorCode.INVALID_URL, `Invalid URL: ${url}`)
+    )
   }
 
   // The signature is for YukiBrowser to extend
@@ -36,7 +34,7 @@ class MyBrowser implements AsyncDisposable {
    * @returns A MyBrowser instance.
    * @throws never
    */
-  static new(_url?: string): AsyncResult<MyBrowser, MyError<Code>> {
+  static new(_url?: string): AsyncResult<MyBrowser, MyErrorBase<Code>> {
     return MyError.try(async () => {
       const args = env.puppeteerLaunchArgs?.split(" ") ?? []
       const b = await puppeteer.launch({
@@ -147,9 +145,7 @@ class MyBrowser implements AsyncDisposable {
    * @throws never
    */
   getUrl() {
-    return this.getPage().andThen(async (page) =>
-      MyError.try(() => ok(page.url()))
-    )
+    return this.getPage().andThen((page) => MyError.try(() => ok(page.url())))
   }
 
   /**

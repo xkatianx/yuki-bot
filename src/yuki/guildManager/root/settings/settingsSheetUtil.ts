@@ -1,7 +1,7 @@
 import { noDefault } from "~misc/type.js"
-import { MyError, MyErrorBase } from "~util/error/index.js"
+import { unexpectedMyError } from "~misc/resultExtras.js"
 import type { GSpreadsheet } from "~util/google/sheet/sheet.js"
-import { err, ok, type AsyncResult } from "~util/result/index.js"
+import { MyErrorBase, err, ok, type AsyncResult } from "always-panic"
 import type { SettingsSheet } from "./settingsSheet.js"
 
 export interface GuildInfo {
@@ -68,7 +68,7 @@ function getInfo_1_0_0(sheet: GSpreadsheet) {
     })
     .andThen(({ table, infos }) => {
       if (table == null)
-        return err(MyError.unexpected("Unable to read INDEX!A:E", sheet))
+        return err(unexpectedMyError("Unable to read INDEX!A:E", sheet))
       return ok({
         table: table as unknown[][],
         infos,

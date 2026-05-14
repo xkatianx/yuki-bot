@@ -16,12 +16,13 @@ import {
   TextInputStyle,
 } from "discord.js"
 import { fatal } from "~misc/cli.js"
-import type { Code, MyErrorBase } from "~util/error/index.js"
-import { err, ok, result, type Result } from "~util/result/index.js"
-import type { MaybeResult } from "~util/result/result/type.js"
+import type { Code, MyErrorBase, Result } from "always-panic"
+import { err, ok, result } from "always-panic"
 import type { IRF } from "../commands/base.js"
 import { BotError, BotErrorCode } from "../error.js"
 import { InteractionHandler } from "./interaction.js"
+
+type MaybeResult<T, E = unknown> = T | Result<T, E>
 
 export interface FormInputProps {
   customId: string

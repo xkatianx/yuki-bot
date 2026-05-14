@@ -1,8 +1,7 @@
+import { MyError, MyErrorBase, err, ok } from "always-panic"
 import puppeteer, { type Browser, type Page } from "puppeteer"
 import { env } from "~misc/env.js"
 import MyBrowser from "~util/browser/browser.js"
-import { MyError, MyErrorBase } from "~util/error/index.js"
-import { err, ok } from "~util/result/index.js"
 
 export class YukiBrowser extends MyBrowser {
   isLogin = false

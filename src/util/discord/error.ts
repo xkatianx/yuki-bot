@@ -1,5 +1,5 @@
+import { MyError, MyErrorBase } from "always-panic"
 import { DiscordAPIError } from "discord.js"
-import { MyError, MyErrorBase } from "~util/error"
 
 export enum DiscordErrorCode {
   NO_ACCESS,
@@ -23,21 +23,18 @@ export class DiscordError<T extends DiscordErrorCode> extends MyErrorBase<T> {
     return new DiscordError(code, message, cause)
   }
 
-  static override fromError(error: Error) {
-    const message = error.message
-    if (error instanceof DiscordAPIError) {
-      if (message === "Missing Permissions") {
-        return new DiscordError(DiscordErrorCode.NO_PERMISSION, message, error)
-      }
-      if (message === "Missing Access") {
-        return new DiscordError(DiscordErrorCode.NO_ACCESS, message, error)
+  static override fromAny(e: unknown) {
+    if (e instanceof Error) {
+      const message = e.message
+      if (e instanceof DiscordAPIError) {
+        if (message === "Missing Permissions") {
+          return new DiscordError(DiscordErrorCode.NO_PERMISSION, message, e)
+        }
+        if (message === "Missing Access") {
+          return new DiscordError(DiscordErrorCode.NO_ACCESS, message, e)
+        }
       }
     }
-    // Fall back to base error when we can't handle it
-    return MyError.fromError(error)
-  }
-
-  static override fromAny(e: unknown) {
     return MyError.fromAny(e)
   }
 }

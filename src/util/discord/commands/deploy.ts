@@ -2,8 +2,7 @@
 // for advanced usage.
 
 import { REST, Routes } from "discord.js"
-import { MyError } from "~util/error/error.js"
-import { ok } from "~util/result/index.js"
+import { MyError, ok } from "always-panic"
 import type { BaseCommand } from "./base.js"
 
 /**

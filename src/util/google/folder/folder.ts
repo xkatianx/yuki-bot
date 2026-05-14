@@ -1,6 +1,6 @@
 import { google } from "googleapis"
-import { MyError } from "~util/error/index.js"
-import { err, ok } from "~util/result/index.js"
+import { unexpectedMyError } from "~misc/resultExtras.js"
+import { err, ok } from "always-panic"
 import { myGoogleInfo } from "../auth/auth.js"
 import { GSpreadsheet } from "../sheet/sheet.js"
 import { GFolderError, GFolderErrorCode } from "./error.js"
@@ -264,7 +264,7 @@ export class GFolder {
         },
       })
       const id = ss.data.id
-      if (id == null) return err(MyError.unexpected(ss))
+      if (id == null) return err(unexpectedMyError(ss))
       return ok(new GSpreadsheet(id))
     })
   }
