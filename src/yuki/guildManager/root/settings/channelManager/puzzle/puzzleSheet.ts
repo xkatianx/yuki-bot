@@ -1,12 +1,12 @@
+import { err, MyError } from "always-panic"
 import { env } from "~misc/env.js"
-import { unexpectedMyError } from "~misc/resultExtras.js"
 import type { GFolder } from "~util/google/folder/folder"
 import {
   PuzzleSheetError,
   PuzzleSheetErrorCode,
 } from "~util/google/sheet/error.js"
 import { GSpreadsheet } from "~util/google/sheet/sheet.js"
-import { err, ok } from "always-panic"
+import { getSheetId } from "~util/google/sheet/util"
 
 export class PuzzleSheet extends GSpreadsheet {
   /**
@@ -76,35 +76,32 @@ export class PuzzleSheet extends GSpreadsheet {
   newFromTemplate(sheetName: string) {
     return this.getSheet("TEMPLATE")
       .andThen((template) => {
-        if (template != null) return ok(template.properties?.sheetId)
-        return err(
-          PuzzleSheetError.new(
-            PuzzleSheetErrorCode.MISSING_TEMPLATE,
-            `Missing template in ${this.toString()}`
-          )
-        )
-      })
-      .andThen(async (templateId) => {
-        if (templateId != null)
-          return await this.dupe(templateId, sheetName).flush()
-        return err(
-          unexpectedMyError(
-            `Unable to get id of TEMPLATE in ${this.toString()}`
-          )
-        )
-      })
-      .andThen(async (res) => {
-        const newSheetId = res?.at(0)?.duplicateSheet?.properties?.sheetId
-        if (newSheetId == null)
+        if (template == null)
           return err(
-            unexpectedMyError(
-              `Unable to get id of or create \`${sheetName}\` in ${this.toString()}`
+            PuzzleSheetError.new(
+              PuzzleSheetErrorCode.MISSING_TEMPLATE,
+              `Missing template in ${this.toString()}`
             )
           )
-        return await this.show(newSheetId)
-          .flush()
-          .map(() => newSheetId)
+        return getSheetId(template)
       })
+      .andThen((templateId) => this.assertFlushed().map(() => templateId))
+      .andThen((templateId) => this.dupe(templateId, sheetName).flush())
+      .andThen((res) => {
+        const sheet = res?.at(0)?.duplicateSheet
+        if (sheet == null)
+          return err(
+            MyError.unreachable(
+              `Unable to create \`${sheetName}\` in ${this.toString()}`
+            )
+          )
+        return getSheetId(sheet)
+      })
+      .andThen((sheetId) =>
+        this.show(sheetId)
+          .flush()
+          .map(() => sheetId)
+      )
   }
 
   /**

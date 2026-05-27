@@ -1,6 +1,5 @@
 import { sheets_v4 } from "@googleapis/sheets"
-import { unexpectedMyError } from "~misc/resultExtras.js"
-import { err, ok } from "always-panic"
+import { err, MyError, ok } from "always-panic"
 import { myGoogleInfo } from "../auth/auth.js"
 import type { GFolder } from "../folder/folder.js"
 import { GSheetError, GSheetErrorCode } from "./error.js"
@@ -140,6 +139,7 @@ export class GSpreadsheet {
    */
   flush() {
     return GSheetError.try(async () => {
+      if (this.requests.length === 0) return ok([])
       const requests = this.requests
       this.requests = []
       const response = await sheets.spreadsheets.batchUpdate({
@@ -148,6 +148,22 @@ export class GSpreadsheet {
       })
       return ok(response.data.replies)
     })
+  }
+
+  /**
+   * Assert that the requests have been flushed.
+   * @returns `this`
+   * @throws never
+   */
+  assertFlushed() {
+    if (this.requests.length > 0)
+      return err(
+        GSheetError.new(
+          GSheetErrorCode.FORGOT_TO_FLUSH,
+          `Forgot to flush in ${this.toString()}`
+        )
+      )
+    return ok(this)
   }
 
   /**
@@ -248,7 +264,7 @@ export class GSpreadsheet {
       const output = res.data.valueRanges
       if (output != null) return ok(output)
       return err(
-        unexpectedMyError(
+        MyError.unreachable(
           `Null reading \`${ranges.join(", ")}\` in ${this.toString()}`
         )
       )

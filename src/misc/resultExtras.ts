@@ -1,6 +1,4 @@
-import { MyError, MyErrorCode, err, ok, type Result } from "always-panic"
-import type { ToLog } from "./cli.js"
-import { fail } from "./cli.js"
+import { err, ok, type Result } from "always-panic"
 
 export function parseUrlResult(url: string): Result<URL, Error> {
   try {
@@ -9,11 +7,4 @@ export function parseUrlResult(url: string): Result<URL, Error> {
     if (e instanceof Error) return err(e)
     return err(new Error(String(e)))
   }
-}
-
-export function unexpectedMyError(
-  ...toLog: ToLog
-): MyError<MyErrorCode.OTHERS> {
-  fail(...toLog)
-  return new MyError(MyErrorCode.OTHERS, "Unexpected error.")
 }

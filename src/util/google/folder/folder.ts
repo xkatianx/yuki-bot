@@ -1,6 +1,5 @@
+import { err, MyError, ok } from "always-panic"
 import { google } from "googleapis"
-import { unexpectedMyError } from "~misc/resultExtras.js"
-import { err, ok } from "always-panic"
 import { myGoogleInfo } from "../auth/auth.js"
 import { GSpreadsheet } from "../sheet/sheet.js"
 import { GFolderError, GFolderErrorCode } from "./error.js"
@@ -263,8 +262,14 @@ export class GFolder {
           name: rename ?? null,
         },
       })
-      const id = ss.data.id
-      if (id == null) return err(unexpectedMyError(ss))
+      const data = ss.data
+      const id = data.id
+      if (id == null)
+        return err(
+          MyError.unreachable(
+            `data.id should not be null. data:\n${JSON.stringify(data)}`
+          )
+        )
       return ok(new GSpreadsheet(id))
     })
   }

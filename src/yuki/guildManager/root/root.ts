@@ -4,12 +4,12 @@
 // so the bot can be hosted across different computers.
 // The root folder is set by pinning a message in any discord channel.
 
+import { err, MyError, MyErrorBase, ok } from "always-panic"
 import type { Guild } from "discord.js"
 import { warn } from "~misc/cli.js"
 import { displayCode, formatString, parseString } from "~misc/format.js"
-import { parseUrlResult, unexpectedMyError } from "~misc/resultExtras.js"
+import { parseUrlResult } from "~misc/resultExtras.js"
 import { getPinned, PinFormat } from "~util/discord/util/pin.js"
-import { MyErrorBase, err, ok } from "always-panic"
 import type { Yuki } from "../../yuki.js"
 import { RootFolder } from "./rootFolder.js"
 
@@ -37,12 +37,10 @@ export function getRootFolderUrl(bot: Yuki, guild: Guild) {
     const url = parseString(PinFormat.Root, lastMessage.message.content)?.get(
       "url"
     )
+    // TODO: this may need further inspection
     if (url == null)
       return err(
-        unexpectedMyError(
-          "Wrong root url format in discord pinned message.",
-          lastMessage
-        )
+        MyError.unreachable("Wrong root url format in discord pinned message.")
       )
     return ok(url)
   })

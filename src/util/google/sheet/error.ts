@@ -9,6 +9,7 @@ export enum GSheetErrorCode {
   NO_CONTENTS,
   DUPLICATE_SHEET,
   UNKNOWN,
+  FORGOT_TO_FLUSH,
 }
 
 export class GSheetError<T extends GSheetErrorCode> extends MyErrorBase<T> {
@@ -42,6 +43,7 @@ export class GSheetError<T extends GSheetErrorCode> extends MyErrorBase<T> {
 
 export enum PuzzleSheetErrorCode {
   MISSING_TEMPLATE,
+  placeholder,
 }
 
 export class PuzzleSheetError<
@@ -62,6 +64,7 @@ export class PuzzleSheetError<
 
 export enum SettingSheetErrorCode {
   UNKNOWN_VERSION,
+  placeholder,
 }
 
 export class SettingSheetError<
