@@ -191,7 +191,6 @@ describe("env", () => {
       expect(env.DC).toHaveProperty("ID")
       expect(env.DC).toHaveProperty("TOKEN")
       expect(env.DC).toHaveProperty("GID")
-      expect(env.DC).toHaveProperty("CID")
     })
 
     it("should have correct types for all properties", async () => {
@@ -219,7 +218,10 @@ describe("env", () => {
 
       expect(configMock).toHaveBeenCalledTimes(2)
       expect(configMock).toHaveBeenNthCalledWith(1, { path: ".env" })
-      expect(configMock).toHaveBeenNthCalledWith(2, { path: ".env.local" })
+      expect(configMock).toHaveBeenNthCalledWith(2, {
+        path: ".env.local",
+        override: true,
+      })
     })
   })
 })
