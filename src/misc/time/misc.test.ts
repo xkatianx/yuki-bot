@@ -1,14 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, jest } from "bun:test"
 import { sleep } from "./misc.js"
 
-let timer: ReturnType<typeof vi.useFakeTimers>
-
 beforeEach(() => {
-  timer = vi.useFakeTimers()
+  jest.useFakeTimers()
 })
 
 afterEach(() => {
-  timer.useRealTimers()
+  jest.useRealTimers()
 })
 
 describe("misc", () => {
@@ -21,96 +19,92 @@ describe("misc", () => {
         resolved = true
       })
 
-      // Initially not resolved
       expect(resolved).toBe(false)
 
-      // Fast-forward 500ms - still not resolved
-      await timer.advanceTimersByTimeAsync(500)
+      jest.advanceTimersByTime(500)
       expect(resolved).toBe(false)
 
-      // Fast-forward another 500ms - should be resolved
-      await timer.advanceTimersByTimeAsync(500)
+      jest.advanceTimersByTime(500)
       await sleepPromise
       expect(resolved).toBe(true)
     })
 
-    it("should handle zero milliseconds", async () => {
+    it("should handle zero milliseconds", () => {
       const sleepPromise = sleep(0)
-      await timer.advanceTimersByTimeAsync(0)
-      await expect(sleepPromise).resolves.toBeUndefined()
+      jest.advanceTimersByTime(0)
+      expect(sleepPromise).resolves.toBeUndefined()
     })
 
-    it("should handle small millisecond values", async () => {
+    it("should handle small millisecond values", () => {
       const sleepPromise = sleep(10)
-      await timer.advanceTimersByTimeAsync(10)
-      await expect(sleepPromise).resolves.toBeUndefined()
+      jest.advanceTimersByTime(10)
+      expect(sleepPromise).resolves.toBeUndefined()
     })
 
-    it("should handle large millisecond values", async () => {
+    it("should handle large millisecond values", () => {
       const sleepPromise = sleep(5000)
-      await timer.advanceTimersByTimeAsync(5000)
-      await expect(sleepPromise).resolves.toBeUndefined()
+      jest.advanceTimersByTime(5000)
+      expect(sleepPromise).resolves.toBeUndefined()
     })
 
-    it("should handle fractional milliseconds", async () => {
+    it("should handle fractional milliseconds", () => {
       const sleepPromise = sleep(1234.56)
-      await timer.advanceTimersByTimeAsync(1234.56)
-      await expect(sleepPromise).resolves.toBeUndefined()
+      jest.advanceTimersByTime(1234.56)
+      expect(sleepPromise).resolves.toBeUndefined()
     })
 
-    it("should handle 30 seconds", async () => {
+    it("should handle 30 seconds", () => {
       const sleepPromise = sleep(30000)
-      await timer.advanceTimersByTimeAsync(30000)
-      await expect(sleepPromise).resolves.toBeUndefined()
+      jest.advanceTimersByTime(30000)
+      expect(sleepPromise).resolves.toBeUndefined()
     })
 
-    it("should handle 60 seconds (1 minute)", async () => {
+    it("should handle 60 seconds (1 minute)", () => {
       const sleepPromise = sleep(60000)
-      await timer.advanceTimersByTimeAsync(60000)
-      await expect(sleepPromise).resolves.toBeUndefined()
+      jest.advanceTimersByTime(60000)
+      expect(sleepPromise).resolves.toBeUndefined()
     })
 
-    it("should handle 5 minutes", async () => {
+    it("should handle 5 minutes", () => {
       const sleepPromise = sleep(300000)
-      await timer.advanceTimersByTimeAsync(300000)
-      await expect(sleepPromise).resolves.toBeUndefined()
+      jest.advanceTimersByTime(300000)
+      expect(sleepPromise).resolves.toBeUndefined()
     })
 
-    it("should handle 1 hour", async () => {
+    it("should handle 1 hour", () => {
       const sleepPromise = sleep(3600000)
-      await timer.advanceTimersByTimeAsync(3600000)
-      await expect(sleepPromise).resolves.toBeUndefined()
+      jest.advanceTimersByTime(3600000)
+      expect(sleepPromise).resolves.toBeUndefined()
     })
 
-    it("should handle very large values (24 hours)", async () => {
+    it("should handle very large values (24 hours)", () => {
       const sleepPromise = sleep(86400000)
-      await timer.advanceTimersByTimeAsync(86400000)
-      await expect(sleepPromise).resolves.toBeUndefined()
+      jest.advanceTimersByTime(86400000)
+      expect(sleepPromise).resolves.toBeUndefined()
     })
 
-    it("should handle negative milliseconds (resolves immediately)", async () => {
+    it("should handle negative milliseconds (resolves immediately)", () => {
       const sleepPromise = sleep(-100)
-      // Negative values cause setTimeout to fire immediately
-      await timer.advanceTimersByTimeAsync(0)
-      await expect(sleepPromise).resolves.toBeUndefined()
+      jest.advanceTimersByTime(0)
+      expect(sleepPromise).resolves.toBeUndefined()
     })
 
-    it("should handle small negative values", async () => {
+    it("should handle small negative values", () => {
       const sleepPromise = sleep(-10)
-      await timer.advanceTimersByTimeAsync(0)
-      await expect(sleepPromise).resolves.toBeUndefined()
+      jest.advanceTimersByTime(0)
+      expect(sleepPromise).resolves.toBeUndefined()
     })
 
-    it("should handle large negative values", async () => {
+    it("should handle large negative values", () => {
       const sleepPromise = sleep(-5000)
-      await timer.advanceTimersByTimeAsync(0)
-      await expect(sleepPromise).resolves.toBeUndefined()
+      jest.advanceTimersByTime(0)
+      expect(sleepPromise).resolves.toBeUndefined()
     })
 
-    it("should handle very large negative values (1 hour)", async () => {
+    it("should handle very large negative values (1 hour)", () => {
       const sleepPromise = sleep(-3600000)
-      await timer.advanceTimersByTimeAsync(0)
-      await expect(sleepPromise).resolves.toBeUndefined()
+      jest.advanceTimersByTime(0)
+      expect(sleepPromise).resolves.toBeUndefined()
     })
   })
 })

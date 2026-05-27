@@ -1,5 +1,5 @@
 import { createServer } from "http"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it } from "bun:test"
 import {
   YukiBrowser,
   YukiBrowserError,

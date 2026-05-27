@@ -14,6 +14,6 @@
     "resolvePackageJsonExports": true,
     "resolvePackageJsonImports": true
   },
-  "include": ["eslint.config.js", "vitest.config.ts"],
+  "include": ["eslint.config.js"],
   "exclude": ["node_modules", "dist"]
 }

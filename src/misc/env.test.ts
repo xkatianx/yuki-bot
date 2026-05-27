@@ -1,131 +1,179 @@
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test"
 import type { DotenvConfigOptions } from "dotenv"
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import type { env } from "./env"
 
-// Mock fatal before any imports
-const fatalMock = vi.fn().mockImplementation((message: string) => {
+const fatalMock = mock((message: string) => {
   throw new Error(message)
 })
 
-// Mock dotenv config function
-const configMock = vi.fn((_options?: DotenvConfigOptions) => {
+const configMock = mock((_options?: DotenvConfigOptions) => {
   return {}
 })
 
-// Mock dotenv to prevent loading .env files during tests
-vi.mock("dotenv", () => ({
+await mock.module("dotenv", () => ({
   config: configMock,
 }))
 
-vi.mock("./cli.js", () => ({
+await mock.module("./cli.js", () => ({
   fatal: fatalMock,
 }))
 
+const trackedEnvKeys = [
+  "TEMPLATE_SETTINGS_SHEET_NAME",
+  "TEMPLATE_SETTINGS_SHEET_ID",
+  "TEMPLATE_PUZZLES_SHEET_NAME",
+  "TEMPLATE_PUZZLES_SHEET_ID",
+  "DISCORD_BOT_ID",
+  "DISCORD_BOT_TOKEN",
+  "DISCORD_SERVER_ID",
+] as const
+
+const savedEnv = new Map<string, string | undefined>()
+
+function clearTrackedEnv() {
+  for (const key of trackedEnvKeys) {
+    if (!savedEnv.has(key)) {
+      savedEnv.set(key, process.env[key])
+    }
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete process.env[key]
+  }
+}
+
+function stubEnv(vars: Record<string, string>) {
+  for (const [key, value] of Object.entries(vars)) {
+    if (!savedEnv.has(key)) {
+      savedEnv.set(key, process.env[key])
+    }
+    process.env[key] = value
+  }
+}
+
+function unstubAllEnvs() {
+  for (const key of trackedEnvKeys) {
+    if (!savedEnv.has(key)) continue
+    const value = savedEnv.get(key)
+    if (value === undefined) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete process.env[key]
+    } else {
+      process.env[key] = value
+    }
+    savedEnv.delete(key)
+  }
+}
+
+async function importEnv() {
+  return import(`./env.js?test=${Bun.randomUUIDv7()}`) as Promise<{
+    env: typeof env
+  }>
+}
+
 describe("env", () => {
   beforeEach(() => {
-    // Reset modules to ensure fresh imports
-    vi.resetModules()
-    // Reset the mock call history
     fatalMock.mockClear()
     configMock.mockClear()
   })
 
   afterEach(() => {
-    // Restore environment
-    vi.unstubAllEnvs()
-    vi.resetModules()
+    unstubAllEnvs()
   })
 
   describe("required environment variables", () => {
-    it("should throw fatal error when TEMPLATE_SETTINGS_SHEET_NAME is missing", async () => {
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_ID", "test-id")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_NAME", "test-puzzles")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_ID", "test-puzzles-id")
-      vi.stubEnv("DISCORD_BOT_ID", "test-client-id")
-      vi.stubEnv("DISCORD_BOT_TOKEN", "test-token")
+    beforeEach(() => {
+      clearTrackedEnv()
+    })
 
-      await expect(async () => {
-        await import("./env.js")
-      }).rejects.toThrow()
+    it("should throw fatal error when TEMPLATE_SETTINGS_SHEET_NAME is missing", () => {
+      stubEnv({
+        TEMPLATE_SETTINGS_SHEET_ID: "test-id",
+        TEMPLATE_PUZZLES_SHEET_NAME: "test-puzzles",
+        TEMPLATE_PUZZLES_SHEET_ID: "test-puzzles-id",
+        DISCORD_BOT_ID: "test-client-id",
+        DISCORD_BOT_TOKEN: "test-token",
+      })
+
+      expect(importEnv()).rejects.toThrow()
 
       expect(fatalMock).toHaveBeenCalledWith(
         'in .env: missing "TEMPLATE_SETTINGS_SHEET_NAME"'
       )
     })
 
-    it("should throw fatal error when TEMPLATE_SETTINGS_SHEET_ID is missing", async () => {
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_NAME", "test-settings")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_NAME", "test-puzzles")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_ID", "test-puzzles-id")
-      vi.stubEnv("DISCORD_BOT_ID", "test-client-id")
-      vi.stubEnv("DISCORD_BOT_TOKEN", "test-token")
+    it("should throw fatal error when TEMPLATE_SETTINGS_SHEET_ID is missing", () => {
+      stubEnv({
+        TEMPLATE_SETTINGS_SHEET_NAME: "test-settings",
+        TEMPLATE_PUZZLES_SHEET_NAME: "test-puzzles",
+        TEMPLATE_PUZZLES_SHEET_ID: "test-puzzles-id",
+        DISCORD_BOT_ID: "test-client-id",
+        DISCORD_BOT_TOKEN: "test-token",
+      })
 
-      await expect(async () => {
-        await import("./env.js")
-      }).rejects.toThrow()
+      expect(importEnv()).rejects.toThrow()
 
       expect(fatalMock).toHaveBeenCalledWith(
         'in .env: missing "TEMPLATE_SETTINGS_SHEET_ID"'
       )
     })
 
-    it("should throw fatal error when TEMPLATE_PUZZLES_SHEET_NAME is missing", async () => {
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_NAME", "test-settings")
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_ID", "test-id")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_ID", "test-puzzles-id")
-      vi.stubEnv("DISCORD_BOT_ID", "test-client-id")
-      vi.stubEnv("DISCORD_BOT_TOKEN", "test-token")
+    it("should throw fatal error when TEMPLATE_PUZZLES_SHEET_NAME is missing", () => {
+      stubEnv({
+        TEMPLATE_SETTINGS_SHEET_NAME: "test-settings",
+        TEMPLATE_SETTINGS_SHEET_ID: "test-id",
+        TEMPLATE_PUZZLES_SHEET_ID: "test-puzzles-id",
+        DISCORD_BOT_ID: "test-client-id",
+        DISCORD_BOT_TOKEN: "test-token",
+      })
 
-      await expect(async () => {
-        await import("./env.js")
-      }).rejects.toThrow()
+      expect(importEnv()).rejects.toThrow()
 
       expect(fatalMock).toHaveBeenCalledWith(
         'in .env: missing "TEMPLATE_PUZZLES_SHEET_NAME"'
       )
     })
 
-    it("should throw fatal error when TEMPLATE_PUZZLES_SHEET_ID is missing", async () => {
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_NAME", "test-settings")
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_ID", "test-id")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_NAME", "test-puzzles")
-      vi.stubEnv("DISCORD_BOT_ID", "test-client-id")
-      vi.stubEnv("DISCORD_BOT_TOKEN", "test-token")
+    it("should throw fatal error when TEMPLATE_PUZZLES_SHEET_ID is missing", () => {
+      stubEnv({
+        TEMPLATE_SETTINGS_SHEET_NAME: "test-settings",
+        TEMPLATE_SETTINGS_SHEET_ID: "test-id",
+        TEMPLATE_PUZZLES_SHEET_NAME: "test-puzzles",
+        DISCORD_BOT_ID: "test-client-id",
+        DISCORD_BOT_TOKEN: "test-token",
+      })
 
-      await expect(async () => {
-        await import("./env.js")
-      }).rejects.toThrow()
+      expect(importEnv()).rejects.toThrow()
 
       expect(fatalMock).toHaveBeenCalledWith(
         'in .env: missing "TEMPLATE_PUZZLES_SHEET_ID"'
       )
     })
 
-    it("should throw fatal error when DISCORD_BOT_ID is missing", async () => {
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_NAME", "test-settings")
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_ID", "test-id")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_NAME", "test-puzzles")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_ID", "test-puzzles-id")
-      vi.stubEnv("DISCORD_BOT_TOKEN", "test-token")
+    it("should throw fatal error when DISCORD_BOT_ID is missing", () => {
+      stubEnv({
+        TEMPLATE_SETTINGS_SHEET_NAME: "test-settings",
+        TEMPLATE_SETTINGS_SHEET_ID: "test-id",
+        TEMPLATE_PUZZLES_SHEET_NAME: "test-puzzles",
+        TEMPLATE_PUZZLES_SHEET_ID: "test-puzzles-id",
+        DISCORD_BOT_TOKEN: "test-token",
+      })
 
-      await expect(async () => {
-        await import("./env.js")
-      }).rejects.toThrow()
+      expect(importEnv()).rejects.toThrow()
 
       expect(fatalMock).toHaveBeenCalledWith(
         'in .env: missing "DISCORD_BOT_ID"'
       )
     })
 
-    it("should throw fatal error when DISCORD_BOT_TOKEN is missing", async () => {
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_NAME", "test-settings")
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_ID", "test-id")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_NAME", "test-puzzles")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_ID", "test-puzzles-id")
-      vi.stubEnv("DISCORD_BOT_ID", "test-client-id")
+    it("should throw fatal error when DISCORD_BOT_TOKEN is missing", () => {
+      stubEnv({
+        TEMPLATE_SETTINGS_SHEET_NAME: "test-settings",
+        TEMPLATE_SETTINGS_SHEET_ID: "test-id",
+        TEMPLATE_PUZZLES_SHEET_NAME: "test-puzzles",
+        TEMPLATE_PUZZLES_SHEET_ID: "test-puzzles-id",
+        DISCORD_BOT_ID: "test-client-id",
+      })
 
-      await expect(async () => {
-        await import("./env.js")
-      }).rejects.toThrow()
+      expect(importEnv()).rejects.toThrow()
 
       expect(fatalMock).toHaveBeenCalledWith(
         'in .env: missing "DISCORD_BOT_TOKEN"'
@@ -134,15 +182,21 @@ describe("env", () => {
   })
 
   describe("optional environment variables", () => {
-    it("should work with all required variables and no optional variables", async () => {
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_NAME", "test-settings")
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_ID", "test-id")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_NAME", "test-puzzles")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_ID", "test-puzzles-id")
-      vi.stubEnv("DISCORD_BOT_ID", "test-client-id")
-      vi.stubEnv("DISCORD_BOT_TOKEN", "test-token")
+    beforeEach(() => {
+      clearTrackedEnv()
+    })
 
-      const { env } = await import("./env.js")
+    it("should work with all required variables and no optional variables", async () => {
+      stubEnv({
+        TEMPLATE_SETTINGS_SHEET_NAME: "test-settings",
+        TEMPLATE_SETTINGS_SHEET_ID: "test-id",
+        TEMPLATE_PUZZLES_SHEET_NAME: "test-puzzles",
+        TEMPLATE_PUZZLES_SHEET_ID: "test-puzzles-id",
+        DISCORD_BOT_ID: "test-client-id",
+        DISCORD_BOT_TOKEN: "test-token",
+      })
+
+      const { env } = await importEnv()
 
       expect(env.settingsName).toBe("test-settings")
       expect(env.settingsId).toBe("test-id")
@@ -155,15 +209,17 @@ describe("env", () => {
     })
 
     it("should include optional DISCORD_SERVER_ID when provided", async () => {
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_NAME", "test-settings")
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_ID", "test-id")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_NAME", "test-puzzles")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_ID", "test-puzzles-id")
-      vi.stubEnv("DISCORD_BOT_ID", "test-client-id")
-      vi.stubEnv("DISCORD_SERVER_ID", "test-server-id")
-      vi.stubEnv("DISCORD_BOT_TOKEN", "test-token")
+      stubEnv({
+        TEMPLATE_SETTINGS_SHEET_NAME: "test-settings",
+        TEMPLATE_SETTINGS_SHEET_ID: "test-id",
+        TEMPLATE_PUZZLES_SHEET_NAME: "test-puzzles",
+        TEMPLATE_PUZZLES_SHEET_ID: "test-puzzles-id",
+        DISCORD_BOT_ID: "test-client-id",
+        DISCORD_SERVER_ID: "test-server-id",
+        DISCORD_BOT_TOKEN: "test-token",
+      })
 
-      const { env } = await import("./env.js")
+      const { env } = await importEnv()
 
       expect(env.DC.GID).toBe("test-server-id")
       expect(fatalMock).not.toHaveBeenCalled()
@@ -172,16 +228,19 @@ describe("env", () => {
 
   describe("env object structure", () => {
     beforeEach(() => {
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_NAME", "test-settings")
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_ID", "test-id")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_NAME", "test-puzzles")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_ID", "test-puzzles-id")
-      vi.stubEnv("DISCORD_BOT_ID", "test-client-id")
-      vi.stubEnv("DISCORD_BOT_TOKEN", "test-token")
+      clearTrackedEnv()
+      stubEnv({
+        TEMPLATE_SETTINGS_SHEET_NAME: "test-settings",
+        TEMPLATE_SETTINGS_SHEET_ID: "test-id",
+        TEMPLATE_PUZZLES_SHEET_NAME: "test-puzzles",
+        TEMPLATE_PUZZLES_SHEET_ID: "test-puzzles-id",
+        DISCORD_BOT_ID: "test-client-id",
+        DISCORD_BOT_TOKEN: "test-token",
+      })
     })
 
     it("should export env object with correct structure", async () => {
-      const { env } = await import("./env.js")
+      const { env } = await importEnv()
 
       expect(env).toHaveProperty("settingsName")
       expect(env).toHaveProperty("settingsId")
@@ -194,7 +253,7 @@ describe("env", () => {
     })
 
     it("should have correct types for all properties", async () => {
-      const { env } = await import("./env.js")
+      const { env } = await importEnv()
 
       expect(typeof env.settingsName).toBe("string")
       expect(typeof env.settingsId).toBe("string")
@@ -206,15 +265,21 @@ describe("env", () => {
   })
 
   describe("dotenv config", () => {
-    it("should call dotenv config with .env and .env.local in order", async () => {
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_NAME", "test-settings")
-      vi.stubEnv("TEMPLATE_SETTINGS_SHEET_ID", "test-id")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_NAME", "test-puzzles")
-      vi.stubEnv("TEMPLATE_PUZZLES_SHEET_ID", "test-puzzles-id")
-      vi.stubEnv("DISCORD_BOT_ID", "test-client-id")
-      vi.stubEnv("DISCORD_BOT_TOKEN", "test-token")
+    beforeEach(() => {
+      clearTrackedEnv()
+    })
 
-      await import("./env.js")
+    it("should call dotenv config with .env and .env.local in order", async () => {
+      stubEnv({
+        TEMPLATE_SETTINGS_SHEET_NAME: "test-settings",
+        TEMPLATE_SETTINGS_SHEET_ID: "test-id",
+        TEMPLATE_PUZZLES_SHEET_NAME: "test-puzzles",
+        TEMPLATE_PUZZLES_SHEET_ID: "test-puzzles-id",
+        DISCORD_BOT_ID: "test-client-id",
+        DISCORD_BOT_TOKEN: "test-token",
+      })
+
+      await importEnv()
 
       expect(configMock).toHaveBeenCalledTimes(2)
       expect(configMock).toHaveBeenNthCalledWith(1, { path: ".env" })

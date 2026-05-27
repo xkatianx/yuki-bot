@@ -38,7 +38,7 @@ class MyBrowser implements AsyncDisposable {
     return MyError.try(async () => {
       const args = env.puppeteerLaunchArgs?.split(" ") ?? []
       const b = await puppeteer.launch({
-        pipe: true,
+        pipe: false,
         args,
       })
       return ok(new MyBrowser(b))

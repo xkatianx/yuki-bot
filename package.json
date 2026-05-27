@@ -3,20 +3,20 @@
   "version": "2.0.0",
   "description": "A discord bot for managing google spreadsheets of puzzlehunts.",
   "scripts": {
-    "prepare": "puppeteer browsers install chrome",
-    "dev": "tsx watch src/index.ts",
+    "prepare": "bun x puppeteer browsers install chrome",
+    "dev": "bun --watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
-    "start": "tsx src/index.ts",
-    "slash": "tsx src/yuki/discord/deploy.ts",
+    "start": "bun src/index.ts",
+    "slash": "bun src/yuki/discord/deploy.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest",
-    "test:coverage": "vitest --coverage"
+    "test": "bun test --no-env-file",
+    "test:coverage": "bun test --no-env-file --coverage"
   },
   "engines": {
-    "node": ">=24.0.0"
+    "bun": ">=1.3.0"
   },
   "type": "module",
   "author": "katian",
@@ -35,16 +35,13 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
-    "@types/node": "^24.10.1",
-    "@vitest/coverage-v8": "^4.0.0",
+    "@types/bun": "^1.3.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "gaxios": "^7.1.3",
     "prettier": "^3.7.2",
-    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.48.0",
-    "vitest": "^4.0.0"
+    "typescript-eslint": "^8.48.0"
   }
 }

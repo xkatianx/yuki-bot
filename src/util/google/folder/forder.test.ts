@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "bun:test"
 import { env } from "~misc/env.js"
 import { GSpreadsheet } from "../sheet/sheet.js"
 import { GFolderError, GFolderErrorCode } from "./error.js"

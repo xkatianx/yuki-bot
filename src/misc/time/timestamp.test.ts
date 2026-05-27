@@ -1,15 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, jest } from "bun:test"
 import { Temporal } from "./temporal.js"
 import { YYYY$MM, discordTime, jpNow, now, twNow } from "./timestamp.js"
 
-let timer: ReturnType<typeof vi.useFakeTimers>
-
 beforeEach(() => {
-  timer = vi.useFakeTimers()
+  jest.useFakeTimers()
 })
 
 afterEach(() => {
-  timer.useRealTimers()
+  jest.useRealTimers()
 })
 
 describe("timestamp", () => {
@@ -17,13 +15,13 @@ describe("timestamp", () => {
     const in1 = "2022-09-01T00:00:00"
     const out1 = "2022/09"
     it(`should return '${out1}' if it is currently ${in1}`, () => {
-      timer.setSystemTime(new Date(in1))
+      jest.setSystemTime(new Date(in1))
       expect(YYYY$MM()).toBe(out1)
     })
     const in2 = "2022-08-31T23:59:59"
     const out2 = "2022/08"
     it(`should return '${out2}' if it is currently ${in2}`, () => {
-      timer.setSystemTime(new Date(in2))
+      jest.setSystemTime(new Date(in2))
       expect(YYYY$MM()).toBe(out2)
     })
   })
@@ -32,13 +30,13 @@ describe("timestamp", () => {
     const in1 = "2022-09-05T14:40:00+08:00"
     const out1 = "2022/9/5 下午2:40:00"
     it(`should return '${out1}' if it is currently ${in1}`, () => {
-      timer.setSystemTime(new Date(in1))
+      jest.setSystemTime(new Date(in1))
       expect(twNow()).toBe(out1)
     })
     const in2 = "1999-10-10T16:34:56Z"
     const out2 = "1999/10/11 上午12:34:56"
     it(`should return '${out2}' if it is currently ${in2}`, () => {
-      timer.setSystemTime(new Date(in2))
+      jest.setSystemTime(new Date(in2))
       expect(twNow()).toBe(out2)
     })
   })
@@ -47,13 +45,13 @@ describe("timestamp", () => {
     const in1 = "2022-09-05T14:40:00+08:00"
     const out1 = "2022/9/5 15:40:00"
     it(`should return '${out1}' if it is currently ${in1}`, () => {
-      timer.setSystemTime(new Date(in1))
+      jest.setSystemTime(new Date(in1))
       expect(jpNow()).toBe(out1)
     })
     const in2 = "1999-10-10T15:34:56Z"
     const out2 = "1999/10/11 0:34:56"
     it(`should return '${out2}' if it is currently ${in2}`, () => {
-      timer.setSystemTime(new Date(in2))
+      jest.setSystemTime(new Date(in2))
       expect(jpNow()).toBe(out2)
     })
   })
@@ -61,23 +59,18 @@ describe("timestamp", () => {
   describe("now", () => {
     it("should respect timezone and locale", () => {
       const time = "2022-09-05T14:40:00Z"
-      timer.setSystemTime(new Date(time))
+      jest.setSystemTime(new Date(time))
 
-      // Taiwan
       expect(now("Asia/Taipei", "zh-tw")).toBe("2022/9/5 下午10:40:00")
-      // Japan
       expect(now("Asia/Tokyo", "ja")).toBe("2022/9/5 23:40:00")
-      // US
       expect(now("America/New_York", "en-US")).toBe("9/5/2022, 10:40:00 AM")
     })
 
     it("should return ISO format with - when locale is missing", () => {
       const time = "2022-09-05T14:40:00Z"
-      timer.setSystemTime(new Date(time))
+      jest.setSystemTime(new Date(time))
 
-      // Taiwan: UTC+8 -> 22:40:00
       expect(now("Asia/Taipei")).toBe("2022-09-05T22:40:00+08:00")
-      // UTC
       expect(now("UTC")).toBe("2022-09-05T14:40:00+00:00")
     })
   })
@@ -116,7 +109,6 @@ describe("timestamp", () => {
       const result1 = discordTime(instant1, "R")
       const result2 = discordTime(instant2, "R")
 
-      // Same instant should produce same timestamp
       expect(result1).toBe(result2)
     })
 

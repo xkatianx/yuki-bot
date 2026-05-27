@@ -1,6 +1,5 @@
 ## Create a Google Service
 
-
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 1. Create a new project or select an existing project
 1. Enable the following APIs:

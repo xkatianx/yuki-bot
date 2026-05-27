@@ -4,17 +4,16 @@ import {
   describe,
   expect,
   it,
-  vi,
+  spyOn,
   type Mock,
-} from "vitest"
+} from "bun:test"
 import { debug, done, fail, fatal, info, warn } from "./cli.js"
 
 describe("cli", () => {
-  let consoleLogSpy: Mock
+  let consoleLogSpy: Mock<typeof console.log>
 
   beforeEach(() => {
-    // Mock console.log to capture calls
-    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {
+    consoleLogSpy = spyOn(console, "log").mockImplementation(() => {
       // Do nothing
     })
   })
@@ -29,7 +28,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[1]).toContain("DEBUG") // DEBUG colored prefix
+      expect(callArgs?.[1]).toContain("DEBUG")
       expect(callArgs?.[2]).toBe("test message")
     })
 
@@ -38,7 +37,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[1]).toContain("DEBUG") // DEBUG colored prefix
+      expect(callArgs?.[1]).toContain("DEBUG")
       expect(callArgs?.[2]).toBe("message")
       expect(callArgs?.[3]).toBe(123)
       expect(callArgs?.[4]).toEqual({ key: "value" })
@@ -51,7 +50,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[1]).toContain("DONE") // DONE colored prefix
+      expect(callArgs?.[1]).toContain("DONE")
       expect(callArgs?.[2]).toBe("success message")
     })
 
@@ -60,7 +59,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[1]).toContain("DONE") // DONE colored prefix
+      expect(callArgs?.[1]).toContain("DONE")
       expect(callArgs?.[2]).toBe("task")
       expect(callArgs?.[3]).toBe("completed")
     })
@@ -72,7 +71,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[1]).toContain("INFO") // INFO colored prefix
+      expect(callArgs?.[1]).toContain("INFO")
       expect(callArgs?.[2]).toBe("info message")
     })
 
@@ -81,7 +80,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[1]).toContain("INFO") // INFO colored prefix
+      expect(callArgs?.[1]).toContain("INFO")
       expect(callArgs?.[2]).toBe("info")
       expect(callArgs?.[3]).toBe(42)
     })
@@ -93,7 +92,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[1]).toContain("WARN") // WARN colored prefix
+      expect(callArgs?.[1]).toContain("WARN")
       expect(callArgs?.[2]).toBe("warning message")
     })
 
@@ -102,7 +101,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[1]).toContain("WARN") // WARN colored prefix
+      expect(callArgs?.[1]).toContain("WARN")
       expect(callArgs?.[2]).toBe("warning")
       expect(callArgs?.[3]).toBe("deprecated")
     })
@@ -114,7 +113,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[1]).toContain("FAIL") // FAIL colored prefix
+      expect(callArgs?.[1]).toContain("FAIL")
       expect(callArgs?.[2]).toBe("error message")
     })
 
@@ -123,7 +122,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[1]).toContain("FAIL") // FAIL colored prefix
+      expect(callArgs?.[1]).toContain("FAIL")
       expect(callArgs?.[2]).toBe("error")
       expect(callArgs?.[3]).toBe("occurred")
     })
@@ -135,7 +134,7 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[1]).toContain("FAIL") // FAIL colored prefix
+      expect(callArgs?.[1]).toContain("FAIL")
       expect(callArgs?.[2]).toBe("fatal error")
     })
 
@@ -144,18 +143,15 @@ describe("cli", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledTimes(1)
       const callArgs = consoleLogSpy.mock.calls[0]
-      expect(callArgs?.[1]).toContain("FAIL") // FAIL colored prefix
+      expect(callArgs?.[1]).toContain("FAIL")
       expect(callArgs?.[2]).toBe("fatal")
       expect(callArgs?.[3]).toBe("error")
       expect(callArgs?.[4]).toBe(500)
     })
 
     it("should have return type never", () => {
-      // TypeScript compile-time test - this should compile
-      // If fatal didn't have return type never, this would be a type error
       const fn = (): string => {
         fatal("test")
-        // This line should be unreachable according to TypeScript
         return "unreachable"
       }
       expect(() => fn()).toThrow("Unexpected failure.")
