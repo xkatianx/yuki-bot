@@ -1,8 +1,4 @@
-import { config } from "dotenv"
 import { fatal } from "./cli.js"
-
-config({ path: ".env" })
-config({ path: ".env.local", override: true })
 
 function required(name: string): string {
   return process.env[name] ?? fatal(`in .env: missing "${name}"`)
@@ -40,4 +36,9 @@ export const env = {
     /** Discord Bot TOKEN */
     TOKEN: required("DISCORD_BOT_TOKEN"),
   },
+}
+
+export const envUtils = {
+  required,
+  optional,
 }

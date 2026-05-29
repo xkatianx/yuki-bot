@@ -28,7 +28,6 @@
     "always-panic": "github:xkatianx/always-panic#v0.3.0",
     "chalk": "^5.6.2",
     "discord.js": "^14.25.1",
-    "dotenv": "^17.2.3",
     "google-auth-library": "^10.5.0",
     "googleapis": "^166.0.0",
     "puppeteer": "^24.31.0"
