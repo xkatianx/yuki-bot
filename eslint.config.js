@@ -26,6 +26,7 @@ export default defineConfig(
     rules: {
       ...prettierConfig.rules,
       "prettier/prettier": "error",
+      "@typescript-eslint/no-misused-new": "off",
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-unused-vars": [
         "error",

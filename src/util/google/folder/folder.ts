@@ -1,6 +1,7 @@
 import { err, MyError, ok } from "always-panic"
 import { google } from "googleapis"
 import { myGoogleInfo } from "../auth/auth.js"
+import { escapeDriveQuery } from "../misc.js"
 import { GSpreadsheet } from "../sheet/sheet.js"
 import { GFolderError, GFolderErrorCode } from "./error.js"
 
@@ -32,7 +33,8 @@ export class GFolder {
     return err(
       GFolderError.new(
         GFolderErrorCode.INVALID_URL,
-        `\`${url}\` is not a valid url.`
+        `\`${url}\` is not a valid url.`,
+        { url }
       )
     )
   }
@@ -69,9 +71,8 @@ export class GFolder {
       const name = res.data.name
       if (name != null) return ok(name)
       return err(
-        GFolderError.new(
-          GFolderErrorCode.MISSING_TEXT,
-          `Unable to get the folder name.`
+        MyError.unreachable(
+          `data.name should exist. data: ${JSON.stringify(res.data)}`
         )
       )
     })
@@ -98,7 +99,8 @@ export class GFolder {
       return err(
         GFolderError.new(
           GFolderErrorCode.CANNOT_WRITE,
-          `No write permission to ${this.url}`
+          `No write permission to ${this.url}`,
+          { folderId: this.id }
         )
       )
     })
@@ -129,7 +131,7 @@ export class GFolder {
   }
 
   /**
-   * Find folders with the given name in the current folder.
+   * Find all (at least one) folders with the given name in the current folder.
    * @param name - The name of the folders to find.
    * @returns The folders found.
    * @throws never
@@ -138,9 +140,10 @@ export class GFolder {
     return GFolderError.try(async () => {
       const response = await drive.files.list({
         q: [
-          `name='${name}'`,
+          `name='${escapeDriveQuery(name)}'`,
           `'${this.id}' in parents`,
           "mimeType='application/vnd.google-apps.folder'",
+          "trashed=false",
         ].join(" and "),
         fields: "files(id, name)",
       })
@@ -179,7 +182,8 @@ export class GFolder {
   }
 
   /**
-   * Get or create a folder with the given name in the current folder.
+   * Get the unique folder with the given name in the current folder.
+   * If there is no folder with the given name, create a new one.
    * @param name - The name of the folder to get or create.
    * @returns The folder found or created.
    * @throws never
@@ -188,7 +192,7 @@ export class GFolder {
     return this.findUniqueFolder(name).orElse(async (e) => {
       if (e instanceof GFolderError) {
         if (e.code === GFolderErrorCode.MISSING_FOLDER) {
-          return await this.newFolder(name)
+          return this.newFolder(name)
         }
       }
       return err(e)
@@ -205,9 +209,10 @@ export class GFolder {
     return GFolderError.try(async () => {
       const response = await drive.files.list({
         q: [
-          `name='${name}'`,
+          `name='${escapeDriveQuery(name)}'`,
           `'${this.id}' in parents`,
           "mimeType='application/vnd.google-apps.spreadsheet'",
+          "trashed=false",
         ].join(" and "),
         fields: "files(id, name)",
       })
@@ -271,6 +276,22 @@ export class GFolder {
           )
         )
       return ok(new GSpreadsheet(id))
+    })
+  }
+
+  /**
+   * Move the current folder and all the contents to the trash.
+   * @throws never
+   */
+  moveToTrash() {
+    return GFolderError.try(async () => {
+      await drive.files.update({
+        fileId: this.id,
+        requestBody: {
+          trashed: true,
+        },
+      })
+      return ok(undefined)
     })
   }
 }

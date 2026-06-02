@@ -15,17 +15,44 @@ export enum GFolderErrorCode {
   UNKNOWN,
 }
 
+type GFolderErrorInfo<T extends GFolderErrorCode> =
+  T extends GFolderErrorCode.INVALID_URL
+    ? {
+        /** The input URL */
+        url: string
+      }
+    : T extends GFolderErrorCode.CANNOT_WRITE
+      ? {
+          /** The ID of the folder */
+          folderId: string
+        }
+      : undefined
+
 export class GFolderError<T extends GFolderErrorCode> extends MyErrorBase<T> {
-  constructor(code: T, message: string) {
-    super(code, message)
+  override info: GFolderErrorInfo<T>
+
+  constructor(code: T, message: string, info: GFolderErrorInfo<T>) {
+    super(code, message, info)
     this.name = "GFolderError"
+    this.info = info
   }
 
   static new<T extends GFolderErrorCode>(
+    code: GFolderErrorInfo<T> extends undefined ? T : never,
+    message: string,
+    info?: GFolderErrorInfo<T>
+  ): GFolderError<T>
+  static new<T extends GFolderErrorCode>(
     code: T,
-    message: string
+    message: string,
+    info: GFolderErrorInfo<T>
+  ): GFolderError<T>
+  static new<T extends GFolderErrorCode>(
+    code: T,
+    message: string,
+    info: GFolderErrorInfo<T>
   ): GFolderError<T> {
-    return new GFolderError(code, message)
+    return new GFolderError(code, message, info)
   }
 
   static override fromAny(e: unknown) {
@@ -33,7 +60,7 @@ export class GFolderError<T extends GFolderErrorCode> extends MyErrorBase<T> {
       const message = e.message
       if (e instanceof GaxiosError) {
         if (message.startsWith("File not found:")) {
-          return new GFolderError(GFolderErrorCode.MISSING_FILE, message)
+          return GFolderError.new(GFolderErrorCode.MISSING_FILE, message)
         }
       }
       fail(e)
