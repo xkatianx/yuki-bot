@@ -1,4 +1,4 @@
-import { MyErrorBase, err, ok, type AsyncResult } from "always-panic"
+import { type AsyncResult, err, MyErrorBase, ok } from "always-panic"
 import { noDefault } from "~misc/type.js"
 import type { GSpreadsheet } from "~util/google/sheet/sheet.js"
 import type { SettingsSheet } from "./settingsSheet.js"

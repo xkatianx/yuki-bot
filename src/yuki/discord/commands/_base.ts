@@ -1,3 +1,4 @@
+import type { Code, MyErrorBase, Result } from "always-panic"
 import type {
   ChatInputCommandInteraction,
   Guild,
@@ -7,7 +8,6 @@ import type {
 import { TextChannel } from "discord.js"
 import { Bot } from "~util/discord/bot.js"
 import { BaseCommand } from "~util/discord/commands/base.js"
-import type { Code, MyErrorBase, Result } from "always-panic"
 import type { Yuki } from "../../yuki.js"
 
 /**

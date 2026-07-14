@@ -1,5 +1,5 @@
-import { createServer } from "http"
 import { afterEach, beforeEach, describe, expect, it } from "bun:test"
+import { createServer } from "node:http"
 import {
   YukiBrowser,
   YukiBrowserError,
@@ -29,7 +29,7 @@ describe("YukiBrowser", () => {
     `
 
     await new Promise<void>((resolve) => {
-      server = createServer((req, res) => {
+      server = createServer((_req, res) => {
         res.writeHead(200, { "Content-Type": "text/html" })
         res.end(testHtml)
       })
@@ -61,7 +61,7 @@ describe("YukiBrowser", () => {
       await using browser = result.unwrap()
       expect(browser).toBeInstanceOf(YukiBrowser)
       expect(browser.browser).toBeDefined()
-      expect(browser.mainUrl.href).toBe(serverUrl + "/")
+      expect(browser.mainUrl.href).toBe(`${serverUrl}/`)
       expect(browser.isLogin).toBe(false)
     }, 30000)
 
@@ -122,7 +122,7 @@ describe("YukiBrowser", () => {
       `
 
       await new Promise<void>((resolve) => {
-        const noPuzzleServer = createServer((req, res) => {
+        const noPuzzleServer = createServer((_req, res) => {
           res.writeHead(200, { "Content-Type": "text/html" })
           res.end(noPuzzleHtml)
         })
@@ -166,7 +166,7 @@ describe("YukiBrowser", () => {
       `
 
       await new Promise<void>((resolve) => {
-        const duplicateServer = createServer((req, res) => {
+        const duplicateServer = createServer((_req, res) => {
           res.writeHead(200, { "Content-Type": "text/html" })
           res.end(duplicateHtml)
         })
@@ -209,7 +209,7 @@ describe("YukiBrowser", () => {
       `
 
       await new Promise<void>((resolve) => {
-        const noInputServer = createServer((req, res) => {
+        const noInputServer = createServer((_req, res) => {
           res.writeHead(200, { "Content-Type": "text/html" })
           res.end(noInputHtml)
         })
@@ -254,7 +254,7 @@ describe("YukiBrowser", () => {
       `
 
       await new Promise<void>((resolve) => {
-        const noSubmitServer = createServer((req, res) => {
+        const noSubmitServer = createServer((_req, res) => {
           res.writeHead(200, { "Content-Type": "text/html" })
           res.end(noSubmitHtml)
         })
@@ -302,7 +302,7 @@ describe("YukiBrowser", () => {
       `
 
       await new Promise<void>((resolve) => {
-        const loginFormServer = createServer((req, res) => {
+        const loginFormServer = createServer((_req, res) => {
           res.writeHead(200, { "Content-Type": "text/html" })
           res.end(loginFormHtml)
         })

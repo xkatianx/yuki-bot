@@ -117,6 +117,7 @@ describe("format", () => {
     })
 
     it("should handle special regex characters in template", () => {
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: intentional
       const template = "Price: ${price}. Is it on sale? {sale}"
       const formatted = "Price: $10.99. Is it on sale? yes"
       const result = parseString(template, formatted)

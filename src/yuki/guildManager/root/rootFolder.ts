@@ -1,8 +1,8 @@
+import { err } from "always-panic"
 import { Cache } from "~misc/cache.js"
 import { env } from "~misc/env.js"
 import { GFolderError, GFolderErrorCode } from "~util/google/folder/error.js"
 import { GFolder } from "~util/google/folder/folder.js"
-import { err } from "always-panic"
 import { Settings } from "./settings/settings.js"
 import { SettingsSheet } from "./settings/settingsSheet.js"
 

@@ -1,14 +1,11 @@
 {
   "recommendations": [
-    "dozerg.tsimportsorter",
     "fill-labs.dependi",
-    "ms-vscode.vscode-typescript-next",
     "wix.vscode-import-cost",
-    "esbenp.prettier-vscode",
+    "biomejs.biome",
     "wayou.vscode-todo-highlight",
     "streetsidesoftware.code-spell-checker",
     "editorconfig.editorconfig",
-    "yzhang.markdown-all-in-one",
-    "dbaeumer.vscode-eslint"
+    "yzhang.markdown-all-in-one"
   ]
 }

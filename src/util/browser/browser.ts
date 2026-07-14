@@ -1,6 +1,6 @@
 import type { Code } from "always-panic"
-import { AsyncResult, MyError, MyErrorBase, err, ok } from "always-panic"
-import puppeteer, { TimeoutError, type Browser, type Page } from "puppeteer"
+import { AsyncResult, err, MyError, MyErrorBase, ok } from "always-panic"
+import puppeteer, { type Browser, type Page, TimeoutError } from "puppeteer"
 import { info } from "~misc/cli.js"
 import { env } from "~misc/env.js"
 import { parseUrlResult } from "~misc/resultExtras.js"

@@ -58,7 +58,7 @@ export function setRootFolderUrl(url: string) {
     .mapErr(() =>
       RootError.new(
         RootErrorCode.INVALID_URL,
-        "Invalid URL:" + displayCode(url)
+        `Invalid URL: ${displayCode(url)}`
       )
     )
 }

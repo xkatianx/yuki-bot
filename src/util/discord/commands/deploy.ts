@@ -1,8 +1,8 @@
 // Read https://discordjs.guide/slash-commands/advanced-creation.html
 // for advanced usage.
 
-import { REST, Routes } from "discord.js"
 import { MyError, ok } from "always-panic"
+import { REST, Routes } from "discord.js"
 import type { BaseCommand } from "./base.js"
 
 /**

@@ -4,8 +4,8 @@ import {
   describe,
   expect,
   it,
-  spyOn,
   type Mock,
+  spyOn,
 } from "bun:test"
 import { envUtils } from "./env"
 

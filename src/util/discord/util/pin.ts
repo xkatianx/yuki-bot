@@ -1,7 +1,7 @@
+import { AsyncResult, err, ok } from "always-panic"
 import type { GuildBasedChannel, Message, TextBasedChannel } from "discord.js"
 import { ChannelType, Guild } from "discord.js"
 import { parseString } from "~misc/format.js"
-import { AsyncResult, err, ok } from "always-panic"
 import type { Bot } from "../bot.js"
 import { DiscordError, DiscordErrorCode } from "../error.js"
 

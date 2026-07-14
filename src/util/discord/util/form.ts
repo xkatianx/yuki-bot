@@ -1,3 +1,5 @@
+import type { Code, MyErrorBase, Result } from "always-panic"
+import { err, ok, result } from "always-panic"
 import type {
   ButtonInteraction,
   ChatInputCommandInteraction,
@@ -16,8 +18,6 @@ import {
   TextInputStyle,
 } from "discord.js"
 import { fatal } from "~misc/cli.js"
-import type { Code, MyErrorBase, Result } from "always-panic"
-import { err, ok, result } from "always-panic"
 import type { IRF } from "../commands/base.js"
 import { BotError, BotErrorCode } from "../error.js"
 import { InteractionHandler } from "./interaction.js"

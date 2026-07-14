@@ -1,8 +1,8 @@
+import type { Result } from "always-panic"
+import { err, ok } from "always-panic"
 import type { ButtonInteraction, ModalSubmitInteraction } from "discord.js"
 import { fatal } from "~misc/cli.js"
 import { Temporal } from "~misc/time/index.js"
-import type { Result } from "always-panic"
-import { err, ok } from "always-panic"
 import type { IRF } from "../commands/base.js"
 
 const buttonFns = new Map<string, IRF<ButtonInteraction>>()

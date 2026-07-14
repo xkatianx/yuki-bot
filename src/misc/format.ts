@@ -44,9 +44,10 @@ export function parseString(
   // --- Step 1: Extract the ordered list of keys from the template ---
   const keyRegex = /\{(\w+)\}/g
   const keys = []
-  let match
-  while ((match = keyRegex.exec(template)) !== null) {
+  let match = keyRegex.exec(template)
+  while (match !== null) {
     if (match[1] != null) keys.push(match[1])
+    match = keyRegex.exec(template)
   }
   // Example: template "Hello {user}, {status}" -> keys = ['user', 'status']
 
@@ -105,9 +106,11 @@ export function lines(...lines: string[]): string {
  * // "`Hello, \\`world\\`!`"
  */
 export function displayCode(code: string): string {
+  // biome-ignore lint/style/useTemplate: this looks better
   return "`" + code.replace(/`/g, "\\`") + "`"
 }
 
 export function displayCodeBlock(code: string): string {
+  // biome-ignore lint/style/useTemplate: this looks better
   return "```\n" + code + "\n```"
 }

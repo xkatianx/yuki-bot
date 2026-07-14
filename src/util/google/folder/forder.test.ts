@@ -1,4 +1,3 @@
-import { AsyncResult } from "always-panic"
 import {
   afterAll,
   beforeAll,
@@ -7,6 +6,7 @@ import {
   expectTypeOf,
   it,
 } from "bun:test"
+import { AsyncResult } from "always-panic"
 import { google } from "googleapis"
 import { env } from "~misc/env.js"
 import { sleep } from "~misc/time/misc.js"
@@ -201,7 +201,7 @@ describe("GFolder", () => {
 
     it("should return MISSING_FOLDER error when folder does not exist", async () => {
       const folder = new GFolder(ownedFolderId)
-      const result = await folder.findUniqueFolder(timestamp + "xx")
+      const result = await folder.findUniqueFolder(`${timestamp}xx`)
       expect(result.isErr()).toBe(true)
       const err = result.unwrapErr()
       expect(err).toBeInstanceOf(GFolderError)
@@ -236,7 +236,7 @@ describe("GFolder", () => {
 
     it("should return MISSING_FOLDER error when folder does not exist", async () => {
       const folder = new GFolder(ownedFolderId)
-      const result = await folder.findFolders(timestamp + "xx")
+      const result = await folder.findFolders(`${timestamp}xx`)
       expect(result.isErr()).toBe(true)
       const err = result.unwrapErr()
       expect(err).toBeInstanceOf(GFolderError)

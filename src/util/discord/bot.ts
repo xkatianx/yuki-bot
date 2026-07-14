@@ -1,3 +1,5 @@
+import type { Code } from "always-panic"
+import { err, MyError, MyErrorBase, ok } from "always-panic"
 import type {
   ButtonInteraction,
   Channel,
@@ -14,8 +16,6 @@ import { done, fail, info, warn } from "~misc/cli.js"
 import { displayCodeBlock, lines } from "~misc/format.js"
 import { Temporal } from "~misc/time/index.js"
 import { noDefault } from "~misc/type.js"
-import type { Code } from "always-panic"
-import { MyError, MyErrorBase, err, ok } from "always-panic"
 import type { BaseCommand } from "./commands/base.js"
 import { BotError, BotErrorCode, BotLogError, ELV } from "./error.js"
 import { InteractionHandler } from "./util/interaction.js"
@@ -91,13 +91,13 @@ export class Bot {
 
     if (e instanceof BotLogError) {
       switch (e.level) {
+        // biome-ignore lint/suspicious/noFallthroughSwitchClause: intentional
         case ELV.PSS:
           ephemeral = true
-        // fallthrough
+        // biome-ignore lint/suspicious/noFallthroughSwitchClause: intentional
         case ELV.SAY:
           content = e.message
           reply = true
-        // fallthrough
         case ELV.LOG:
           if (interaction.guild != null)
             (

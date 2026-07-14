@@ -1,4 +1,4 @@
-import { MyError, MyErrorBase, err, ok } from "always-panic"
+import { err, MyError, MyErrorBase, ok } from "always-panic"
 import puppeteer, { type Browser, type Page } from "puppeteer"
 import { env } from "~misc/env.js"
 import MyBrowser from "~util/browser/browser.js"
@@ -91,28 +91,25 @@ function findLoginElements(page: Page) {
       inputs = await page.$$(
         'input[name="id"], input[type="email"], input[type="password"]'
       )
-    if (inputs.length !== 2)
+    const usernameEl = inputs[0]
+    const passwordEl = inputs[1]
+    if (usernameEl == null || passwordEl == null || inputs.length !== 2)
       return err(
         YukiBrowserError.new(
           YukiBrowserErrorCode.LOGIN_INPUT_NOT_FOUND,
           "Unable to find input boxes for login."
         )
       )
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const usernameEl = inputs[0]!
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const passwordEl = inputs[1]!
 
     const submits = await page.$$('button[type="submit"], input[type="submit"]')
-    if (submits.length !== 1)
+    const submitEl = submits[0]
+    if (submitEl == null || submits.length !== 1)
       return err(
         YukiBrowserError.new(
           YukiBrowserErrorCode.SUBMIT_NOT_FOUND,
           "Unable to find submit button."
         )
       )
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const submitEl = submits[0]!
     return ok({ page, usernameEl, passwordEl, submitEl })
   })
 }

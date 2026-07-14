@@ -1,5 +1,5 @@
-import { createServer } from "http"
 import { afterEach, beforeEach, describe, expect, it } from "bun:test"
+import { createServer } from "node:http"
 import MyBrowser, { BrowserError, BrowserErrorCode } from "./browser.js"
 
 describe("MyBrowser", () => {

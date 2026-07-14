@@ -1,9 +1,9 @@
+import { AsyncResult, err, MyErrorBase, result } from "always-panic"
 import type { TextChannel } from "discord.js"
 import { Cache } from "~misc/cache.js"
 import { env } from "~misc/env.js"
 import { GFolderError, GFolderErrorCode } from "~util/google/folder/error.js"
 import { GFolder } from "~util/google/folder/folder.js"
-import { MyErrorBase, AsyncResult, err, result } from "always-panic"
 import { ChannelManager } from "./channelManager/channelManager.js"
 import { PuzzleSheet } from "./channelManager/puzzle/puzzleSheet.js"
 import { SettingsSheet } from "./settingsSheet.js"
@@ -46,8 +46,9 @@ export class Settings {
     return this.spreadsheet
       .updateChannel(channel, folder, spreadsheet)
       .andThen(() => ChannelManager.from(channel, folder, spreadsheet))
-      .inspect(async (cm) => {
+      .map(async (cm) => {
         await using _old = this.#cms.set(channel.id, cm)
+        return cm
       })
   }
 }

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from "bun:test"
 import { Temporal } from "./temporal.js"
-import { YYYY$MM, discordTime, jpNow, now, twNow } from "./timestamp.js"
+import { discordTime, jpNow, now, twNow, YYYY$MM } from "./timestamp.js"
 
 beforeEach(() => {
   jest.useFakeTimers()
