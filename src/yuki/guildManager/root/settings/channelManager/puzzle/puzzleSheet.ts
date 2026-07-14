@@ -1,4 +1,4 @@
-import { err, MyError } from "always-panic"
+import { err, UnexpectedError } from "always-panic"
 import { env } from "~misc/env.js"
 import type { GFolder } from "~util/google/folder/folder"
 import {
@@ -91,7 +91,7 @@ export class PuzzleSheet extends GSpreadsheet {
         const sheet = res?.at(0)?.duplicateSheet
         if (sheet == null)
           return err(
-            MyError.unreachable(
+            UnexpectedError.unreachable(
               `Unable to create \`${sheetName}\` in ${this.toString()}`
             )
           )

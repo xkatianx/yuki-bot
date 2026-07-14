@@ -1,5 +1,5 @@
 import type { Code } from "always-panic"
-import { err, MyError, MyErrorBase, ok } from "always-panic"
+import { err, ok, TypedError, UnexpectedError } from "always-panic"
 import type {
   ButtonInteraction,
   Channel,
@@ -138,7 +138,7 @@ export class Bot {
    * @returns The message to display to the user
    * @throws never
    */
-  static errorToMessage(e: MyErrorBase<Code>): string {
+  static errorToMessage(e: TypedError<Code>): string {
     if (e instanceof BotError) {
       const code = e.code as BotErrorCode
       switch (code) {
@@ -160,26 +160,26 @@ export class Bot {
   /** Reply an ephemeral error message to Discord.
    *  Non-ephemeral if after `deferReply({ ephemeral: false })`
    */
-  static pss(e: string | MyErrorBase<Code>, silent = false): never {
+  static pss(e: string | TypedError<Code>, silent = false): never {
     if (!silent) {
-      if (e instanceof MyErrorBase) {
+      if (e instanceof TypedError) {
         info(e.code, e.message, e.stack)
       } else info(e)
     }
-    const message = e instanceof MyErrorBase ? this.errorToMessage(e) : e
+    const message = e instanceof TypedError ? this.errorToMessage(e) : e
     throw new BotLogError(ELV.PSS, message)
   }
 
   /** Reply an non-ephemeral error message to Discord.
    *  Ephemeral if after `deferReply({ ephemeral: true })`
    */
-  static say(e: string | MyErrorBase<Code>, silent = false): never {
+  static say(e: string | TypedError<Code>, silent = false): never {
     if (!silent) {
-      if (e instanceof MyErrorBase) {
+      if (e instanceof TypedError) {
         info(e.code, e.message, e.stack)
       } else info(e)
     }
-    const message = e instanceof MyErrorBase ? this.errorToMessage(e) : e
+    const message = e instanceof TypedError ? this.errorToMessage(e) : e
     throw new BotLogError(ELV.SAY, message)
   }
 
@@ -273,6 +273,6 @@ export class Bot {
    * @throws never
    */
   logToChannel(message: string | MessagePayload, channel: TextChannel) {
-    return MyError.try(async () => ok(await channel.send(message)))
+    return UnexpectedError.try(async () => ok(await channel.send(message)))
   }
 }

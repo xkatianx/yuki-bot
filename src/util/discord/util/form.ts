@@ -1,4 +1,4 @@
-import type { Code, MyErrorBase, Result } from "always-panic"
+import type { Code, Result, TypedError } from "always-panic"
 import { err, ok, result } from "always-panic"
 import type {
   ButtonInteraction,
@@ -46,7 +46,7 @@ export class Form {
   ) => Promise<
     MaybeResult<
       string | MessagePayload | InteractionEditReplyOptions,
-      MyErrorBase<Code>
+      TypedError<Code>
     >
   >
   #afterSubmit?: () => Promise<void>

@@ -1,4 +1,4 @@
-import { AsyncResult, type Code, type MyErrorBase } from "always-panic"
+import { AsyncResult, type Code, type TypedError } from "always-panic"
 import type { Client, Guild, TextChannel } from "discord.js"
 import { GatewayIntentBits } from "discord.js"
 import { Cache } from "~misc/cache.js"
@@ -41,7 +41,7 @@ export class Yuki extends Bot {
     super.onReady(readyClient)
   }
 
-  static override errorToMessage(e: MyErrorBase<Code>): string {
+  static override errorToMessage(e: TypedError<Code>): string {
     if (e instanceof GFolderError) {
       const code = e.code as GFolderErrorCode
       if (code === GFolderErrorCode.CANNOT_WRITE) {

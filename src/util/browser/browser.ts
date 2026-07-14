@@ -1,5 +1,5 @@
 import type { Code } from "always-panic"
-import { AsyncResult, err, MyError, MyErrorBase, ok } from "always-panic"
+import { AsyncResult, err, ok, TypedError, UnexpectedError } from "always-panic"
 import puppeteer, { type Browser, type Page, TimeoutError } from "puppeteer"
 import { info } from "~misc/cli.js"
 import { env } from "~misc/env.js"
@@ -34,8 +34,8 @@ class MyBrowser implements AsyncDisposable {
    * @returns A MyBrowser instance.
    * @throws never
    */
-  static new(_url?: string): AsyncResult<MyBrowser, MyErrorBase<Code>> {
-    return MyError.try(async () => {
+  static new(_url?: string): AsyncResult<MyBrowser, TypedError<Code>> {
+    return UnexpectedError.try(async () => {
       const args = env.puppeteerLaunchArgs?.split(" ") ?? []
       const b = await puppeteer.launch({
         pipe: false,
@@ -77,7 +77,7 @@ class MyBrowser implements AsyncDisposable {
    * @throws never
    */
   protected getPage() {
-    return MyError.try(async () => {
+    return UnexpectedError.try(async () => {
       const pages = await this.browser.pages()
       let page = pages[1]
       if (page == null) {
@@ -135,7 +135,7 @@ class MyBrowser implements AsyncDisposable {
       AsyncResult.from(MyBrowser.parseUrl(url)),
       this.getPage(),
     ]).andThen(([url, page]) =>
-      MyError.try(async () => this._browse(url, page))
+      UnexpectedError.try(async () => this._browse(url, page))
     )
   }
 
@@ -145,7 +145,9 @@ class MyBrowser implements AsyncDisposable {
    * @throws never
    */
   getUrl() {
-    return this.getPage().andThen((page) => MyError.try(() => ok(page.url())))
+    return this.getPage().andThen((page) =>
+      UnexpectedError.try(() => ok(page.url()))
+    )
   }
 
   /**
@@ -156,7 +158,7 @@ class MyBrowser implements AsyncDisposable {
    */
   getTitle() {
     return this.getPage().andThen(async (page) =>
-      MyError.try(async () => {
+      UnexpectedError.try(async () => {
         // Wait for the title to change after page load for 2 seconds
         const initialTitle = await page.evaluate(() => document.title)
         try {
@@ -189,7 +191,7 @@ class MyBrowser implements AsyncDisposable {
         BrowserError.new(BrowserErrorCode.INVALID_SCREENSHOT_FILENAME, filename)
       )
     return this.getPage().andThen(async (page) =>
-      MyError.try(async () =>
+      UnexpectedError.try(async () =>
         ok(
           await page.screenshot({
             path: `screenshots/${filename}`,
@@ -210,7 +212,7 @@ export enum BrowserErrorCode {
   ABORTED,
 }
 
-export class BrowserError<T extends BrowserErrorCode> extends MyErrorBase<T> {
+export class BrowserError<T extends BrowserErrorCode> extends TypedError<T> {
   private constructor(code: T, message: string) {
     super(code, message)
     this.name = "BrowserError"

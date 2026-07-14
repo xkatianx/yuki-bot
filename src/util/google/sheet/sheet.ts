@@ -1,5 +1,5 @@
 import { sheets_v4 } from "@googleapis/sheets"
-import { err, MyError, ok } from "always-panic"
+import { err, ok, UnexpectedError } from "always-panic"
 import { myGoogleInfo } from "../auth/auth.js"
 import type { GFolder } from "../folder/folder.js"
 import { GSheetError, GSheetErrorCode } from "./error.js"
@@ -264,7 +264,7 @@ export class GSpreadsheet {
       const output = res.data.valueRanges
       if (output != null) return ok(output)
       return err(
-        MyError.unreachable(
+        UnexpectedError.unreachable(
           `Null reading \`${ranges.join(", ")}\` in ${this.toString()}`
         )
       )

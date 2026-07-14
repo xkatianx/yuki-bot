@@ -1,4 +1,4 @@
-import { err, MyError, ok } from "always-panic"
+import { err, ok, UnexpectedError } from "always-panic"
 import { google } from "googleapis"
 import { myGoogleInfo } from "../auth/auth.js"
 import { escapeDriveQuery } from "../misc.js"
@@ -71,7 +71,7 @@ export class GFolder {
       const name = res.data.name
       if (name != null) return ok(name)
       return err(
-        MyError.unreachable(
+        UnexpectedError.unreachable(
           `data.name should exist. data: ${JSON.stringify(res.data)}`
         )
       )
@@ -271,7 +271,7 @@ export class GFolder {
       const id = data.id
       if (id == null)
         return err(
-          MyError.unreachable(
+          UnexpectedError.unreachable(
             `data.id should not be null. data:\n${JSON.stringify(data)}`
           )
         )

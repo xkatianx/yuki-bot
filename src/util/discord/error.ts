@@ -1,4 +1,4 @@
-import { MyError, MyErrorBase } from "always-panic"
+import { TypedError, UnexpectedError } from "always-panic"
 import { DiscordAPIError } from "discord.js"
 
 export enum DiscordErrorCode {
@@ -8,7 +8,7 @@ export enum DiscordErrorCode {
   UNKNOWN,
 }
 
-export class DiscordError<T extends DiscordErrorCode> extends MyErrorBase<T> {
+export class DiscordError<T extends DiscordErrorCode> extends TypedError<T> {
   constructor(code: T, message: string, cause?: unknown) {
     super(code, message)
     this.name = "DiscordError"
@@ -35,7 +35,7 @@ export class DiscordError<T extends DiscordErrorCode> extends MyErrorBase<T> {
         }
       }
     }
-    return MyError.fromAny(e)
+    return UnexpectedError.fromAny(e)
   }
 }
 
@@ -47,7 +47,7 @@ export enum BotErrorCode {
   UNKNOWN_SELECT_MENU,
 }
 
-export class BotError<T extends BotErrorCode> extends MyErrorBase<T> {
+export class BotError<T extends BotErrorCode> extends TypedError<T> {
   private constructor(code: T, message: string) {
     super(code, message)
     this.name = "BotError"

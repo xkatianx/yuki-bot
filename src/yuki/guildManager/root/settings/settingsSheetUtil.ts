@@ -1,4 +1,4 @@
-import { type AsyncResult, err, MyErrorBase, ok } from "always-panic"
+import { type AsyncResult, err, ok, TypedError } from "always-panic"
 import { noDefault } from "~misc/type.js"
 import type { GSpreadsheet } from "~util/google/sheet/sheet.js"
 import type { SettingsSheet } from "./settingsSheet.js"
@@ -148,7 +148,7 @@ export enum SettingsSheetErrorCode {
 
 export class SettingsSheetError<
   T extends SettingsSheetErrorCode,
-> extends MyErrorBase<T> {
+> extends TypedError<T> {
   constructor(code: T, message: string) {
     super(code, message)
     this.name = "SettingSheetError"

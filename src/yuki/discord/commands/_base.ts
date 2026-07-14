@@ -1,4 +1,4 @@
-import type { Code, MyErrorBase, Result } from "always-panic"
+import type { Code, Result, TypedError } from "always-panic"
 import type {
   ChatInputCommandInteraction,
   Guild,
@@ -69,7 +69,7 @@ export abstract class YukiBaseCommand extends BaseCommand {
    * @throws Yuki.say if the result is an error.
    */
   protected async unwrap<T>(
-    result: PromiseLike<Result<T, MyErrorBase<Code>>>
+    result: PromiseLike<Result<T, TypedError<Code>>>
   ): Promise<T> {
     return (await result).unwrapOrElse((e) => Bot.say(e))
   }

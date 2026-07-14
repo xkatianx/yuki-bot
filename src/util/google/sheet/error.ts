@@ -1,4 +1,4 @@
-import { MyError, MyErrorBase } from "always-panic"
+import { TypedError, UnexpectedError } from "always-panic"
 import { GaxiosError } from "gaxios"
 import { fail } from "~misc/cli.js"
 
@@ -12,7 +12,7 @@ export enum GSheetErrorCode {
   FORGOT_TO_FLUSH,
 }
 
-export class GSheetError<T extends GSheetErrorCode> extends MyErrorBase<T> {
+export class GSheetError<T extends GSheetErrorCode> extends TypedError<T> {
   constructor(code: T, message: string) {
     super(code, message)
     this.name = "GSheetError"
@@ -37,7 +37,7 @@ export class GSheetError<T extends GSheetErrorCode> extends MyErrorBase<T> {
       }
       fail(e)
     }
-    return MyError.fromAny(e)
+    return UnexpectedError.fromAny(e)
   }
 }
 
@@ -48,7 +48,7 @@ export enum PuzzleSheetErrorCode {
 
 export class PuzzleSheetError<
   T extends PuzzleSheetErrorCode,
-> extends MyErrorBase<T> {
+> extends TypedError<T> {
   constructor(code: T, message: string) {
     super(code, message)
     this.name = "PuzzleSheetError"
@@ -69,7 +69,7 @@ export enum SettingSheetErrorCode {
 
 export class SettingSheetError<
   T extends SettingSheetErrorCode,
-> extends MyErrorBase<T> {
+> extends TypedError<T> {
   constructor(code: T, message: string) {
     super(code, message)
     this.name = "SettingSheetError"

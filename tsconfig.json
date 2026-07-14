@@ -24,7 +24,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noUncheckedIndexedAccess": true,
-    "baseUrl": ".",
+    "types": ["bun"],
     "paths": {
       "~util/*": ["./src/util/*"],
       "~misc/*": ["./src/misc/*"]

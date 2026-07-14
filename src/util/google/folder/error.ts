@@ -1,4 +1,4 @@
-import { MyError, MyErrorBase } from "always-panic"
+import { TypedError, UnexpectedError } from "always-panic"
 import { GaxiosError } from "gaxios"
 import { fail } from "~misc/cli.js"
 
@@ -28,7 +28,7 @@ type GFolderErrorInfo<T extends GFolderErrorCode> =
         }
       : undefined
 
-export class GFolderError<T extends GFolderErrorCode> extends MyErrorBase<T> {
+export class GFolderError<T extends GFolderErrorCode> extends TypedError<T> {
   override info: GFolderErrorInfo<T>
 
   constructor(code: T, message: string, info: GFolderErrorInfo<T>) {
@@ -65,6 +65,6 @@ export class GFolderError<T extends GFolderErrorCode> extends MyErrorBase<T> {
       }
       fail(e)
     }
-    return MyError.fromAny(e)
+    return UnexpectedError.fromAny(e)
   }
 }

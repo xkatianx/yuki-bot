@@ -1,4 +1,4 @@
-import { err, MyError, MyErrorBase, ok } from "always-panic"
+import { err, ok, TypedError, UnexpectedError } from "always-panic"
 import puppeteer, { type Browser, type Page } from "puppeteer"
 import { env } from "~misc/env.js"
 import MyBrowser from "~util/browser/browser.js"
@@ -20,7 +20,7 @@ export class YukiBrowser extends MyBrowser {
    * @throws never
    */
   static override new(url: string) {
-    return MyError.try(async () => {
+    return UnexpectedError.try(async () => {
       const mainUrl = MyBrowser.parseUrl(url)
       if (mainUrl.isErr()) return mainUrl
       const args = env.puppeteerLaunchArgs?.split(" ") ?? []
@@ -33,7 +33,7 @@ export class YukiBrowser extends MyBrowser {
   getPuzzles() {
     const selector = 'a[href*="/puzzle/"], a[href*="/puzzles/"]'
     return this.getPage().andThen(async (page) =>
-      MyError.try(async () => {
+      UnexpectedError.try(async () => {
         const links = await page.$$eval(selector, (elements) =>
           elements
             .map((element) => element.href)
@@ -83,7 +83,7 @@ export class YukiBrowser extends MyBrowser {
 }
 
 function findLoginElements(page: Page) {
-  return MyError.try(async () => {
+  return UnexpectedError.try(async () => {
     let inputs = await page.$$(
       'input[type="text"], input[type="password"], input[name="username"]'
     )
@@ -125,7 +125,7 @@ export enum YukiBrowserErrorCode {
 
 export class YukiBrowserError<
   T extends YukiBrowserErrorCode,
-> extends MyErrorBase<T> {
+> extends TypedError<T> {
   private constructor(code: T, message: string) {
     super(code, message)
     this.name = "YukiBrowserError"

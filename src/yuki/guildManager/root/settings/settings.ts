@@ -1,4 +1,4 @@
-import { AsyncResult, err, MyErrorBase, result } from "always-panic"
+import { AsyncResult, err, result, TypedError } from "always-panic"
 import type { TextChannel } from "discord.js"
 import { Cache } from "~misc/cache.js"
 import { env } from "~misc/env.js"
@@ -58,7 +58,7 @@ export enum SettingsErrorCode {
   MISSING_CHANNEL,
 }
 
-export class SettingsError<T extends SettingsErrorCode> extends MyErrorBase<T> {
+export class SettingsError<T extends SettingsErrorCode> extends TypedError<T> {
   private constructor(code: T, message: string) {
     super(code, message)
     this.name = "SettingsError"
