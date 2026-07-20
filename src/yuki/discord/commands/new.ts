@@ -1,3 +1,4 @@
+import { AsyncResult, ok, result } from "always-panic"
 import type {
   ButtonInteraction,
   ChatInputCommandInteraction,
@@ -13,7 +14,7 @@ import {
 import { displayCode } from "~misc/format.js"
 import { YYYY$MM } from "~misc/time/timestamp.js"
 import MyBrowser from "~util/browser/browser.js"
-import { Bot } from "~util/discord/bot.js"
+import { BotLogError } from "~util/discord/bot/log.js"
 import type { IRF } from "~util/discord/commands/base.js"
 import { Form } from "~util/discord/util/form.js"
 import { InteractionHandler } from "~util/discord/util/interaction.js"
@@ -33,111 +34,133 @@ class NewCommand extends YukiBaseCommand {
       )
   }
 
-  async execute(interaction: ChatInputCommandInteraction) {
-    const { bot, guild } = this.getContext(interaction)
-    const channel = this.getTextChannel(interaction)
-    const url =
-      interaction.options.getString("url") ??
-      Bot.say("Usage: `/new <url>`. Please enter a url.")
-    await this.deferReply(interaction)
-
-    const rootFolder = await this.unwrap(bot.getRootFolder(guild))
-    const settings = await this.unwrap(bot.getSettings(guild))
-    await using browser = await this.unwrap(
-      MyBrowser.new().inspect(async (b) => {
-        await b.browse(url)
-      })
+  execute(interaction: ChatInputCommandInteraction) {
+    const url = interaction.options.getString("url")
+    if (url == null)
+      return AsyncResult.from(
+        BotLogError.say("Usage: `/new <url>`. Please enter a url.")
+      )
+    return AsyncResult.from(
+      result.all([
+        this.getContext(interaction),
+        this.getTextChannel(interaction),
+      ])
     )
-    const url2 = (await browser.getUrl()).unwrapOr(url)
-    const title = (await browser.getTitle()).unwrapOr("<title>")
-    const folder = `[${YYYY$MM()}] ${title}`
+      .andThen(async ([{ bot, guild }, channel]) => {
+        await this.deferReply(interaction)
 
-    const form = new Form()
-      .addInput2({
-        customId: "url",
-        label: "URL",
-        placeholder: "The main url of the puzzlehunt",
-        value: url2,
-        required: true,
+        const rootFolder = await bot.getRootFolder(guild)
+        if (rootFolder.isErr()) return rootFolder
+        const settings = await bot.getSettings(guild)
+        if (settings.isErr()) return settings
+        const browserR = await MyBrowser.new().inspect(async (b) => {
+          await b.browse(url)
+        })
+        if (browserR.isErr()) return browserR
+        await using browser = browserR.value
+        return ok({
+          channel,
+          rootFolder: rootFolder.value,
+          settings: settings.value,
+          url2: (await browser.getUrl()).unwrapOr(url),
+          title: (await browser.getTitle()).unwrapOr("<title>"),
+        })
       })
-      .addInput2({
-        customId: "title",
-        label: "TITLE",
-        placeholder: "The title of the puzzlehunt",
-        value: title,
-        required: true,
-      })
-      .addInput2({
-        customId: "folder",
-        label: "FOLDER NAME",
-        placeholder:
-          "The spreadsheet will be created under this google drive folder",
-        value: folder,
-        required: true,
-      })
-      .addInput2({
-        customId: "start",
-        label: "START TIME",
-        placeholder: 'e.g. "2023-05-06T10:00:00-07:00"',
-      })
-      .addInput2({
-        customId: "end",
-        label: "END TIME",
-        placeholder: 'e.g. "2023-05-06T10:00:00-07:00"',
-      })
-      .addInput2({
-        customId: "username",
-        label: "USERNAME",
-        placeholder: "The username to login to the puzzlehunt",
-      })
-      .addInput2({
-        customId: "password",
-        label: "PASSWORD",
-        placeholder: "The password to login to the puzzlehunt",
-      })
-      .setOnSubmit(async (form: Form) => {
-        const args = {
-          url: form.get("url").unwrap(),
-          title: form.get("title").unwrap(),
-          folder: form.get("folder").unwrap(),
-          start: form.get("start").unwrap(),
-          end: form.get("end").unwrap(),
-          username: form.get("username").unwrap(),
-          password: form.get("password").unwrap(),
-        }
-        // step 1: get or create a folder
-        const folder = await this.unwrap(
-          rootFolder.getOrCreateFolder(args.folder)
+      .mapErr((e) => this.handleError(e))
+      .map(async ({ channel, rootFolder, settings, url2, title }) => {
+        const folder = `[${YYYY$MM()}] ${title}`
+
+        const form = new Form()
+          .addInput2({
+            customId: "url",
+            label: "URL",
+            placeholder: "The main url of the puzzlehunt",
+            value: url2,
+            required: true,
+          })
+          .addInput2({
+            customId: "title",
+            label: "TITLE",
+            placeholder: "The title of the puzzlehunt",
+            value: title,
+            required: true,
+          })
+          .addInput2({
+            customId: "folder",
+            label: "FOLDER NAME",
+            placeholder:
+              "The spreadsheet will be created under this google drive folder",
+            value: folder,
+            required: true,
+          })
+          .addInput2({
+            customId: "start",
+            label: "START TIME",
+            placeholder: 'e.g. "2023-05-06T10:00:00-07:00"',
+          })
+          .addInput2({
+            customId: "end",
+            label: "END TIME",
+            placeholder: 'e.g. "2023-05-06T10:00:00-07:00"',
+          })
+          .addInput2({
+            customId: "username",
+            label: "USERNAME",
+            placeholder: "The username to login to the puzzlehunt",
+          })
+          .addInput2({
+            customId: "password",
+            label: "PASSWORD",
+            placeholder: "The password to login to the puzzlehunt",
+          })
+          .setOnSubmit(async (form: Form) => {
+            const args = {
+              url: form.get("url").unwrap(),
+              title: form.get("title").unwrap(),
+              folder: form.get("folder").unwrap(),
+              start: form.get("start").unwrap(),
+              end: form.get("end").unwrap(),
+              username: form.get("username").unwrap(),
+              password: form.get("password").unwrap(),
+            }
+            // step 1: get or create a folder
+            return await rootFolder
+              .getOrCreateFolder(args.folder)
+              .andThen(async (folder) => {
+                // step 2: copy-paste main spreadsheet and edit
+                const sheet = await PuzzleSheet.newFromTemplate(
+                  folder,
+                  args.title
+                )
+                if (sheet.isErr()) return sheet
+                const spreadsheet = sheet.value
+                  .writeCell("folder", folder.url)
+                  .writeCell("username", args.username)
+                  .writeCell("password", args.password)
+                  .writeCell("website", args.url)
+                return await spreadsheet
+                  .flushWrite()
+                  // step 3: edit settings
+                  .andThen(() =>
+                    settings.setChannelManager(channel, folder, spreadsheet)
+                  )
+                  // step 4: done
+                  .map(() => `Spreadsheet: ${spreadsheet.url}`)
+              })
+              .mapErr((e) => this.handleError(e))
+          })
+        form.setAfterSubmit(() =>
+          AsyncResult.from(settings.getChannelManager(channel))
+            .map(async (cm) => {
+              await interaction.followUp(
+                this.setTopicConfirm(channel, cm.spreadsheet.url)
+              )
+            })
+            .mapErr((e) => this.handleError(e))
         )
 
-        // step 2: copy-paste main spreadsheet and edit
-        const spreadsheet = (
-          await PuzzleSheet.newFromTemplate(folder, args.title)
-        )
-          .unwrapOrElse(() => Bot.say("Unable to create a spreadsheet."))
-          .writeCell("folder", folder.url)
-          .writeCell("username", args.username)
-          .writeCell("password", args.password)
-          .writeCell("website", args.url)
-        await this.unwrap(spreadsheet.flushWrite())
-
-        // step 3: edit settings
-        await this.unwrap(
-          settings.setChannelManager(channel, folder, spreadsheet)
-        )
-        // step 4: edit channel manager
-
-        // step 5: done
-        return `Spreadsheet: ${spreadsheet.url}`
+        await form.reply(interaction)
       })
-    form.setAfterSubmit(async () => {
-      const url = (await settings.getChannelManager(channel)).unwrapOrElse(
-        (e) => Bot.say(e)
-      ).spreadsheet.url
-      await interaction.followUp(this.setTopicConfirm(channel, url))
-    })
-
-    await form.reply(interaction)
   }
 
   private setTopicConfirm(
@@ -148,20 +171,24 @@ class NewCommand extends YukiBaseCommand {
       "Do you want to set the topic of this channel to" +
       displayCode(topic) +
       "?"
-    const onYes: IRF<ButtonInteraction> = async (i) => {
-      await i.deferReply({ ephemeral: true })
-      await channel.setTopic(topic)
-      await i.editReply("done!")
-    }
+    const onYes: IRF<ButtonInteraction> = (i) =>
+      AsyncResult.from(async () => {
+        await i.deferReply({ ephemeral: true })
+        await channel.setTopic(topic)
+        await i.editReply("done!")
+        return ok(undefined)
+      })
     const uid = InteractionHandler.setButton(onYes)
     const yes = new ButtonBuilder()
       .setCustomId(uid)
       .setLabel("Yes")
       .setStyle(ButtonStyle.Success)
 
-    const onNo: IRF<ButtonInteraction> = async (i) => {
-      await i.reply("okay.")
-    }
+    const onNo: IRF<ButtonInteraction> = (i) =>
+      AsyncResult.from(async () => {
+        await i.reply("okay.")
+        return ok(undefined)
+      })
     const uid2 = InteractionHandler.setButton(onNo)
     const no = new ButtonBuilder()
       .setCustomId(uid2)

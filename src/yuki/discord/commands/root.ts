@@ -1,6 +1,7 @@
+import { AsyncResult, ok } from "always-panic"
 import type { ChatInputCommandInteraction } from "discord.js"
 import { SlashCommandBuilder } from "discord.js"
-import { Bot } from "~util/discord/bot.js"
+import { BotLogError } from "~util/discord/bot/log.js"
 import { DiscordError } from "~util/discord/error.js"
 import { pin } from "~util/discord/util/pin.js"
 import { setRootFolderUrl } from "../../guildManager/root/root.js"
@@ -21,36 +22,43 @@ class RootCommand extends YukiBaseCommand {
       )
   }
 
-  async execute(interaction: ChatInputCommandInteraction) {
-    const { bot, channel, guild } = this.getContext(interaction)
-    await this.deferReply(interaction)
-    if (interaction.user.id !== guild.ownerId)
-      Bot.say("This command is owner-only.")
+  execute(interaction: ChatInputCommandInteraction) {
+    return AsyncResult.from(this.getContext(interaction))
+      .andThen(async ({ bot, channel, guild }) => {
+        await this.deferReply(interaction)
+        if (interaction.user.id !== guild.ownerId)
+          return BotLogError.say("This command is owner-only.")
 
-    const newRootUrl = interaction.options.getString("url")
-    if (newRootUrl == null) {
-      // GET
-      const oldRoot = await this.unwrap(bot.getRootFolder(guild))
-      Bot.say(`The root folder for this server:\n${oldRoot.url}`)
-    } else {
-      // SET
-      // set root folder url by pinning certain message
-      const reply = setRootFolderUrl(newRootUrl).unwrapOrElse((e) => Bot.say(e))
-      const m = await interaction.editReply(reply)
-      const res = await pin(channel, m)
-        .inspect(() => {
-          bot.roots.reset(guild.id)
-        })
-        .mapErr((e) => {
-          if (e instanceof DiscordError) {
-            return e.changeMessage(
-              "Failed: Please grant me permission to pin messages."
-            )
-          }
-          return e
-        })
-      res.unwrapOrElse((e) => Bot.say(e))
-    }
+        const newRootUrl = interaction.options.getString("url")
+        if (newRootUrl == null) {
+          // GET
+          const oldRoot = await bot.getRootFolder(guild)
+          if (oldRoot.isErr()) return oldRoot
+          await interaction.editReply(
+            `The root folder for this server:\n${oldRoot.value.url}`
+          )
+          return ok(undefined)
+        }
+        // SET
+        // set root folder url by pinning certain message
+        const reply = setRootFolderUrl(newRootUrl)
+        if (reply.isErr()) return reply
+        const m = await interaction.editReply(reply.value)
+        return await pin(channel, m)
+          .inspect(() => {
+            bot.roots.reset(guild.id)
+          })
+          .mapErr((e) => {
+            if (e instanceof DiscordError) {
+              return e.changeMessage(
+                "Failed: Please grant me permission to pin messages."
+              )
+            }
+            return e
+          })
+          .map(() => undefined)
+      })
+      .mapErr((e) => this.handleError(e))
   }
 }
 

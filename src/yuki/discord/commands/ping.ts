@@ -1,3 +1,4 @@
+import { AsyncResult } from "always-panic"
 import type { ChatInputCommandInteraction } from "discord.js"
 import { SlashCommandBuilder } from "discord.js"
 import { lines } from "~misc/format.js"
@@ -11,14 +12,17 @@ class PingCommand extends YukiBaseCommand {
       .setDescription("Ping the bot to check if it is alive.")
   }
 
-  async execute(interaction: ChatInputCommandInteraction) {
+  execute(interaction: ChatInputCommandInteraction) {
     const now = discordTime(Temporal.Now.instant(), "T")
-    const { bot } = this.getContext(interaction)
-    await interaction.reply(
-      lines(
-        `Request time: ${now}`,
-        `Last time I woke up: ${discordTime(bot.readyTime)}`
-      )
+    return AsyncResult.from(this.getContext(interaction)).map(
+      async ({ bot }) => {
+        await interaction.reply(
+          lines(
+            `Request time: ${now}`,
+            `Last time I woke up: ${discordTime(bot.readyTime)}`
+          )
+        )
+      }
     )
   }
 }

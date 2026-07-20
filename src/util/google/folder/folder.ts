@@ -31,7 +31,7 @@ export class GFolder {
       ?.at(1)
     if (id != null) return ok(new this(id) as InstanceType<T>)
     return err(
-      GFolderError.new(
+      new GFolderError(
         GFolderErrorCode.INVALID_URL,
         `\`${url}\` is not a valid url.`,
         { url }
@@ -97,7 +97,7 @@ export class GFolder {
       )
       if (userPermission != null) return ok(this)
       return err(
-        GFolderError.new(
+        new GFolderError(
           GFolderErrorCode.CANNOT_WRITE,
           `No write permission to ${this.url}`,
           { folderId: this.id }
@@ -125,7 +125,7 @@ export class GFolder {
       const id = folder.data.id
       if (id != null) return ok(new GFolder(id))
       return err(
-        GFolderError.new(GFolderErrorCode.CREATION_FAILED, folder.statusText)
+        new GFolderError(GFolderErrorCode.CREATION_FAILED, folder.statusText)
       )
     })
   }
@@ -153,7 +153,7 @@ export class GFolder {
       )
       if (folders != null && folders.length > 0) return ok(folders)
       return err(
-        GFolderError.new(
+        new GFolderError(
           GFolderErrorCode.MISSING_FOLDER,
           `Folder \`${name}\` does not exist.`
         )
@@ -173,7 +173,7 @@ export class GFolder {
       const last = folders.pop()
       if (len === 1 && last != null) return ok(last)
       return err(
-        GFolderError.new(
+        new GFolderError(
           GFolderErrorCode.MANY_FOLDERS,
           `There are ${len.toString()} folders with name \`${name}\`.`
         )
@@ -223,7 +223,7 @@ export class GFolder {
       if (spreadsheets != null && spreadsheets.length > 0)
         return ok(spreadsheets)
       return err(
-        GFolderError.new(
+        new GFolderError(
           GFolderErrorCode.MISSING_SPREADSHEET,
           `Spreadsheet \`${name}\` does not exist.`
         )
@@ -243,7 +243,7 @@ export class GFolder {
       const last = sheets.pop()
       if (len === 1 && last != null) return ok(last)
       return err(
-        GFolderError.new(
+        new GFolderError(
           GFolderErrorCode.MANY_SPREADSHEETS,
           `There are ${len.toString()} spreadsheets with name \`${name}\`.`
         )

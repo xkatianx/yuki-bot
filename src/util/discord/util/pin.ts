@@ -1,4 +1,4 @@
-import { AsyncResult, err, ok } from "always-panic"
+import { AsyncResult, err, ok, result, UnexpectedError } from "always-panic"
 import type { GuildBasedChannel, Message, TextBasedChannel } from "discord.js"
 import { ChannelType, Guild } from "discord.js"
 import { parseString } from "~misc/format.js"
@@ -14,7 +14,6 @@ export enum PinFormat {
  * @param message - The message to check
  * @param format - The format to check
  * @returns True if the message matches the format, false otherwise
- * @throws never
  */
 function isPinFormat(message: Message, format: PinFormat): boolean {
   try {
@@ -31,7 +30,6 @@ function isPinFormat(message: Message, format: PinFormat): boolean {
  * @param bot - The bot to get the pinned messages from
  * @param search - The format to search for
  * @returns The pinned messages, sorted from old to new
- * @throws never
  */
 export function getPinned(
   guildOrChannel: Guild | GuildBasedChannel,
@@ -90,7 +88,6 @@ export function getPinned(
  * Pin a message.
  * @param channel - The channel to pin the message in
  * @param message - The message to pin
- * @throws never
  */
 export function pin(channel: TextBasedChannel, message: Message) {
   return DiscordError.try(async () => {
@@ -100,21 +97,19 @@ export function pin(channel: TextBasedChannel, message: Message) {
 }
 
 function fetchPins(channel: TextBasedChannel) {
-  return DiscordError.try(async () => {
-    const pinned = await channel.messages.fetchPins()
-    return ok(pinned)
-  }).mapErr((e) => {
-    if (e instanceof DiscordError) {
-      if (e.code === DiscordErrorCode.NO_ACCESS) {
-        return DiscordError.new(
-          DiscordErrorCode.NO_ACCESS_FETCH_PINS,
-          "Missing permissions to fetch pinned messages in a certain channel.",
-          e.cause
-        )
-      } else {
-        return DiscordError.new(DiscordErrorCode.UNKNOWN, e.message, e.cause)
+  return result.panic(
+    DiscordError.try(async () => {
+      const pinned = await channel.messages.fetchPins()
+      return ok(pinned)
+    }).mapErr((e) => {
+      if (e instanceof DiscordError) {
+        if (e.code === DiscordErrorCode.NO_ACCESS) {
+          return DiscordError.noAccessFetchPins(e.info.cause)
+        } else {
+          return UnexpectedError.unreachable()
+        }
       }
-    }
-    return e
-  })
+      return e
+    })
+  )
 }

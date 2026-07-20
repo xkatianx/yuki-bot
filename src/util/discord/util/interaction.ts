@@ -1,8 +1,8 @@
-import type { Result } from "always-panic"
 import { err, ok } from "always-panic"
 import type { ButtonInteraction, ModalSubmitInteraction } from "discord.js"
 import { fatal } from "~misc/cli.js"
 import { Temporal } from "~misc/time/index.js"
+import { BotError, BotErrorCode } from "../bot/error.js"
 import type { IRF } from "../commands/base.js"
 
 const buttonFns = new Map<string, IRF<ButtonInteraction>>()
@@ -33,15 +33,21 @@ function setModal(fn: IRF<ModalSubmitInteraction>): string {
   return uid
 }
 
-function getButton(uid: string): Result<IRF<ButtonInteraction>, string> {
+function getButton(uid: string) {
   const fn = buttonFns.get(uid)
-  if (fn == null) return err(`Function (UID=${uid}) does not exist.`)
+  if (fn == null)
+    return err(
+      new BotError(BotErrorCode.UNKNOWN_BUTTON, "unknown button", { uid })
+    )
   return ok(fn)
 }
 
-function getModal(uid: string): Result<IRF<ModalSubmitInteraction>, string> {
+function getModal(uid: string) {
   const fn = modalFns.get(uid)
-  if (fn == null) return err(`Function (UID=${uid}) does not exist.`)
+  if (fn == null)
+    return err(
+      new BotError(BotErrorCode.UNKNOWN_MODAL, "unknown modal", { uid })
+    )
   return ok(fn)
 }
 

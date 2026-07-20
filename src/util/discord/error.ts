@@ -5,22 +5,31 @@ export enum DiscordErrorCode {
   NO_ACCESS,
   NO_ACCESS_FETCH_PINS,
   NO_PERMISSION,
-  UNKNOWN,
 }
 
+type DiscordErrorInfoMap = {
+  [DiscordErrorCode.NO_ACCESS]: { cause: Error }
+  [DiscordErrorCode.NO_ACCESS_FETCH_PINS]: { cause: Error }
+  [DiscordErrorCode.NO_PERMISSION]: { cause: Error }
+}
+
+export type DiscordErrorInfo<C extends DiscordErrorCode> =
+  DiscordErrorInfoMap[C]
+
 export class DiscordError<T extends DiscordErrorCode> extends TypedError<T> {
-  constructor(code: T, message: string, cause?: unknown) {
-    super(code, message)
+  declare info: DiscordErrorInfo<T>
+
+  constructor(code: T, message: string, info: DiscordErrorInfo<T>) {
+    super(code, message, info)
     this.name = "DiscordError"
-    if (cause != null) this.cause = cause
   }
 
-  static new<T extends DiscordErrorCode>(
-    code: T,
-    message: string,
-    cause?: unknown
-  ): DiscordError<T> {
-    return new DiscordError(code, message, cause)
+  static noAccessFetchPins(error: Error) {
+    return new DiscordError(
+      DiscordErrorCode.NO_ACCESS_FETCH_PINS,
+      "Missing permissions to fetch pinned messages in a certain channel.",
+      { cause: error }
+    )
   }
 
   static override fromAny(e: unknown) {
@@ -28,52 +37,17 @@ export class DiscordError<T extends DiscordErrorCode> extends TypedError<T> {
       const message = e.message
       if (e instanceof DiscordAPIError) {
         if (message === "Missing Permissions") {
-          return new DiscordError(DiscordErrorCode.NO_PERMISSION, message, e)
+          return new DiscordError(DiscordErrorCode.NO_PERMISSION, message, {
+            cause: e,
+          })
         }
         if (message === "Missing Access") {
-          return new DiscordError(DiscordErrorCode.NO_ACCESS, message, e)
+          return new DiscordError(DiscordErrorCode.NO_ACCESS, message, {
+            cause: e,
+          })
         }
       }
     }
     return UnexpectedError.fromAny(e)
-  }
-}
-
-export enum BotErrorCode {
-  INVALID_LOG_CHANNEL,
-  UNKNOWN_COMMAND,
-  UNKNOWN_BUTTON,
-  UNKNOWN_MODAL,
-  UNKNOWN_SELECT_MENU,
-}
-
-export class BotError<T extends BotErrorCode> extends TypedError<T> {
-  private constructor(code: T, message: string) {
-    super(code, message)
-    this.name = "BotError"
-  }
-
-  static new<T extends BotErrorCode>(code: T, message: string): BotError<T> {
-    return new BotError(code, message)
-  }
-}
-
-/** Error Level */
-export enum ELV {
-  /** just for debug */
-  LOG,
-  /** some error messages show to discord but ephemeral */
-  PSS,
-  /** some error messages show to discord */
-  SAY,
-  /** should not happen */
-  BAD,
-}
-export class BotLogError extends Error {
-  level: ELV
-  constructor(level: ELV, message: string) {
-    super(message)
-    this.name = "BotLogError"
-    this.level = level
   }
 }

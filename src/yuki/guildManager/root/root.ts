@@ -8,7 +8,7 @@ import { err, ok, TypedError, UnexpectedError } from "always-panic"
 import type { Guild } from "discord.js"
 import { warn } from "~misc/cli.js"
 import { displayCode, formatString, parseString } from "~misc/format.js"
-import { parseUrlResult } from "~misc/resultExtras.js"
+import MyBrowser from "~util/browser/browser.js"
 import { getPinned, PinFormat } from "~util/discord/util/pin.js"
 import type { Yuki } from "../../yuki.js"
 import { RootFolder } from "./rootFolder.js"
@@ -55,7 +55,7 @@ export function getRootFolderUrl(bot: Yuki, guild: Guild) {
  * @returns The reply message.
  */
 export function setRootFolderUrl(url: string) {
-  return parseUrlResult(url)
+  return MyBrowser.parseUrl(url)
     .map((url) => formatString(PinFormat.Root, { url: url.href }))
     .mapErr(() =>
       RootError.new(

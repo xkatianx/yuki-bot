@@ -15,44 +15,40 @@ export enum GFolderErrorCode {
   UNKNOWN,
 }
 
-type GFolderErrorInfo<T extends GFolderErrorCode> =
-  T extends GFolderErrorCode.INVALID_URL
-    ? {
-        /** The input URL */
-        url: string
-      }
-    : T extends GFolderErrorCode.CANNOT_WRITE
-      ? {
-          /** The ID of the folder */
-          folderId: string
-        }
-      : undefined
+type GFolderErrorInfoMap = {
+  [GFolderErrorCode.CANNOT_WRITE]: {
+    /** The ID of the folder */
+    folderId: string
+  }
+  [GFolderErrorCode.INVALID_URL]: {
+    /** The input URL */
+    url: string
+  }
+  [GFolderErrorCode.CREATION_FAILED]: undefined
+  [GFolderErrorCode.MISSING_TEXT]: undefined
+  [GFolderErrorCode.MISSING_FILE]: undefined
+  [GFolderErrorCode.MISSING_FOLDER]: undefined
+  [GFolderErrorCode.MISSING_SPREADSHEET]: undefined
+  [GFolderErrorCode.MANY_FOLDERS]: undefined
+  [GFolderErrorCode.MANY_SPREADSHEETS]: undefined
+  [GFolderErrorCode.UNKNOWN]: undefined
+}
+
+export type GFolderErrorInfo<C extends GFolderErrorCode> =
+  GFolderErrorInfoMap[C]
 
 export class GFolderError<T extends GFolderErrorCode> extends TypedError<T> {
-  override info: GFolderErrorInfo<T>
+  declare info: GFolderErrorInfo<T>
 
-  constructor(code: T, message: string, info: GFolderErrorInfo<T>) {
+  constructor(
+    code: T,
+    message: string,
+    ...[info]: undefined extends GFolderErrorInfo<T>
+      ? [info?: GFolderErrorInfo<T>]
+      : [info: GFolderErrorInfo<T>]
+  ) {
     super(code, message, info)
     this.name = "GFolderError"
-    this.info = info
-  }
-
-  static new<T extends GFolderErrorCode>(
-    code: GFolderErrorInfo<T> extends undefined ? T : never,
-    message: string,
-    info?: GFolderErrorInfo<T>
-  ): GFolderError<T>
-  static new<T extends GFolderErrorCode>(
-    code: T,
-    message: string,
-    info: GFolderErrorInfo<T>
-  ): GFolderError<T>
-  static new<T extends GFolderErrorCode>(
-    code: T,
-    message: string,
-    info: GFolderErrorInfo<T>
-  ): GFolderError<T> {
-    return new GFolderError(code, message, info)
   }
 
   static override fromAny(e: unknown) {
@@ -60,7 +56,7 @@ export class GFolderError<T extends GFolderErrorCode> extends TypedError<T> {
       const message = e.message
       if (e instanceof GaxiosError) {
         if (message.startsWith("File not found:")) {
-          return GFolderError.new(GFolderErrorCode.MISSING_FILE, message)
+          return new GFolderError(GFolderErrorCode.MISSING_FILE, message)
         }
       }
       fail(e)

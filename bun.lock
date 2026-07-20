@@ -8,7 +8,7 @@
         "@googleapis/drive": "^19.2.0",
         "@googleapis/sheets": "^12.0.0",
         "@js-temporal/polyfill": "^0.5.1",
-        "always-panic": "^0.8.2",
+        "always-panic": "^0.8.5",
         "chalk": "^5.6.2",
         "discord.js": "^14.25.1",
         "google-auth-library": "^10.5.0",
@@ -130,7 +130,7 @@
 
     "agent-base": ["agent-base@7.1.4", "", {}, "sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ=="],
 
-    "always-panic": ["always-panic@0.8.2", "", {}, "sha512-PS+xaoOg6DtTlq9u3/hJ2XoUcwD+yzcH1xd1DkNPPUMcNaou4kfMUzKDgWDixiue8btSGioUTOB5EnN+mAqkPg=="],
+    "always-panic": ["always-panic@0.8.5", "", {}, "sha512-5hx+oN/Cmv03yrgUsxFeZ6CrkG5pPuOkFYkjOq5lOrKxq8q+/KomTkxZP10Hp/TG4MiBSHmY8mA8TatQ7Y30Gg=="],
 
     "ansi-regex": ["ansi-regex@5.0.1", "", {}, "sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ=="],
 

@@ -1,11 +1,8 @@
-import { AsyncResult, type Code, type TypedError } from "always-panic"
+import { AsyncResult } from "always-panic"
 import type { Client, Guild, TextChannel } from "discord.js"
 import { GatewayIntentBits } from "discord.js"
 import { Cache } from "~misc/cache.js"
-import { lines } from "~misc/format.js"
 import { Bot } from "~util/discord/bot.js"
-import { myGoogleInfo } from "~util/google/auth/auth.js"
-import { GFolderError, GFolderErrorCode } from "~util/google/folder/error.js"
 import * as YukiCommands from "./discord/commands.js"
 import { getRootFolder } from "./guildManager/root/root.js"
 import type { RootFolder } from "./guildManager/root/rootFolder.js"
@@ -39,26 +36,6 @@ export class Yuki extends Bot {
   protected override onReady(readyClient: Client<true>): void {
     // TODO: maybe fetch all log channels on ready
     super.onReady(readyClient)
-  }
-
-  static override errorToMessage(e: TypedError<Code>): string {
-    if (e instanceof GFolderError) {
-      const code = e.code as GFolderErrorCode
-      if (code === GFolderErrorCode.CANNOT_WRITE) {
-        const email = myGoogleInfo.email
-        const target = email == null ? "me" : `\`${email}\``
-        return `${e.message}\nPlease add ${target} as an editor.`
-      }
-      if (code === GFolderErrorCode.MISSING_FILE) {
-        const email = myGoogleInfo.email
-        const target = email == null ? "me" : `\`${email}\``
-        return lines(
-          e.message,
-          `Please make sure the file exists or add ${target} as a viewer.`
-        )
-      }
-    }
-    return super.errorToMessage(e)
   }
 
   /**

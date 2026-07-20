@@ -1,5 +1,5 @@
-import type { Code, Result, TypedError } from "always-panic"
-import { err, ok, result } from "always-panic"
+import type { Result } from "always-panic"
+import { AsyncResult, err, ok, result } from "always-panic"
 import type {
   ButtonInteraction,
   ChatInputCommandInteraction,
@@ -18,8 +18,8 @@ import {
   TextInputStyle,
 } from "discord.js"
 import { fatal } from "~misc/cli.js"
+import { type AnyBotLogError, BotLogError } from "../bot/log.js"
 import type { IRF } from "../commands/base.js"
-import { BotError, BotErrorCode } from "../error.js"
 import { InteractionHandler } from "./interaction.js"
 
 type MaybeResult<T, E = unknown> = T | Result<T, E>
@@ -46,10 +46,10 @@ export class Form {
   ) => Promise<
     MaybeResult<
       string | MessagePayload | InteractionEditReplyOptions,
-      TypedError<Code>
+      AnyBotLogError
     >
   >
-  #afterSubmit?: () => Promise<void>
+  #afterSubmit?: () => AsyncResult<void, AnyBotLogError>
 
   getModal(idx: number): ModalBuilder {
     if (this.#modal[idx] == null) {
@@ -59,14 +59,16 @@ export class Form {
   }
 
   #newModal(title: string, idx: number): ModalBuilder {
-    const fn: IRF<ModalSubmitInteraction> = async (i) => {
-      this.#editFromModal(i, idx)
-      if (i.isFromMessage()) {
-        await i.update({
-          content: this.printToDiscord(),
-        })
-      }
-    }
+    const fn: IRF<ModalSubmitInteraction> = (i) =>
+      AsyncResult.from(async () => {
+        this.#editFromModal(i, idx)
+        if (i.isFromMessage()) {
+          await i.update({
+            content: this.printToDiscord(),
+          })
+        }
+        return ok(undefined)
+      })
     const uid = InteractionHandler.setModal(fn)
 
     const inputs = this.#inputs.slice(
@@ -105,7 +107,7 @@ export class Form {
   }
 
   /** The returned string of `fn` will be the message showed after submit. */
-  setAfterSubmit(fn: () => Promise<void>): this {
+  setAfterSubmit(fn: () => AsyncResult<void, AnyBotLogError>): this {
     this.#afterSubmit = fn
     return this
   }
@@ -113,9 +115,11 @@ export class Form {
   #newButtons(): ActionRowBuilder<ButtonBuilder> {
     const edits = []
     for (let c = 0; c * GROUP_SIZE < this.#inputs.length; c++) {
-      const onEdit: IRF<ButtonInteraction> = async (i) => {
-        await i.showModal(this.getModal(c))
-      }
+      const onEdit: IRF<ButtonInteraction> = (i) =>
+        AsyncResult.from(async () => {
+          await i.showModal(this.getModal(c))
+          return ok(undefined)
+        })
       const uid = InteractionHandler.setButton(onEdit)
       const edit = new ButtonBuilder()
         .setCustomId(uid)
@@ -123,26 +127,29 @@ export class Form {
         .setStyle(ButtonStyle.Secondary)
       edits.push(edit)
     }
-    if (edits.length > 1)
+    if (edits.length > 1) {
       edits.forEach((edit, idx) => {
         edit.setLabel(`Edit ${(idx + 1).toString()}`)
       })
-
-    const onSubmit: IRF<ButtonInteraction> = async (i) => {
-      await i.deferReply()
-      await this.#interaction?.editReply({
-        components: [],
-      })
-      if (this.onSubmit == null)
-        throw BotError.new(
-          BotErrorCode.UNKNOWN_MODAL,
-          "Missing submission function."
-        )
-      const res = await this.onSubmit(this)
-      const str = result.isResult(res) ? res.unwrap() : res
-      await i.editReply(str)
-      await this.#afterSubmit?.()
     }
+    const onSubmit: IRF<ButtonInteraction> = (i) =>
+      AsyncResult.from(async () => {
+        await i.deferReply()
+        await this.#interaction?.editReply({
+          components: [],
+        })
+        if (this.onSubmit == null)
+          return BotLogError.say(
+            "This command is buggy. Please contact the developer.",
+            new Error("Missing submission function.")
+          )
+        const res0 = await this.onSubmit(this)
+        const res = result.isResult(res0) ? res0 : ok(res0)
+        if (res.isErr()) return res
+        await i.editReply(res.value)
+        const res2 = await this.#afterSubmit?.()
+        return res2 ?? ok(undefined)
+      })
     const uid = InteractionHandler.setButton(onSubmit)
     const submit = new ButtonBuilder()
       .setCustomId(uid)

@@ -1,8 +1,9 @@
 // Read https://discordjs.guide/slash-commands/advanced-creation.html
 // for advanced usage.
 
-import { ok, UnexpectedError } from "always-panic"
+import { ok, result } from "always-panic"
 import { REST, Routes } from "discord.js"
+import { DiscordError } from "../error.js"
 import type { BaseCommand } from "./base.js"
 
 /**
@@ -14,7 +15,6 @@ import type { BaseCommand } from "./base.js"
  * @param token - The token of the bot.
  * @param clientId - The client ID of the bot.
  * @param guildId - The guild ID to deploy the commands to.
- * @returns A success message if the commands were deployed successfully.
  */
 export function deployCommands(
   commands: BaseCommand[],
@@ -27,8 +27,10 @@ export function deployCommands(
       ? Routes.applicationCommands(clientId) // for all guilds
       : Routes.applicationGuildCommands(clientId, guildId) // for 1 guild
   const body = commands.map((v) => v.data.toJSON())
-  return UnexpectedError.try(async () => {
-    await new REST({ version: "10" }).setToken(token).put(routes, { body })
-    return ok("Successfully reloaded application (/) commands.")
-  })
+  return result.panic(
+    DiscordError.try(async () => {
+      await new REST({ version: "10" }).setToken(token).put(routes, { body })
+      return ok(null)
+    })
+  )
 }

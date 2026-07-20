@@ -1,29 +1,31 @@
-import type { Code } from "always-panic"
-import { err, ok, TypedError, UnexpectedError } from "always-panic"
+import { err, ok } from "always-panic"
 import type {
-  ButtonInteraction,
   Channel,
-  ChatInputCommandInteraction,
   GatewayIntentBits,
   Interaction,
   MessagePayload,
-  ModalSubmitInteraction,
-  StringSelectMenuInteraction,
   TextChannel,
 } from "discord.js"
 import { ChannelType, Client, Collection, Events } from "discord.js"
-import { done, fail, info, warn } from "~misc/cli.js"
-import { displayCodeBlock, lines } from "~misc/format.js"
+import { done, fail, warn } from "~misc/cli.js"
 import { Temporal } from "~misc/time/index.js"
-import { noDefault } from "~misc/type.js"
+import {
+  actionButton,
+  actionCommand,
+  actionModal,
+  actionSelectMenu,
+  actionUnknown,
+  toBotLogError,
+} from "./bot/action.js"
+import { type AnyBotError, BotError, BotErrorCode } from "./bot/error.js"
+import { type AnyBotLogError, report } from "./bot/log.js"
 import type { BaseCommand } from "./commands/base.js"
-import { BotError, BotErrorCode, BotLogError, ELV } from "./error.js"
-import { InteractionHandler } from "./util/interaction.js"
+import { DiscordError } from "./error.js"
 
 export class Bot {
   readonly client: Client
   protected logChannel = new Collection<string, TextChannel>()
-  protected commands = new Collection<string, BaseCommand>()
+  readonly commands = new Collection<string, BaseCommand>()
   #readyTime = Temporal.Now.instant()
 
   get readyTime() {
@@ -77,111 +79,8 @@ export class Bot {
 
   ///////////////////// Error handling //////////////////////////////
 
-  /**
-   * This is called when a slash command has some error and fails to reply
-   * to the user, this function will reply to the user instead.
-   */
-  protected async handleError(
-    interaction: Interaction,
-    e: unknown
-  ): Promise<void> {
-    let content = "There was an error while executing this command!"
-    let reply = false
-    let ephemeral = false
-
-    if (e instanceof BotLogError) {
-      switch (e.level) {
-        // biome-ignore lint/suspicious/noFallthroughSwitchClause: intentional
-        case ELV.PSS:
-          ephemeral = true
-        // biome-ignore lint/suspicious/noFallthroughSwitchClause: intentional
-        case ELV.SAY:
-          content = e.message
-          reply = true
-        case ELV.LOG:
-          if (interaction.guild != null)
-            (
-              await this.logToGuild(
-                displayCodeBlock(lines(e.message, e.stack ?? "")),
-                interaction.guild.id
-              )
-            )?.unwrapOrElse((e) => {
-              fail(e)
-            })
-          break
-        default:
-          fail(e)
-      }
-    } else fail(e)
-
-    if (
-      reply &&
-      (interaction.isChatInputCommand() ||
-        interaction.isButton() ||
-        interaction.isModalSubmit())
-    ) {
-      try {
-        await interaction.reply({ content, ephemeral })
-      } catch {
-        try {
-          await interaction.editReply(content)
-        } catch {
-          // TODO: this happens when the message is gone or it's been too long
-        }
-      }
-    }
-  }
-
-  /**
-   * Convert an error to a message to display to the user.
-   * @param e - The error to convert to a message
-   * @returns The message to display to the user
-   * @throws never
-   */
-  static errorToMessage(e: TypedError<Code>): string {
-    if (e instanceof BotError) {
-      const code = e.code as BotErrorCode
-      switch (code) {
-        case BotErrorCode.UNKNOWN_COMMAND:
-          return `Unknown command: \`${e.message}\``
-        case BotErrorCode.UNKNOWN_BUTTON:
-        case BotErrorCode.UNKNOWN_MODAL:
-        case BotErrorCode.UNKNOWN_SELECT_MENU:
-          return "The action has expired."
-        case BotErrorCode.INVALID_LOG_CHANNEL:
-          return e.message
-        default:
-          return noDefault(code)
-      }
-    }
-    return e.message
-  }
-
-  /** Reply an ephemeral error message to Discord.
-   *  Non-ephemeral if after `deferReply({ ephemeral: false })`
-   */
-  static pss(e: string | TypedError<Code>, silent = false): never {
-    if (!silent) {
-      if (e instanceof TypedError) {
-        info(e.code, e.message, e.stack)
-      } else info(e)
-    }
-    const message = e instanceof TypedError ? this.errorToMessage(e) : e
-    throw new BotLogError(ELV.PSS, message)
-  }
-
-  /** Reply an non-ephemeral error message to Discord.
-   *  Ephemeral if after `deferReply({ ephemeral: true })`
-   */
-  static say(e: string | TypedError<Code>, silent = false): never {
-    if (!silent) {
-      if (e instanceof TypedError) {
-        info(e.code, e.message, e.stack)
-      } else info(e)
-    }
-    const message = e instanceof TypedError ? this.errorToMessage(e) : e
-    throw new BotLogError(ELV.SAY, message)
-  }
+  /** Report an expected error to Discord. See `./bot/log.js`. */
+  protected readonly report = report
 
   ///////////////////// Interaction handling //////////////////////////////
 
@@ -191,44 +90,35 @@ export class Bot {
 
   /**
    * Handle an interaction.
+   *
+   * Dispatches to the matching action. Internal failures come back as a
+   * `BotError` and user-facing ones as a `BotLogError`; both are normalized by
+   * `toBotLogError` and reported via {@link report}.
+   * Unexpected throws (Discord API errors, bugs) are caught and logged via `fail`.
    * @param i - The interaction to handle
-   * @throws freely
    */
   protected async handleInteraction(i: Interaction): Promise<void> {
     try {
-      if (i.isChatInputCommand()) await this.actionCommand(i)
-      else if (i.isButton()) await this.actionButton(i)
-      else if (i.isModalSubmit()) await this.actionModal(i)
-      else if (i.isStringSelectMenu()) await this.actionSelectMenu(i)
+      const res = await this.route(i)
+      if (res.isErr()) await this.report(i, toBotLogError(res.error))
     } catch (e: unknown) {
-      await this.handleError(i, e)
+      fail(e)
     }
   }
 
-  protected async actionCommand(interaction: ChatInputCommandInteraction) {
-    const command = this.commands.get(interaction.commandName)
-    if (command == null)
-      throw BotError.new(BotErrorCode.UNKNOWN_COMMAND, interaction.commandName)
-    await command.execute(interaction)
+  protected route(i: Interaction) {
+    if (i.isChatInputCommand()) return this.actionCommand(i)
+    if (i.isButton()) return this.actionButton(i)
+    if (i.isModalSubmit()) return this.actionModal(i)
+    if (i.isStringSelectMenu()) return this.actionSelectMenu(i)
+    return this.actionUnknown(i)
   }
 
-  protected async actionButton(interaction: ButtonInteraction) {
-    const method = InteractionHandler.getButton(interaction.customId)
-      .mapErr((e) => BotError.new(BotErrorCode.UNKNOWN_BUTTON, e))
-      .unwrap()
-    await method(interaction)
-  }
-
-  protected async actionModal(interaction: ModalSubmitInteraction) {
-    const method = InteractionHandler.getModal(interaction.customId)
-      .mapErr((e) => BotError.new(BotErrorCode.UNKNOWN_MODAL, e))
-      .unwrap()
-    await method(interaction)
-  }
-
-  protected async actionSelectMenu(_interaction: StringSelectMenuInteraction) {
-    // respond to the select menu
-  }
+  protected readonly actionCommand = actionCommand
+  protected readonly actionButton = actionButton
+  protected readonly actionModal = actionModal
+  protected readonly actionSelectMenu = actionSelectMenu
+  protected readonly actionUnknown = actionUnknown
 
   ///////////////////// Log handling //////////////////////////////
 
@@ -242,7 +132,7 @@ export class Bot {
   setLogChannel(guildId: string, channel: Channel) {
     if (channel.type !== ChannelType.GuildText) {
       return err(
-        BotError.new(
+        new BotError(
           BotErrorCode.INVALID_LOG_CHANNEL,
           "A log channel has to be a text channel."
         )
@@ -273,6 +163,10 @@ export class Bot {
    * @throws never
    */
   logToChannel(message: string | MessagePayload, channel: TextChannel) {
-    return UnexpectedError.try(async () => ok(await channel.send(message)))
+    // Deliberately not panicking: this runs inside `report`, so a throw
+    // here would escape the error handler itself. Callers swallow the `Err`.
+    return DiscordError.try(async () => ok(await channel.send(message)))
   }
 }
+
+export type { AnyBotError, AnyBotLogError }

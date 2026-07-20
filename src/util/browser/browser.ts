@@ -1,9 +1,15 @@
-import type { Code } from "always-panic"
-import { AsyncResult, err, ok, TypedError, UnexpectedError } from "always-panic"
+import {
+  AsyncResult,
+  err,
+  ok,
+  result,
+  TypedError,
+  UnexpectedError,
+  UnexpectedErrorCode,
+} from "always-panic"
 import puppeteer, { type Browser, type Page, TimeoutError } from "puppeteer"
 import { info } from "~misc/cli.js"
 import { env } from "~misc/env.js"
-import { parseUrlResult } from "~misc/resultExtras.js"
 
 class MyBrowser implements AsyncDisposable {
   TIMEOUT_SECONDS = 12
@@ -11,7 +17,6 @@ class MyBrowser implements AsyncDisposable {
   /**
    * Create a new MyBrowser instance.
    * @param browser - The underlying puppeteer browser.
-   * @throws never
    */
   constructor(public readonly browser: Browser) {}
 
@@ -19,12 +24,15 @@ class MyBrowser implements AsyncDisposable {
    * Parse a URL string into a URL object.
    * @param url - The URL string to parse.
    * @returns A URL object.
-   * @throws never
    */
   static parseUrl(url: string) {
-    return parseUrlResult(url).mapErr(() =>
-      BrowserError.new(BrowserErrorCode.INVALID_URL, `Invalid URL: ${url}`)
-    )
+    try {
+      return ok(new URL(url))
+    } catch {
+      return err(
+        BrowserError.new(BrowserErrorCode.INVALID_URL, `Invalid URL: ${url}`)
+      )
+    }
   }
 
   // The signature is for YukiBrowser to extend
@@ -32,22 +40,24 @@ class MyBrowser implements AsyncDisposable {
    * Create a new MyBrowser instance.
    * @param _url - The main URL for this browser.
    * @returns A MyBrowser instance.
-   * @throws never
    */
-  static new(_url?: string): AsyncResult<MyBrowser, TypedError<Code>> {
-    return UnexpectedError.try(async () => {
-      const args = env.puppeteerLaunchArgs?.split(" ") ?? []
-      const b = await puppeteer.launch({
-        pipe: false,
-        args,
+  static new(
+    _url?: string
+  ): AsyncResult<MyBrowser, BrowserError<BrowserErrorCode>> {
+    return result.panic(
+      BrowserError.try(async () => {
+        const args = env.puppeteerLaunchArgs?.split(" ") ?? []
+        const b = await puppeteer.launch({
+          pipe: false,
+          args,
+        })
+        return ok(new MyBrowser(b))
       })
-      return ok(new MyBrowser(b))
-    })
+    )
   }
 
   /**
    * Dispose the browser.
-   * @throws never
    */
   async [Symbol.asyncDispose]() {
     try {
@@ -61,7 +71,6 @@ class MyBrowser implements AsyncDisposable {
    * Listen to the WebSocket for the given page.
    * TODO: verify if this works
    * @param page - The page to listen to.
-   * @throws any
    */
   protected async listenWS(page: Page) {
     const session = await page.createCDPSession()
@@ -74,79 +83,61 @@ class MyBrowser implements AsyncDisposable {
   /**
    * Get the "second" page or create a new one if it doesn't exist.
    * @returns The second page.
-   * @throws never
    */
   protected getPage() {
-    return UnexpectedError.try(async () => {
-      const pages = await this.browser.pages()
-      let page = pages[1]
-      if (page == null) {
-        page = await this.browser.newPage()
-        page.setDefaultTimeout(this.TIMEOUT_SECONDS * 1000)
-        page.setDefaultNavigationTimeout(this.TIMEOUT_SECONDS * 1000)
-        await page.setViewport({ width: 1280, height: 1024 })
-        await this.listenWS(page)
-      }
-      return ok(page)
-    })
-  }
-
-  /**
-   * Browse to the given URL.
-   * @param url - The URL to browse to.
-   * @param page - The page used to browse to the URL.
-   * @returns The HTTP response.
-   * @throws any
-   */
-  private async _browse(url: URL, page: Page) {
-    try {
-      const res = await page.goto(url.href, {
-        waitUntil: ["domcontentloaded", "networkidle0"],
+    return result.panic(
+      BrowserError.try(async () => {
+        const pages = await this.browser.pages()
+        let page = pages[1]
+        if (page == null) {
+          page = await this.browser.newPage()
+          page.setDefaultTimeout(this.TIMEOUT_SECONDS * 1000)
+          page.setDefaultNavigationTimeout(this.TIMEOUT_SECONDS * 1000)
+          await page.setViewport({ width: 1280, height: 1024 })
+          await this.listenWS(page)
+        }
+        return ok(page)
       })
-      return ok(res)
-    } catch (e) {
-      if (!(e instanceof Error)) throw e
-      if (
-        e instanceof TimeoutError ||
-        e.message.startsWith("net::ERR_CONNECTION_TIMED_OUT ")
-      )
-        return err(BrowserError.new(BrowserErrorCode.TIMEOUT, e.message))
-      if (
-        e.message.startsWith("net::ERR_NAME_NOT_RESOLVED ") ||
-        e.message.startsWith(
-          "Protocol error (Page.navigate): Cannot navigate to invalid URL"
-        )
-      )
-        return err(BrowserError.new(BrowserErrorCode.INVALID_URL, e.message))
-      if (e.message.startsWith("net::ERR_ABORTED "))
-        return err(BrowserError.new(BrowserErrorCode.ABORTED, e.message))
-      throw e
-    }
+    )
   }
 
   /**
    * Browse to the given URL.
    * @param url - The URL to browse to.
    * @returns The HTTP response.
-   * @throws never
    */
   browse(url: string) {
-    return AsyncResult.merge([
-      AsyncResult.from(MyBrowser.parseUrl(url)),
-      this.getPage(),
-    ]).andThen(([url, page]) =>
-      UnexpectedError.try(async () => this._browse(url, page))
+    return result.panic(
+      AsyncResult.merge([
+        AsyncResult.from(MyBrowser.parseUrl(url)),
+        this.getPage(),
+      ]).andThen(([url, page]) =>
+        BrowserError.try(async () => {
+          return ok(
+            await page.goto(url.href, {
+              waitUntil: ["domcontentloaded", "networkidle0"],
+            })
+          )
+        }).orElse((e) => {
+          if (
+            e instanceof UnexpectedError &&
+            e.code === UnexpectedErrorCode.UNKNOWN
+          ) {
+            return err(toNavigationError(e.cause))
+          }
+          return err(e)
+        })
+      )
     )
   }
 
   /**
    * Get the URL of the current page.
    * @returns The URL of the current page.
-   * @throws never
    */
   getUrl() {
-    return this.getPage().andThen((page) =>
-      UnexpectedError.try(() => ok(page.url()))
+    return result.panic(
+      this.getPage().andThen((page) => BrowserError.try(() => ok(page.url())))
     )
   }
 
@@ -154,25 +145,26 @@ class MyBrowser implements AsyncDisposable {
    * Get the title of the current page.
    * This will wait for the title to change after page load for 2 seconds.
    * @returns The title of the current page.
-   * @throws never
    */
   getTitle() {
-    return this.getPage().andThen(async (page) =>
-      UnexpectedError.try(async () => {
-        // Wait for the title to change after page load for 2 seconds
-        const initialTitle = await page.evaluate(() => document.title)
-        try {
-          await page.waitForFunction(
-            (oldTitle) => document.title !== oldTitle,
-            { timeout: 2000 },
-            initialTitle
-          )
-        } catch {
-          // ignore
-        }
-        const newTitle = await page.evaluate(() => document.title)
-        return ok(newTitle)
-      })
+    return result.panic(
+      this.getPage().andThen(async (page) =>
+        BrowserError.try(async () => {
+          // Wait for the title to change after page load for 2 seconds
+          const initialTitle = await page.evaluate(() => document.title)
+          try {
+            await page.waitForFunction(
+              (oldTitle) => document.title !== oldTitle,
+              { timeout: 2000 },
+              initialTitle
+            )
+          } catch {
+            // ignore
+          }
+          const newTitle = await page.evaluate(() => document.title)
+          return ok(newTitle)
+        })
+      )
     )
   }
 
@@ -181,7 +173,6 @@ class MyBrowser implements AsyncDisposable {
    * @param filename - The filename of the screenshot.
    * It must match the pattern `[a-zA-Z0-9_-]+\.(png|jpeg|webp)`.
    * @returns the buffer of the screenshot.
-   * @throws never
    */
   async screenshot(
     filename: `${string}.png` | `${string}.jpeg` | `${string}.webp` = "test.png"
@@ -190,13 +181,15 @@ class MyBrowser implements AsyncDisposable {
       return err(
         BrowserError.new(BrowserErrorCode.INVALID_SCREENSHOT_FILENAME, filename)
       )
-    return this.getPage().andThen(async (page) =>
-      UnexpectedError.try(async () =>
-        ok(
-          await page.screenshot({
-            path: `screenshots/${filename}`,
-            fullPage: true,
-          })
+    return result.panic(
+      this.getPage().andThen(async (page) =>
+        BrowserError.try(async () =>
+          ok(
+            await page.screenshot({
+              path: `screenshots/${filename}`,
+              fullPage: true,
+            })
+          )
         )
       )
     )
@@ -213,7 +206,7 @@ export enum BrowserErrorCode {
 }
 
 export class BrowserError<T extends BrowserErrorCode> extends TypedError<T> {
-  private constructor(code: T, message: string) {
+  constructor(code: T, message: string) {
     super(code, message)
     this.name = "BrowserError"
   }
@@ -224,4 +217,33 @@ export class BrowserError<T extends BrowserErrorCode> extends TypedError<T> {
   ): BrowserError<T> {
     return new BrowserError(code, message)
   }
+
+  static override fromAny(e: unknown) {
+    return UnexpectedError.fromAny(e)
+  }
+}
+
+/**
+ * Recognize the puppeteer navigation failures we know how to type.
+ * Anything else is a bug in the chain and stays an `UnexpectedError`.
+ */
+function toNavigationError(e: unknown) {
+  if (e instanceof Error) {
+    const message = e.message
+    if (
+      e instanceof TimeoutError ||
+      message.startsWith("net::ERR_CONNECTION_TIMED_OUT ")
+    )
+      return BrowserError.new(BrowserErrorCode.TIMEOUT, message)
+    if (
+      message.startsWith("net::ERR_NAME_NOT_RESOLVED ") ||
+      message.startsWith(
+        "Protocol error (Page.navigate): Cannot navigate to invalid URL"
+      )
+    )
+      return BrowserError.new(BrowserErrorCode.INVALID_URL, message)
+    if (message.startsWith("net::ERR_ABORTED "))
+      return BrowserError.new(BrowserErrorCode.ABORTED, message)
+  }
+  return UnexpectedError.fromAny(e)
 }

@@ -1,4 +1,5 @@
 import type { Code, Result, TypedError } from "always-panic"
+import { ok } from "always-panic"
 import type {
   ChatInputCommandInteraction,
   Guild,
@@ -6,8 +7,11 @@ import type {
   TextBasedChannel,
 } from "discord.js"
 import { TextChannel } from "discord.js"
-import { Bot } from "~util/discord/bot.js"
+import { lines } from "~misc/format.js"
+import { type AnyBotLogError, BotLogError } from "~util/discord/bot/log.js"
 import { BaseCommand } from "~util/discord/commands/base.js"
+import { myGoogleInfo } from "~util/google/auth/auth.js"
+import { GFolderError, GFolderErrorCode } from "~util/google/folder/error.js"
 import type { Yuki } from "../../yuki.js"
 
 /**
@@ -27,10 +31,14 @@ import type { Yuki } from "../../yuki.js"
  *       .setDescription("My command description")
  *   }
  *
- *   async execute(interaction: ChatInputCommandInteraction) {
- *     const { bot, channel, guild } = this.getContext(interaction)
- *     await this.deferReply(interaction)
- *     // Your command logic here
+ *   execute(interaction: ChatInputCommandInteraction) {
+ *     return AsyncResult.from(async () => {
+ *       const ctx = this.getContext(interaction)
+ *       if (ctx.isErr()) return ctx
+ *       await this.deferReply(interaction)
+ *       // Your command logic here
+ *       return ok(undefined)
+ *     })
  *   }
  * }
  * ```
@@ -40,37 +48,52 @@ export abstract class YukiBaseCommand extends BaseCommand {
    * Get the context (bot, channel, guild) from an interaction.
    * This is a convenience method that wraps interactionFetch.
    */
-  protected getContext(interaction: ChatInputCommandInteraction): {
-    bot: Yuki
-    channel: TextBasedChannel
-    guild: Guild
-  } {
+  protected getContext(
+    interaction: ChatInputCommandInteraction
+  ): Result<
+    { bot: Yuki; channel: TextBasedChannel; guild: Guild },
+    AnyBotLogError
+  > {
     const bot = interaction.client.mybot
-    const channel =
-      interaction.channel ??
-      Bot.say("This command is not available in this channel.")
-    const guild =
-      interaction.guild ??
-      Bot.say("This command is not available outside a guild.")
-    return { bot, channel, guild }
+    if (interaction.channel == null)
+      return BotLogError.say("This command is not available in this channel.")
+    if (interaction.guild == null)
+      return BotLogError.say("This command is not available outside a guild.")
+    return ok({ bot, channel: interaction.channel, guild: interaction.guild })
   }
 
   /**
    * Get the text channel from an interaction.
-   * @throws Yuki.say if the channel is not a text channel.
+   * @returns `Err` if the channel is not a text channel.
    */
-  protected getTextChannel(interaction: Interaction): TextChannel {
-    if (interaction.channel instanceof TextChannel) return interaction.channel
-    Bot.say("This command is not available in this channel.")
+  protected getTextChannel(
+    interaction: Interaction
+  ): Result<TextChannel, AnyBotLogError> {
+    if (interaction.channel instanceof TextChannel)
+      return ok(interaction.channel)
+    return BotLogError.say("This command is not available in this channel.")
   }
 
-  /**
-   * Unwrap an AsyncResult into a value.
-   * @throws Yuki.say if the result is an error.
-   */
-  protected async unwrap<T>(
-    result: PromiseLike<Result<T, TypedError<Code>>>
-  ): Promise<T> {
-    return (await result).unwrapOrElse((e) => Bot.say(e))
+  protected handleError(e: TypedError<Code>): AnyBotLogError {
+    if (e instanceof BotLogError) return e
+    if (e instanceof GFolderError) {
+      const code = e.code as GFolderErrorCode
+      if (code === GFolderErrorCode.CANNOT_WRITE) {
+        const email = myGoogleInfo.email
+        const target = email == null ? "me" : `\`${email}\``
+        const message = `${e.message}\nPlease add ${target} as an editor.`
+        return BotLogError.say(message).unwrapErr()
+      }
+      if (code === GFolderErrorCode.MISSING_FILE) {
+        const email = myGoogleInfo.email
+        const target = email == null ? "me" : `\`${email}\``
+        const message = lines(
+          e.message,
+          `Please make sure the file exists or add ${target} as a viewer.`
+        )
+        return BotLogError.say(message).unwrapErr()
+      }
+    }
+    return BotLogError.say(e.message, e).unwrapErr()
   }
 }
