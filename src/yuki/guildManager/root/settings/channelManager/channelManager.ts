@@ -44,13 +44,25 @@ export class ChannelManager implements AsyncDisposable {
   }
 
   appendPuzzle(url: string, title: string) {
-    return this.spreadsheet.newPuzzleTab(url, title).mapErr((e) => {
-      if (e instanceof GSheetError) {
-        if (e.code === GSheetErrorCode.DUPLICATE_SHEET) {
-          e.message = `${displayCode(title)} sheet already exists.`
-        }
-      }
-      return e
-    })
+    return appendPuzzle(this.spreadsheet, url, title)
   }
+}
+
+/**
+ * Append a puzzle tab to a spreadsheet, without needing a ChannelManager
+ * (and therefore without a browser).
+ */
+export function appendPuzzle(
+  spreadsheet: PuzzleSheet,
+  url: string,
+  title: string
+) {
+  return spreadsheet.newPuzzleTab(url, title).mapErr((e) => {
+    if (e instanceof GSheetError) {
+      if (e.code === GSheetErrorCode.DUPLICATE_SHEET) {
+        e.message = `${displayCode(title)} sheet already exists.`
+      }
+    }
+    return e
+  })
 }

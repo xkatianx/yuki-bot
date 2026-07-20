@@ -73,4 +73,15 @@ export class Yuki extends Bot {
       settings.getChannelManager(channel)
     )
   }
+
+  /**
+   * Get the puzzle spreadsheet of the channel without launching a browser.
+   * @param channel - The channel to get the puzzle spreadsheet for.
+   * @returns The puzzle spreadsheet of the channel.
+   */
+  getPuzzleSheet(channel: TextChannel) {
+    return this.getSettings(channel.guild).andThen((settings) =>
+      settings.getPuzzleSheet(channel)
+    )
+  }
 }

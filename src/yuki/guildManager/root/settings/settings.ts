@@ -38,6 +38,16 @@ export class Settings {
     )
   }
 
+  /**
+   * Get the puzzle spreadsheet of the channel without creating a
+   * ChannelManager, so no browser is launched.
+   */
+  getPuzzleSheet(channel: TextChannel) {
+    return this.spreadsheet
+      .getSpreadsheetId(channel)
+      .map((id) => new PuzzleSheet(id))
+  }
+
   setChannelManager(
     channel: TextChannel,
     folder: GFolder,
