@@ -5,9 +5,13 @@ starts automatically when the machine boots.
 
 ## 1. Prerequisites
 
-Install Bun (as the user that will own the process, **not** root):
+Install Bun (as the user that will own the process, **not** root). The install
+script unpacks a zip, so `unzip` and `curl` must be present first — a fresh
+Ubuntu image usually has neither, and the script fails with
+`unzip is required to install bun`:
 
 ```bash
+sudo apt update && sudo apt install -y curl unzip
 curl -fsSL https://bun.sh/install | bash
 source ~/.bashrc
 bun --version
@@ -64,15 +68,16 @@ Stop it with `Ctrl+C` once you see the bot come online.
 
 ## 3. PM2 config
 
-[pm2.config.js](pm2.config.js) describes the process:
+[pm2.config.cjs](pm2.config.cjs) describes the process:
 
 ```js
 module.exports = {
   apps: [
     {
       name: "yuki-bot",
-      script: "src/index.ts",
-      interpreter: "bun",
+      script: "bun",
+      args: "run start",
+      interpreter: "none",
       env: {
         PATH: `${process.env.HOME}/.bun/bin:${process.env.PATH}`,
       },
@@ -83,13 +88,19 @@ module.exports = {
 
 Notes:
 
-- `interpreter: "bun"` is what makes PM2 run TypeScript directly; the `PATH`
-  entry is needed because PM2's startup service does not source `~/.bashrc`, so
-  `~/.bun/bin/bun` would otherwise not be found.
+- `interpreter: "none"` tells PM2 to exec `bun run start` as a plain child
+  process. The more obvious `script: "src/index.ts", interpreter: "bun"` does
+  not work here: PM2 wraps the entry point in a loader that `require()`s it,
+  and `require()` cannot load a module using top-level `await`.
+- The `PATH` entry is needed because PM2's startup service does not source
+  `~/.bashrc`, so `~/.bun/bin/bun` would otherwise not be found.
 - The working directory matters: Bun loads `.env.local` relative to it. PM2
-  defaults it to the directory holding `pm2.config.js`, which is what you want.
+  defaults it to the directory holding `pm2.config.cjs`, which is what you want.
   If you ever see the bot fail to find its config, pin it explicitly with
   `cwd: "/home/YOUR_USER/yuki-bot"`.
+- The `.cjs` extension is required. `package.json` sets `"type": "module"`, so a
+  `.js` config would be treated as ESM and PM2 — which `require()`s it — fails
+  with `ERR_REQUIRE_ESM`.
 - Do **not** put secrets in `env` here — this file is committed to git. Keep
   them in `.env.local`.
 
@@ -97,7 +108,7 @@ Notes:
 
 ```bash
 cd ~/yuki-bot
-pm2 start pm2.config.js
+pm2 start pm2.config.cjs
 pm2 logs yuki-bot        # confirm it connected to Discord
 ```
 
@@ -148,9 +159,13 @@ pm2 save               # only if the process list changed
 
 ## Troubleshooting
 
-**`Interpreter bun is NOT AVAILABLE in PATH`** — the `PATH` entry in
-`pm2.config.js` did not resolve. Use an absolute path instead:
-`interpreter: "/home/YOUR_USER/.bun/bin/bun"`.
+**`bun: command not found` / `Script not found`** — the `PATH` entry in
+`pm2.config.cjs` did not resolve. Use an absolute path instead:
+`script: "/home/YOUR_USER/.bun/bin/bun"`.
+
+**`require() async module ... is unsupported`** — the config is using
+`interpreter: "bun"`. Switch to the `script: "bun"` + `interpreter: "none"`
+form shown above.
 
 **Bot starts then exits immediately** — check `pm2 logs yuki-bot`. Usually a
 missing env var; the app calls `fatal()` and dies. Confirm `.env.local` is in
