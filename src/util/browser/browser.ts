@@ -113,11 +113,19 @@ class MyBrowser implements AsyncDisposable {
         this.getPage(),
       ]).andThen(([url, page]) =>
         BrowserError.try(async () => {
-          return ok(
-            await page.goto(url.href, {
-              waitUntil: ["domcontentloaded", "networkidle0"],
+          const r = await page.goto(url.href, {
+            waitUntil: ["load"],
+          })
+          // Paradox Puzzlehunt uses an SSE/EventSource stream opening forever,
+          // so full network idle may never happen
+          await page
+            .waitForNetworkIdle({
+              idleTime: 500,
+              timeout: 3000,
+              concurrency: 1,
             })
-          )
+            .catch(() => {})
+          return ok(r)
         }).orElse((e) => {
           if (
             e instanceof UnexpectedError &&
