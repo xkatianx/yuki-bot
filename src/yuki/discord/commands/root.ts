@@ -1,4 +1,4 @@
-import { AsyncResult, ok } from "always-panic"
+import { ok, result } from "always-panic"
 import type { ChatInputCommandInteraction } from "discord.js"
 import { SlashCommandBuilder } from "discord.js"
 import { BotLogError } from "~util/discord/bot/log.js"
@@ -23,42 +23,41 @@ class RootCommand extends YukiBaseCommand {
   }
 
   execute(interaction: ChatInputCommandInteraction) {
-    return AsyncResult.from(this.getContext(interaction))
-      .andThen(async ({ bot, channel, guild }) => {
-        await this.deferReply(interaction)
+    const self = this
+    return result
+      .gen(async function* () {
+        const { bot, channel, guild } = yield* self.getContext(interaction)
+        await self.deferReply(interaction)
         if (interaction.user.id !== guild.ownerId)
           return BotLogError.say("This command is owner-only.")
 
         const newRootUrl = interaction.options.getString("url")
         if (newRootUrl == null) {
           // GET
-          const oldRoot = await bot.getRootFolder(guild)
-          if (oldRoot.isErr()) return oldRoot
+          const oldRoot = yield* await bot.getRootFolder(guild)
           await interaction.editReply(
-            `The root folder for this server:\n${oldRoot.value.url}`
+            `The root folder for this server:\n${oldRoot.url}`
           )
-          return ok(undefined)
+          return ok()
         }
         // SET
         // set root folder url by pinning certain message
-        const reply = setRootFolderUrl(newRootUrl)
-        if (reply.isErr()) return reply
-        const m = await interaction.editReply(reply.value)
-        return await pin(channel, m)
+        const reply = yield* setRootFolderUrl(newRootUrl)
+        const m = await interaction.editReply(reply)
+        return pin(channel, m)
           .inspect(() => {
             bot.roots.reset(guild.id)
           })
-          .mapErr((e) => {
-            if (e instanceof DiscordError) {
-              return e.changeMessage(
-                "Failed: Please grant me permission to pin messages."
-              )
-            }
-            return e
-          })
+          .mapErr((e) =>
+            DiscordError.is(e)
+              ? e.changeMessage(
+                  "Failed: Please grant me permission to pin messages."
+                )
+              : e
+          )
           .map(() => undefined)
       })
-      .mapErr((e) => this.handleError(e))
+      .mapErr((e) => self.handleError(e))
   }
 }
 

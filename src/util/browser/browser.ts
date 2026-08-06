@@ -1,5 +1,5 @@
 import {
-  AsyncResult,
+  type AsyncResult,
   err,
   ok,
   result,
@@ -30,7 +30,7 @@ class MyBrowser implements AsyncDisposable {
       return ok(new URL(url))
     } catch {
       return err(
-        BrowserError.new(BrowserErrorCode.INVALID_URL, `Invalid URL: ${url}`)
+        new BrowserError(BrowserErrorCode.INVALID_URL, `Invalid URL: ${url}`)
       )
     }
   }
@@ -107,13 +107,13 @@ class MyBrowser implements AsyncDisposable {
    * @returns The HTTP response.
    */
   browse(url: string) {
+    const self = this
     return result.panic(
-      AsyncResult.merge([
-        AsyncResult.from(MyBrowser.parseUrl(url)),
-        this.getPage(),
-      ]).andThen(([url, page]) =>
-        BrowserError.try(async () => {
-          const r = await page.goto(url.href, {
+      result.gen(async function* () {
+        const urlObj = yield* MyBrowser.parseUrl(url)
+        const page = yield* self.getPage()
+        return BrowserError.try(async () => {
+          const res = await page.goto(urlObj.href, {
             waitUntil: ["load"],
           })
           // Paradox Puzzlehunt uses an SSE/EventSource stream opening forever,
@@ -125,17 +125,13 @@ class MyBrowser implements AsyncDisposable {
               concurrency: 1,
             })
             .catch(() => {})
-          return ok(r)
-        }).orElse((e) => {
-          if (
-            e instanceof UnexpectedError &&
-            e.code === UnexpectedErrorCode.UNKNOWN
-          ) {
-            return err(toNavigationError(e.cause))
-          }
-          return err(e)
-        })
-      )
+          return ok(res)
+        }).orElse((e) =>
+          UnexpectedError.is(e, UnexpectedErrorCode.UNKNOWN)
+            ? err(toNavigationError(e.cause))
+            : err(e)
+        )
+      })
     )
   }
 
@@ -187,7 +183,7 @@ class MyBrowser implements AsyncDisposable {
   ) {
     if (!/^[a-zA-Z0-9_-]+\.(png|jpeg|webp)$/.exec(filename))
       return err(
-        BrowserError.new(BrowserErrorCode.INVALID_SCREENSHOT_FILENAME, filename)
+        new BrowserError(BrowserErrorCode.INVALID_SCREENSHOT_FILENAME, filename)
       )
     return result.panic(
       this.getPage().andThen(async (page) =>
@@ -214,18 +210,6 @@ export enum BrowserErrorCode {
 }
 
 export class BrowserError<T extends BrowserErrorCode> extends TypedError<T> {
-  constructor(code: T, message: string) {
-    super(code, message)
-    this.name = "BrowserError"
-  }
-
-  static new<T extends BrowserErrorCode>(
-    code: T,
-    message: string
-  ): BrowserError<T> {
-    return new BrowserError(code, message)
-  }
-
   static override fromAny(e: unknown) {
     return UnexpectedError.fromAny(e)
   }
@@ -242,16 +226,16 @@ function toNavigationError(e: unknown) {
       e instanceof TimeoutError ||
       message.startsWith("net::ERR_CONNECTION_TIMED_OUT ")
     )
-      return BrowserError.new(BrowserErrorCode.TIMEOUT, message)
+      return new BrowserError(BrowserErrorCode.TIMEOUT, message)
     if (
       message.startsWith("net::ERR_NAME_NOT_RESOLVED ") ||
       message.startsWith(
         "Protocol error (Page.navigate): Cannot navigate to invalid URL"
       )
     )
-      return BrowserError.new(BrowserErrorCode.INVALID_URL, message)
+      return new BrowserError(BrowserErrorCode.INVALID_URL, message)
     if (message.startsWith("net::ERR_ABORTED "))
-      return BrowserError.new(BrowserErrorCode.ABORTED, message)
+      return new BrowserError(BrowserErrorCode.ABORTED, message)
   }
   return UnexpectedError.fromAny(e)
 }

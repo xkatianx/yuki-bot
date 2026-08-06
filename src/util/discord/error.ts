@@ -13,17 +13,10 @@ type DiscordErrorInfoMap = {
   [DiscordErrorCode.NO_PERMISSION]: { cause: Error }
 }
 
-export type DiscordErrorInfo<C extends DiscordErrorCode> =
-  DiscordErrorInfoMap[C]
-
-export class DiscordError<T extends DiscordErrorCode> extends TypedError<T> {
-  declare info: DiscordErrorInfo<T>
-
-  constructor(code: T, message: string, info: DiscordErrorInfo<T>) {
-    super(code, message, info)
-    this.name = "DiscordError"
-  }
-
+export class DiscordError<T extends DiscordErrorCode> extends TypedError<
+  T,
+  DiscordErrorInfoMap
+> {
   static noAccessFetchPins(error: Error) {
     return new DiscordError(
       DiscordErrorCode.NO_ACCESS_FETCH_PINS,

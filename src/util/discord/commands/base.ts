@@ -5,7 +5,7 @@ import type {
   SlashCommandBuilder,
   SlashCommandOptionsOnlyBuilder,
 } from "discord.js"
-import type { AnyBotLogError } from "~util/discord/bot/log.js"
+import type { BotLogError } from "~util/discord/bot/log.js"
 
 /**
  * Interaction response function.
@@ -15,7 +15,7 @@ import type { AnyBotLogError } from "~util/discord/bot/log.js"
  */
 export type IRF<T extends Interaction> = (
   interaction: T
-) => AsyncResult<void, AnyBotLogError>
+) => AsyncResult<void, BotLogError>
 
 export abstract class BaseCommand {
   /**
@@ -36,7 +36,7 @@ export abstract class BaseCommand {
    */
   abstract execute(
     interaction: ChatInputCommandInteraction
-  ): AsyncResult<void, AnyBotLogError>
+  ): AsyncResult<void, BotLogError>
 
   /**
    * Get the command data. This is automatically generated from buildData().

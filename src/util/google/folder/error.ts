@@ -34,23 +34,10 @@ type GFolderErrorInfoMap = {
   [GFolderErrorCode.UNKNOWN]: undefined
 }
 
-export type GFolderErrorInfo<C extends GFolderErrorCode> =
-  GFolderErrorInfoMap[C]
-
-export class GFolderError<T extends GFolderErrorCode> extends TypedError<T> {
-  declare info: GFolderErrorInfo<T>
-
-  constructor(
-    code: T,
-    message: string,
-    ...[info]: undefined extends GFolderErrorInfo<T>
-      ? [info?: GFolderErrorInfo<T>]
-      : [info: GFolderErrorInfo<T>]
-  ) {
-    super(code, message, info)
-    this.name = "GFolderError"
-  }
-
+export class GFolderError<T extends GFolderErrorCode> extends TypedError<
+  T,
+  GFolderErrorInfoMap
+> {
   static override fromAny(e: unknown) {
     if (e instanceof Error) {
       const message = e.message

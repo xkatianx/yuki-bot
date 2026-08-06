@@ -18,7 +18,7 @@ import {
   TextInputStyle,
 } from "discord.js"
 import { fatal } from "~misc/cli.js"
-import { type AnyBotLogError, BotLogError } from "../bot/log.js"
+import { BotLogError } from "../bot/log.js"
 import type { IRF } from "../commands/base.js"
 import { InteractionHandler } from "./interaction.js"
 
@@ -46,10 +46,10 @@ export class Form {
   ) => Promise<
     MaybeResult<
       string | MessagePayload | InteractionEditReplyOptions,
-      AnyBotLogError
+      BotLogError
     >
   >
-  #afterSubmit?: () => AsyncResult<void, AnyBotLogError>
+  #afterSubmit?: () => AsyncResult<void, BotLogError>
 
   getModal(idx: number): ModalBuilder {
     if (this.#modal[idx] == null) {
@@ -67,7 +67,7 @@ export class Form {
             content: this.printToDiscord(),
           })
         }
-        return ok(undefined)
+        return ok()
       })
     const uid = InteractionHandler.setModal(fn)
 
@@ -107,7 +107,7 @@ export class Form {
   }
 
   /** The returned string of `fn` will be the message showed after submit. */
-  setAfterSubmit(fn: () => AsyncResult<void, AnyBotLogError>): this {
+  setAfterSubmit(fn: () => AsyncResult<void, BotLogError>): this {
     this.#afterSubmit = fn
     return this
   }
@@ -118,7 +118,7 @@ export class Form {
       const onEdit: IRF<ButtonInteraction> = (i) =>
         AsyncResult.from(async () => {
           await i.showModal(this.getModal(c))
-          return ok(undefined)
+          return ok()
         })
       const uid = InteractionHandler.setButton(onEdit)
       const edit = new ButtonBuilder()
@@ -132,23 +132,22 @@ export class Form {
         edit.setLabel(`Edit ${(idx + 1).toString()}`)
       })
     }
+    const self = this
     const onSubmit: IRF<ButtonInteraction> = (i) =>
-      AsyncResult.from(async () => {
+      result.gen(async function* () {
         await i.deferReply()
-        await this.#interaction?.editReply({
+        await self.#interaction?.editReply({
           components: [],
         })
-        if (this.onSubmit == null)
+        if (self.onSubmit == null)
           return BotLogError.say(
             "This command is buggy. Please contact the developer.",
             new Error("Missing submission function.")
           )
-        const res0 = await this.onSubmit(this)
-        const res = result.isResult(res0) ? res0 : ok(res0)
-        if (res.isErr()) return res
-        await i.editReply(res.value)
-        const res2 = await this.#afterSubmit?.()
-        return res2 ?? ok(undefined)
+        const reply = yield* result.fromMaybe(await self.onSubmit(self))
+        await i.editReply(reply)
+        const res2 = await self.#afterSubmit?.()
+        return res2 ?? ok()
       })
     const uid = InteractionHandler.setButton(onSubmit)
     const submit = new ButtonBuilder()

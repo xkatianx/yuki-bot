@@ -33,13 +33,13 @@ export class YukiBrowser extends MyBrowser {
     url: string
   ): AsyncResult<YukiBrowser, BrowserError<BrowserErrorCode>> {
     return result.panic(
-      YukiBrowserError.try(async () => {
-        const mainUrl = MyBrowser.parseUrl(url)
-        if (mainUrl.isErr()) return mainUrl
-        const args = env.puppeteerLaunchArgs?.split(" ") ?? []
-        const b = await puppeteer.launch({ args })
-        const browser = new YukiBrowser(b, mainUrl.value)
-        return ok(browser)
+      result.gen(async function* () {
+        const mainUrl = yield* MyBrowser.parseUrl(url)
+        return YukiBrowserError.try(async () => {
+          const args = env.puppeteerLaunchArgs?.split(" ") ?? []
+          const b = await puppeteer.launch({ args })
+          return ok(new YukiBrowser(b, mainUrl))
+        })
       })
     )
   }
@@ -73,31 +73,33 @@ export class YukiBrowser extends MyBrowser {
     url = url.trim()
     if (username === "")
       return err(
-        YukiBrowserError.new(
+        new YukiBrowserError(
           YukiBrowserErrorCode.EMPTY_USERNAME,
           "Username cannot be empty."
         )
       )
     if (password === "")
       return err(
-        YukiBrowserError.new(
+        new YukiBrowserError(
           YukiBrowserErrorCode.EMPTY_PASSWORD,
           "Password cannot be empty."
         )
       )
+    const self = this
     return result.panic(
-      this.browse(url)
-        .andThen(async () => await this.getPage())
-        .andThen(async (page) => findLoginElements(page))
-        .andThen(async ({ page, usernameEl, passwordEl, submitEl }) =>
-          YukiBrowserError.try(async () => {
-            await usernameEl.type(username)
-            await passwordEl.type(password)
-            await Promise.all([page.waitForNavigation(), submitEl.click()])
-            this.isLogin = true
-            return ok(this)
-          })
-        )
+      result.gen(async function* () {
+        yield* self.browse(url)
+        const page = yield* self.getPage()
+        const { usernameEl, passwordEl, submitEl } =
+          yield* findLoginElements(page)
+        return YukiBrowserError.try(async () => {
+          await usernameEl.type(username)
+          await passwordEl.type(password)
+          await Promise.all([page.waitForNavigation(), submitEl.click()])
+          self.isLogin = true
+          return ok(self)
+        })
+      })
     )
   }
 }
@@ -115,7 +117,7 @@ function findLoginElements(page: Page) {
     const passwordEl = inputs[1]
     if (usernameEl == null || passwordEl == null || inputs.length !== 2)
       return err(
-        YukiBrowserError.new(
+        new YukiBrowserError(
           YukiBrowserErrorCode.LOGIN_INPUT_NOT_FOUND,
           "Unable to find input boxes for login."
         )
@@ -125,7 +127,7 @@ function findLoginElements(page: Page) {
     const submitEl = submits[0]
     if (submitEl == null || submits.length !== 1)
       return err(
-        YukiBrowserError.new(
+        new YukiBrowserError(
           YukiBrowserErrorCode.SUBMIT_NOT_FOUND,
           "Unable to find submit button."
         )
@@ -146,18 +148,6 @@ export enum YukiBrowserErrorCode {
 export class YukiBrowserError<
   T extends YukiBrowserErrorCode,
 > extends TypedError<T> {
-  constructor(code: T, message: string) {
-    super(code, message)
-    this.name = "YukiBrowserError"
-  }
-
-  static new<T extends YukiBrowserErrorCode>(
-    code: T,
-    message: string
-  ): YukiBrowserError<T> {
-    return new YukiBrowserError(code, message)
-  }
-
   static override fromAny(e: unknown) {
     return UnexpectedError.fromAny(e)
   }

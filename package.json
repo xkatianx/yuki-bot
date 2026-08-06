@@ -25,7 +25,7 @@
     "@googleapis/drive": "^19.2.0",
     "@googleapis/sheets": "^12.0.0",
     "@js-temporal/polyfill": "^0.5.1",
-    "always-panic": "^0.8.5",
+    "always-panic": "^0.9.1",
     "chalk": "^5.6.2",
     "discord.js": "^14.25.1",
     "google-auth-library": "^10.5.0",

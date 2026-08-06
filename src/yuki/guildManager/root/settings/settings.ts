@@ -68,27 +68,14 @@ export enum SettingsErrorCode {
   MISSING_CHANNEL,
 }
 
-export class SettingsError<T extends SettingsErrorCode> extends TypedError<T> {
-  private constructor(code: T, message: string) {
-    super(code, message)
-    this.name = "SettingsError"
-  }
-
-  static new<T extends SettingsErrorCode>(
-    code: T,
-    message: string
-  ): SettingsError<T> {
-    return new SettingsError(code, message)
-  }
-}
+export class SettingsError<T extends SettingsErrorCode> extends TypedError<T> {}
 
 export function getSettings(root: GFolder) {
   return root
     .findUniqueSpreadsheet(env.settingsName)
     .andThen((spreadsheet) => SettingsSheet.fromSpreadsheet(spreadsheet))
     .orElse(async (e) =>
-      e instanceof GFolderError &&
-      e.code === GFolderErrorCode.MISSING_SPREADSHEET
+      GFolderError.is(e, GFolderErrorCode.MISSING_SPREADSHEET)
         ? await SettingsSheet.newFromTemplate(root)
         : err(e)
     )

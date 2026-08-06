@@ -60,15 +60,11 @@ export function getPinned(
             channel: channel,
           }))
         )
-        .orElse((e) => {
-          if (
-            e instanceof DiscordError &&
-            e.code === DiscordErrorCode.NO_ACCESS_FETCH_PINS
-          ) {
-            return ok([])
-          }
-          return err(e)
-        })
+        .orElse((e) =>
+          DiscordError.is(e, DiscordErrorCode.NO_ACCESS_FETCH_PINS)
+            ? ok([]) // TODO: verify whether this is the correct behavior
+            : err(e)
+        )
     )
 
   return AsyncResult.merge(pss).map((arr) =>
@@ -92,7 +88,7 @@ export function getPinned(
 export function pin(channel: TextBasedChannel, message: Message) {
   return DiscordError.try(async () => {
     await channel.messages.pin(message)
-    return ok(undefined)
+    return ok()
   })
 }
 
@@ -101,15 +97,14 @@ function fetchPins(channel: TextBasedChannel) {
     DiscordError.try(async () => {
       const pinned = await channel.messages.fetchPins()
       return ok(pinned)
-    }).mapErr((e) => {
-      if (e instanceof DiscordError) {
-        if (e.code === DiscordErrorCode.NO_ACCESS) {
-          return DiscordError.noAccessFetchPins(e.info.cause)
-        } else {
-          return UnexpectedError.unreachable()
-        }
-      }
-      return e
-    })
+    }).mapErr((e) =>
+      DiscordError.is(e)
+        ? DiscordError.match(e, {
+            [DiscordErrorCode.NO_ACCESS]: (e) =>
+              DiscordError.noAccessFetchPins(e.info.cause),
+            else: () => UnexpectedError.unreachable(),
+          })
+        : e
+    )
   )
 }

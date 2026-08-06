@@ -393,7 +393,7 @@ describe("YukiBrowser", () => {
 
   describe("YukiBrowserError", () => {
     it("should create YukiBrowserError with correct properties", () => {
-      const error = YukiBrowserError.new(
+      const error = new YukiBrowserError(
         YukiBrowserErrorCode.ALREADY_LOGIN,
         "Test error message"
       )
@@ -405,7 +405,7 @@ describe("YukiBrowser", () => {
     })
 
     it("should be instance of Error", () => {
-      const error = YukiBrowserError.new(
+      const error = new YukiBrowserError(
         YukiBrowserErrorCode.LOGIN_INPUT_NOT_FOUND,
         "Test error"
       )
@@ -422,7 +422,7 @@ describe("YukiBrowser", () => {
       ]
 
       codes.forEach((code) => {
-        const error = YukiBrowserError.new(code, `Error for ${code.toString()}`)
+        const error = new YukiBrowserError(code, `Error for ${code.toString()}`)
         expect(error.code).toBe(code)
         expect(error.name).toBe("YukiBrowserError")
       })

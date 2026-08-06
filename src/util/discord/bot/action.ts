@@ -8,8 +8,8 @@ import type {
 } from "discord.js"
 import type { Bot } from "../bot.js"
 import { InteractionHandler } from "../util/interaction.js"
-import { type AnyBotError, BotError, BotErrorCode } from "./error.js"
-import { type AnyBotLogError, BotLogError } from "./log.js"
+import { BotError, BotErrorCode } from "./error.js"
+import { BotLogError } from "./log.js"
 
 export function actionCommand<B extends Bot>(
   this: B,
@@ -50,7 +50,7 @@ export function actionSelectMenu<B extends Bot>(
   _interaction: StringSelectMenuInteraction
 ) {
   // respond to the select menu
-  return AsyncResult.from(ok(undefined))
+  return AsyncResult.from(ok())
 }
 
 export function actionUnknown<B extends Bot>(
@@ -67,27 +67,22 @@ export function actionUnknown<B extends Bot>(
 }
 
 /** Convert an internal {@link BotError} into a user-facing {@link BotLogError}. */
-export function handleBotError(e: AnyBotError) {
-  switch (e.code) {
-    case BotErrorCode.UNKNOWN_COMMAND:
-      return BotLogError.pss(
-        `Unknown command: \`${e.info.interaction.commandName}\``
-      )
-    case BotErrorCode.UNKNOWN_BUTTON:
-    case BotErrorCode.UNKNOWN_MODAL:
-    case BotErrorCode.UNKNOWN_SELECT_MENU:
-      return BotLogError.pss("The action has expired.")
-    case BotErrorCode.INVALID_LOG_CHANNEL:
-      // A misconfiguration; nothing useful to tell the user.
-      return BotLogError.log(e)
-    case BotErrorCode.UNKNOWN_INTERACTION:
-      return BotLogError.pss("This interaction is not supported.", e)
-    default:
-      return e satisfies never
-  }
+export function handleBotError(e: BotError) {
+  const expired = () => BotLogError.pss("The action has expired.")
+  return BotError.match(e, {
+    [BotErrorCode.UNKNOWN_COMMAND]: (e) =>
+      BotLogError.pss(`Unknown command: \`${e.info.interaction.commandName}\``),
+    [BotErrorCode.UNKNOWN_BUTTON]: expired,
+    [BotErrorCode.UNKNOWN_MODAL]: expired,
+    [BotErrorCode.UNKNOWN_SELECT_MENU]: expired,
+    // A misconfiguration; nothing useful to tell the user.
+    [BotErrorCode.INVALID_LOG_CHANNEL]: (e) => BotLogError.log(e),
+    [BotErrorCode.UNKNOWN_INTERACTION]: (e) =>
+      BotLogError.pss("This interaction is not supported.", e),
+  })
 }
 
 /** Normalize whatever an action returned into the reportable error type. */
-export function toBotLogError(e: AnyBotError | AnyBotLogError): AnyBotLogError {
-  return e instanceof BotError ? handleBotError(e).unwrapErr() : e
+export function toBotLogError(e: BotError | BotLogError): BotLogError {
+  return BotError.is(e) ? handleBotError(e).unwrapErr() : e
 }

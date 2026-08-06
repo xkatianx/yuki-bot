@@ -189,14 +189,11 @@ export class GFolder {
    * @throws never
    */
   getOrCreateFolder(name: string) {
-    return this.findUniqueFolder(name).orElse(async (e) => {
-      if (e instanceof GFolderError) {
-        if (e.code === GFolderErrorCode.MISSING_FOLDER) {
-          return this.newFolder(name)
-        }
-      }
-      return err(e)
-    })
+    return this.findUniqueFolder(name).orElse(async (e) =>
+      GFolderError.is(e, GFolderErrorCode.MISSING_FOLDER)
+        ? this.newFolder(name)
+        : err(e)
+    )
   }
 
   /**
@@ -291,7 +288,7 @@ export class GFolder {
           trashed: true,
         },
       })
-      return ok(undefined)
+      return ok()
     })
   }
 }

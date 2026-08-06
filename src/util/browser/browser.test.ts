@@ -543,7 +543,7 @@ describe("MyBrowser", () => {
 
   describe("BrowserError", () => {
     it("should create BrowserError with correct properties", () => {
-      const error = BrowserError.new(
+      const error = new BrowserError(
         BrowserErrorCode.INVALID_URL,
         "Test error message"
       )
@@ -555,7 +555,7 @@ describe("MyBrowser", () => {
     })
 
     it("should create BrowserError with TIMEOUT code", () => {
-      const error = BrowserError.new(
+      const error = new BrowserError(
         BrowserErrorCode.TIMEOUT,
         "Connection timeout"
       )
@@ -567,17 +567,17 @@ describe("MyBrowser", () => {
     })
 
     it("should be instance of Error", () => {
-      const error = BrowserError.new(BrowserErrorCode.INVALID_URL, "Test error")
+      const error = new BrowserError(BrowserErrorCode.INVALID_URL, "Test error")
 
       expect(error instanceof Error).toBe(true)
     })
 
     it("should have different error codes", () => {
-      const invalidUrlError = BrowserError.new(
+      const invalidUrlError = new BrowserError(
         BrowserErrorCode.INVALID_URL,
         "Invalid URL"
       )
-      const timeoutError = BrowserError.new(BrowserErrorCode.TIMEOUT, "Timeout")
+      const timeoutError = new BrowserError(BrowserErrorCode.TIMEOUT, "Timeout")
 
       expect(invalidUrlError.code).toBe(BrowserErrorCode.INVALID_URL)
       expect(timeoutError.code).toBe(BrowserErrorCode.TIMEOUT)

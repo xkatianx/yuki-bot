@@ -32,7 +32,7 @@ export class GSpreadsheet {
       ?.at(1)
     if (id != null) return ok(new GSpreadsheet(id))
     return err(
-      GSheetError.new(
+      new GSheetError(
         GSheetErrorCode.INVALID_URL,
         `\`${url}\` is not a valid url.`
       )
@@ -158,7 +158,7 @@ export class GSpreadsheet {
   assertFlushed() {
     if (this.requests.length > 0)
       return err(
-        GSheetError.new(
+        new GSheetError(
           GSheetErrorCode.FORGOT_TO_FLUSH,
           `Forgot to flush in ${this.toString()}`
         )
@@ -240,7 +240,7 @@ export class GSpreadsheet {
       const contents = res.data.values
       if (contents == null)
         return err(
-          GSheetError.new(
+          new GSheetError(
             GSheetErrorCode.NO_CONTENTS,
             `No contents in range \`${range}\` in ${this.toString()}`
           )

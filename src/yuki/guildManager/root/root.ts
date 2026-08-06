@@ -25,7 +25,7 @@ export function getRootFolderUrl(bot: Yuki, guild: Guild) {
     const lastMessage = messages.pop()
     if (lastMessage == null)
       return err(
-        RootError.new(
+        new RootError(
           RootErrorCode.MISSING_URL,
           `Unable to find root url in ${guild.toString()}.` +
             " Please use `/root {url}` to set one."
@@ -57,11 +57,12 @@ export function getRootFolderUrl(bot: Yuki, guild: Guild) {
 export function setRootFolderUrl(url: string) {
   return MyBrowser.parseUrl(url)
     .map((url) => formatString(PinFormat.Root, { url: url.href }))
-    .mapErr(() =>
-      RootError.new(
-        RootErrorCode.INVALID_URL,
-        `Invalid URL: ${displayCode(url)}`
-      )
+    .mapErr(
+      () =>
+        new RootError(
+          RootErrorCode.INVALID_URL,
+          `Invalid URL: ${displayCode(url)}`
+        )
     )
 }
 
@@ -105,13 +106,4 @@ export enum RootErrorCode {
   INVALID_URL,
 }
 
-export class RootError<T extends RootErrorCode> extends TypedError<T> {
-  private constructor(code: T, message: string) {
-    super(code, message)
-    this.name = "RootError"
-  }
-
-  static new<T extends RootErrorCode>(code: T, message: string): RootError<T> {
-    return new RootError(code, message)
-  }
-}
+export class RootError<T extends RootErrorCode> extends TypedError<T> {}

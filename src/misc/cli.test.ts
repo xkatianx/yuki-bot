@@ -150,9 +150,9 @@ describe("cli", () => {
     })
 
     it("should have return type never", () => {
+      // Compiles without returning a string only because `fatal` is `never`.
       const fn = (): string => {
         fatal("test")
-        return "unreachable"
       }
       expect(() => fn()).toThrow("Unexpected failure.")
     })

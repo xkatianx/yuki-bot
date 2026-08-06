@@ -20,7 +20,7 @@ class TestCommand extends YukiBaseCommand {
   }
 
   execute(interaction: ChatInputCommandInteraction) {
-    return AsyncResult.from(ok(undefined)).map(async () => {
+    return AsyncResult.from(ok()).map(async () => {
       await interaction.reply("Hello!")
     })
   }

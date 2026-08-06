@@ -40,28 +40,22 @@ class NewCommand extends YukiBaseCommand {
       return AsyncResult.from(
         BotLogError.say("Usage: `/new <url>`. Please enter a url.")
       )
-    return AsyncResult.from(
-      result.all([
-        this.getContext(interaction),
-        this.getTextChannel(interaction),
-      ])
-    )
-      .andThen(async ([{ bot, guild }, channel]) => {
-        await this.deferReply(interaction)
+    const self = this
+    return result
+      .gen(async function* () {
+        const { bot, guild } = yield* self.getContext(interaction)
+        const channel = yield* self.getTextChannel(interaction)
+        await self.deferReply(interaction)
 
-        const rootFolder = await bot.getRootFolder(guild)
-        if (rootFolder.isErr()) return rootFolder
-        const settings = await bot.getSettings(guild)
-        if (settings.isErr()) return settings
-        const browserR = await MyBrowser.new().inspect(async (b) => {
+        const rootFolder = yield* await bot.getRootFolder(guild)
+        const settings = yield* await bot.getSettings(guild)
+        await using browser = yield* MyBrowser.new().inspect(async (b) => {
           await b.browse(url)
         })
-        if (browserR.isErr()) return browserR
-        await using browser = browserR.value
         return ok({
           channel,
-          rootFolder: rootFolder.value,
-          settings: settings.value,
+          rootFolder,
+          settings,
           url2: (await browser.getUrl()).unwrapOr(url),
           title: (await browser.getTitle()).unwrapOr("<title>"),
         })
@@ -123,29 +117,25 @@ class NewCommand extends YukiBaseCommand {
               username: form.get("username").unwrap(),
               password: form.get("password").unwrap(),
             }
-            // step 1: get or create a folder
-            return await rootFolder
-              .getOrCreateFolder(args.folder)
-              .andThen(async (folder) => {
+            return await result
+              .gen(async function* () {
+                // step 1: get or create a folder
+                const folder = yield* rootFolder.getOrCreateFolder(args.folder)
                 // step 2: copy-paste main spreadsheet and edit
-                const sheet = await PuzzleSheet.newFromTemplate(
+                const sheet = yield* await PuzzleSheet.newFromTemplate(
                   folder,
                   args.title
                 )
-                if (sheet.isErr()) return sheet
-                const spreadsheet = sheet.value
+                const spreadsheet = sheet
                   .writeCell("folder", folder.url)
                   .writeCell("username", args.username)
                   .writeCell("password", args.password)
                   .writeCell("website", args.url)
-                return await spreadsheet
-                  .flushWrite()
-                  // step 3: edit settings
-                  .andThen(() =>
-                    settings.setChannelManager(channel, folder, spreadsheet)
-                  )
-                  // step 4: done
-                  .map(() => `Spreadsheet: ${spreadsheet.url}`)
+                yield* spreadsheet.flushWrite()
+                // step 3: edit settings
+                yield* settings.setChannelManager(channel, folder, spreadsheet)
+                // step 4: done
+                return ok(`Spreadsheet: ${spreadsheet.url}`)
               })
               .mapErr((e) => this.handleError(e))
           })
@@ -176,7 +166,7 @@ class NewCommand extends YukiBaseCommand {
         await i.deferReply({ ephemeral: true })
         await channel.setTopic(topic)
         await i.editReply("done!")
-        return ok(undefined)
+        return ok()
       })
     const uid = InteractionHandler.setButton(onYes)
     const yes = new ButtonBuilder()
@@ -187,7 +177,7 @@ class NewCommand extends YukiBaseCommand {
     const onNo: IRF<ButtonInteraction> = (i) =>
       AsyncResult.from(async () => {
         await i.reply("okay.")
-        return ok(undefined)
+        return ok()
       })
     const uid2 = InteractionHandler.setButton(onNo)
     const no = new ButtonBuilder()

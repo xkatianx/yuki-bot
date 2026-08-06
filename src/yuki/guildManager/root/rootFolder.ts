@@ -20,8 +20,7 @@ export class RootFolder extends GFolder {
       this.findUniqueSpreadsheet(env.settingsName)
         .andThen((spreadsheet) => SettingsSheet.fromSpreadsheet(spreadsheet))
         .orElse(async (e) =>
-          e instanceof GFolderError &&
-          e.code === GFolderErrorCode.MISSING_SPREADSHEET
+          GFolderError.is(e, GFolderErrorCode.MISSING_SPREADSHEET)
             ? await SettingsSheet.newFromTemplate(this)
             : err(e)
         )

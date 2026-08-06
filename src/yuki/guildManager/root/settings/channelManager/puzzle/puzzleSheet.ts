@@ -78,7 +78,7 @@ export class PuzzleSheet extends GSpreadsheet {
       .andThen((template) => {
         if (template == null)
           return err(
-            PuzzleSheetError.new(
+            new PuzzleSheetError(
               PuzzleSheetErrorCode.MISSING_TEMPLATE,
               `Missing template in ${this.toString()}`
             )

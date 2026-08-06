@@ -17,8 +17,8 @@ import {
   actionUnknown,
   toBotLogError,
 } from "./bot/action.js"
-import { type AnyBotError, BotError, BotErrorCode } from "./bot/error.js"
-import { type AnyBotLogError, report } from "./bot/log.js"
+import { BotError, BotErrorCode } from "./bot/error.js"
+import { report } from "./bot/log.js"
 import type { BaseCommand } from "./commands/base.js"
 import { DiscordError } from "./error.js"
 
@@ -168,5 +168,3 @@ export class Bot {
     return DiscordError.try(async () => ok(await channel.send(message)))
   }
 }
-
-export type { AnyBotError, AnyBotLogError }

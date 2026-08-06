@@ -58,10 +58,8 @@ export function appendPuzzle(
   title: string
 ) {
   return spreadsheet.newPuzzleTab(url, title).mapErr((e) => {
-    if (e instanceof GSheetError) {
-      if (e.code === GSheetErrorCode.DUPLICATE_SHEET) {
-        e.message = `${displayCode(title)} sheet already exists.`
-      }
+    if (GSheetError.is(e, GSheetErrorCode.DUPLICATE_SHEET)) {
+      e.message = `${displayCode(title)} sheet already exists.`
     }
     return e
   })

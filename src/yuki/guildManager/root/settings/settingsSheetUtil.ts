@@ -26,7 +26,7 @@ function getVersion(sheet: GSpreadsheet) {
     if (validVersions.includes(ver))
       return ok(ver as (typeof validVersions)[number])
     return err(
-      SettingsSheetError.new(
+      new SettingsSheetError(
         SettingsSheetErrorCode.UNKNOWN_VERSION,
         `Unknown version: ${JSON.stringify(ver)}`
       )
@@ -68,7 +68,7 @@ function getInfo_1_0_0(sheet: GSpreadsheet) {
     .andThen(({ table, infos }) => {
       if (table == null)
         return err(
-          SettingsSheetError.new(
+          new SettingsSheetError(
             SettingsSheetErrorCode.CORRUPTED,
             `Unable to read INDEX!A:E in ${sheet.toString()}`
           )
@@ -148,16 +148,4 @@ export enum SettingsSheetErrorCode {
 
 export class SettingsSheetError<
   T extends SettingsSheetErrorCode,
-> extends TypedError<T> {
-  constructor(code: T, message: string) {
-    super(code, message)
-    this.name = "SettingSheetError"
-  }
-
-  static new<T extends SettingsSheetErrorCode>(
-    code: T,
-    message: string
-  ): SettingsSheetError<T> {
-    return new SettingsSheetError(code, message)
-  }
-}
+> extends TypedError<T> {}

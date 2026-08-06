@@ -8,7 +8,7 @@ import type {
 } from "discord.js"
 import { TextChannel } from "discord.js"
 import { lines } from "~misc/format.js"
-import { type AnyBotLogError, BotLogError } from "~util/discord/bot/log.js"
+import { BotLogError } from "~util/discord/bot/log.js"
 import { BaseCommand } from "~util/discord/commands/base.js"
 import { myGoogleInfo } from "~util/google/auth/auth.js"
 import { GFolderError, GFolderErrorCode } from "~util/google/folder/error.js"
@@ -32,12 +32,12 @@ import type { Yuki } from "../../yuki.js"
  *   }
  *
  *   execute(interaction: ChatInputCommandInteraction) {
- *     return AsyncResult.from(async () => {
- *       const ctx = this.getContext(interaction)
- *       if (ctx.isErr()) return ctx
- *       await this.deferReply(interaction)
+ *     const self = this
+ *     return result.gen(async function* () {
+ *       const ctx = yield* self.getContext(interaction)
+ *       await self.deferReply(interaction)
  *       // Your command logic here
- *       return ok(undefined)
+ *       return ok()
  *     })
  *   }
  * }
@@ -52,7 +52,7 @@ export abstract class YukiBaseCommand extends BaseCommand {
     interaction: ChatInputCommandInteraction
   ): Result<
     { bot: Yuki; channel: TextBasedChannel; guild: Guild },
-    AnyBotLogError
+    BotLogError
   > {
     const bot = interaction.client.mybot
     if (interaction.channel == null)
@@ -68,31 +68,31 @@ export abstract class YukiBaseCommand extends BaseCommand {
    */
   protected getTextChannel(
     interaction: Interaction
-  ): Result<TextChannel, AnyBotLogError> {
+  ): Result<TextChannel, BotLogError> {
     if (interaction.channel instanceof TextChannel)
       return ok(interaction.channel)
     return BotLogError.say("This command is not available in this channel.")
   }
 
-  protected handleError(e: TypedError<Code>): AnyBotLogError {
-    if (e instanceof BotLogError) return e
-    if (e instanceof GFolderError) {
-      const code = e.code as GFolderErrorCode
-      if (code === GFolderErrorCode.CANNOT_WRITE) {
-        const email = myGoogleInfo.email
-        const target = email == null ? "me" : `\`${email}\``
-        const message = `${e.message}\nPlease add ${target} as an editor.`
-        return BotLogError.say(message).unwrapErr()
-      }
-      if (code === GFolderErrorCode.MISSING_FILE) {
-        const email = myGoogleInfo.email
-        const target = email == null ? "me" : `\`${email}\``
-        const message = lines(
-          e.message,
-          `Please make sure the file exists or add ${target} as a viewer.`
-        )
-        return BotLogError.say(message).unwrapErr()
-      }
+  protected handleError(e: TypedError<Code>): BotLogError {
+    if (BotLogError.is(e)) return e
+    if (GFolderError.is(e)) {
+      const email = myGoogleInfo.email
+      const target = email == null ? "me" : `\`${email}\``
+      return GFolderError.match(e, {
+        [GFolderErrorCode.CANNOT_WRITE]: (e) =>
+          BotLogError.say(
+            `${e.message}\nPlease add ${target} as an editor.`
+          ).unwrapErr(),
+        [GFolderErrorCode.MISSING_FILE]: (e) =>
+          BotLogError.say(
+            lines(
+              e.message,
+              `Please make sure the file exists or add ${target} as a viewer.`
+            )
+          ).unwrapErr(),
+        else: (e) => BotLogError.say(e.message, e).unwrapErr(),
+      })
     }
     return BotLogError.say(e.message, e).unwrapErr()
   }

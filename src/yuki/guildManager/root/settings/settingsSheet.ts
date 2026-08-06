@@ -90,7 +90,7 @@ export class SettingsSheet extends GSpreadsheet {
     const row = this.table.find((row) => row[indexCol.channelId] === id)
     if (row != null) return ok(String(row[indexCol.folderId]))
     return err(
-      SettingsSheetError.new(
+      new SettingsSheetError(
         SettingsSheetErrorCode.MISSING_CHANNEL,
         `Unable to find channel \`${id}\`.` +
           " Please use `/new <url>` to set one."
@@ -109,7 +109,7 @@ export class SettingsSheet extends GSpreadsheet {
     const row = this.table.find((row) => row[indexCol.channelId] === id)
     if (row != null) return ok(String(row[indexCol.spreadsheetId]))
     return err(
-      SettingsSheetError.new(
+      new SettingsSheetError(
         SettingsSheetErrorCode.MISSING_CHANNEL,
         `Unable to find channel \`${id}\`.` +
           " Please use `/new <url>` to set one."

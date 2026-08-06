@@ -21,16 +21,10 @@ type BotLogErrorInfoMap = {
   [BotLogErrorCode.SAY]: { error?: Error | undefined }
   [BotLogErrorCode.BAD]: { error: Error }
 }
-export type BotLogErrorInfo<C extends BotLogErrorCode> = BotLogErrorInfoMap[C]
 
-export class BotLogError<C extends BotLogErrorCode> extends TypedError<C> {
-  declare info: BotLogErrorInfo<C>
-
-  constructor(code: C, message: string, info?: BotLogErrorInfo<C>) {
-    super(code, message, info)
-    this.name = "BotLogError"
-  }
-
+export class BotLogError<
+  C extends BotLogErrorCode = BotLogErrorCode,
+> extends TypedError<C, BotLogErrorInfoMap> {
   static log(error: Error) {
     return err(new BotLogError(BotLogErrorCode.LOG, error.message, { error }))
   }
@@ -48,10 +42,6 @@ export class BotLogError<C extends BotLogErrorCode> extends TypedError<C> {
   }
 }
 
-export type AnyBotLogError<C extends BotLogErrorCode = BotLogErrorCode> = {
-  [K in C]: BotLogError<K>
-}[C]
-
 const SHUTDOWN_MESSAGE =
   "An unexpected error happens. " +
   "The bot is shutting down to prevent misbehavior."
@@ -66,7 +56,7 @@ const SHUTDOWN_MESSAGE =
 export async function report<B extends Bot>(
   this: B,
   i: Interaction,
-  e: AnyBotLogError
+  e: BotLogError
 ): Promise<void> {
   await logToDebugChannel.call(this, i, e)
 
@@ -83,7 +73,7 @@ export async function report<B extends Bot>(
 async function logToDebugChannel<B extends Bot>(
   this: B,
   i: Interaction,
-  e: AnyBotLogError
+  e: BotLogError
 ): Promise<void> {
   const error = e.info?.error
   if (error == null || i.guild == null) return
@@ -97,18 +87,13 @@ async function logToDebugChannel<B extends Bot>(
 }
 
 /** The message to show the user, or `null` to stay silent. */
-function replyContent(e: AnyBotLogError): string | null {
-  switch (e.code) {
-    case BotLogErrorCode.LOG:
-      return null
-    case BotLogErrorCode.PSS:
-    case BotLogErrorCode.SAY:
-      return e.message
-    case BotLogErrorCode.BAD:
-      return SHUTDOWN_MESSAGE
-    default:
-      return e satisfies never
-  }
+function replyContent(e: BotLogError): string | null {
+  return BotLogError.match(e, {
+    [BotLogErrorCode.LOG]: () => null,
+    [BotLogErrorCode.PSS]: (e) => e.message,
+    [BotLogErrorCode.SAY]: (e) => e.message,
+    [BotLogErrorCode.BAD]: () => SHUTDOWN_MESSAGE,
+  })
 }
 
 async function replyTo(
