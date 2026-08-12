@@ -46,10 +46,13 @@ Create `.env.local` with your Discord/Google credentials (see
 [README.md](README.md)) and put the Google service account key at
 `secret/google.json`.
 
-On a headless machine, add this to `.env.local` so Chrome can start:
+On a headless machine, add this to `.env.local` so Chrome can start.
+`--disable-dev-shm-usage` matters on small VMs: Chrome otherwise uses
+`/dev/shm`, which is tiny there and causes hangs and crashes that look like
+random timeouts.
 
 ```
-PUPPETEER_LAUNCH_ARGS=--no-sandbox
+PUPPETEER_LAUNCH_ARGS=--no-sandbox --disable-dev-shm-usage --disable-gpu
 ```
 
 Register slash commands once:
@@ -174,8 +177,9 @@ the directory named by `cwd`.
 **Restart loop after boot but fine manually** — almost always `cwd` missing or
 wrong, so `.env.local` and `secret/google.json` are not found.
 
-**Puppeteer fails to launch** — set `PUPPETEER_LAUNCH_ARGS=--no-sandbox` in
-`.env.local` and make sure the system libraries in step 1 are installed.
+**Puppeteer fails to launch** — set
+`PUPPETEER_LAUNCH_ARGS=--no-sandbox --disable-dev-shm-usage --disable-gpu`
+in `.env.local` and make sure the system libraries in step 1 are installed.
 
 **Logs growing too large** — install rotation:
 

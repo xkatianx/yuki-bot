@@ -21,7 +21,11 @@ class LoginCommand extends YukiBaseCommand {
     )
       .andThen(async ([{ bot }, channel]) => {
         await this.deferReply(interaction)
-        return await bot.getChannelManager(channel)
+        // /login is the manual recovery path: rebuild the channel manager so
+        // a dead or wedged browser is replaced by a fresh one.
+        return await bot
+          .resetChannelManager(channel)
+          .andThen(() => bot.getChannelManager(channel))
       })
       .mapErr((e) => this.handleError(e))
       .map(async (cm) => {

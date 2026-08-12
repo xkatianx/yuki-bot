@@ -60,7 +60,7 @@ describe("YukiBrowser", () => {
       expect(result.isOk()).toBe(true)
       await using browser = result.unwrap()
       expect(browser).toBeInstanceOf(YukiBrowser)
-      expect(browser.browser).toBeDefined()
+      expect(browser.context).toBeDefined()
       expect(browser.mainUrl.href).toBe(`${serverUrl}/`)
       expect(browser.isLogin).toBe(false)
     }, 30000)
@@ -88,7 +88,7 @@ describe("YukiBrowser", () => {
       expect(browserResult.isOk()).toBe(true)
 
       await using browser = browserResult.unwrap()
-      expect(browser.browser).toBeDefined()
+      expect(browser.context).toBeDefined()
       expect(browser.mainUrl).toBeInstanceOf(URL)
       expect(browser.isLogin).toBe(false)
     }, 30000)

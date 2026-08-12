@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test"
 import { createServer } from "node:http"
-import MyBrowser, { BrowserError, BrowserErrorCode } from "./browser.js"
+import MyBrowser from "./browser.js"
+import { BrowserError, BrowserErrorCode } from "./error.js"
 
 describe("MyBrowser", () => {
   let server: ReturnType<typeof createServer> | null = null
@@ -53,7 +54,7 @@ describe("MyBrowser", () => {
       expect(result.isOk()).toBe(true)
       await using browser = result.unwrap()
       expect(browser).toBeInstanceOf(MyBrowser)
-      expect(browser.browser).toBeDefined()
+      expect(browser.context).toBeDefined()
     }, 30000)
 
     it("should create a browser instance with optional URL parameter", async () => {
@@ -61,7 +62,7 @@ describe("MyBrowser", () => {
       expect(result.isOk()).toBe(true)
       await using browser = result.unwrap()
       expect(browser).toBeInstanceOf(MyBrowser)
-      expect(browser.browser).toBeDefined()
+      expect(browser.context).toBeDefined()
     }, 30000)
   })
 
@@ -453,11 +454,14 @@ describe("MyBrowser", () => {
         await _browser.browse(serverUrl)
 
         // Browser should be connected before disposal
-        wasConnected = _browser.browser.connected
+        wasConnected = _browser.connected
         expect(wasConnected).toBe(true)
       }
       // After the using block, browser should be disposed
-      expect(browser.browser.connected).toBe(false)
+      expect(browser.connected).toBe(false)
+      // Only the context was closed; the shared browser process survives
+      // for other instances.
+      expect(browser.context.browser().connected).toBe(true)
     }, 30000)
 
     it("should close browser on direct dispose call", async () => {
@@ -468,13 +472,13 @@ describe("MyBrowser", () => {
       await browser.browse(serverUrl)
 
       // Browser should be connected before disposal
-      expect(browser.browser.connected).toBe(true)
+      expect(browser.connected).toBe(true)
 
       // Dispose directly
       await browser[Symbol.asyncDispose]()
 
       // Browser should be disconnected after disposal
-      expect(browser.browser.connected).toBe(false)
+      expect(browser.connected).toBe(false)
     }, 30000)
 
     it("should handle multiple dispose calls gracefully", async () => {
@@ -484,15 +488,15 @@ describe("MyBrowser", () => {
       const browser = browserResult.unwrap()
       await browser.browse(serverUrl)
 
-      expect(browser.browser.connected).toBe(true)
+      expect(browser.connected).toBe(true)
 
       // First dispose
       await browser[Symbol.asyncDispose]()
-      expect(browser.browser.connected).toBe(false)
+      expect(browser.connected).toBe(false)
 
       // Second dispose should not throw
       await browser[Symbol.asyncDispose]()
-      expect(browser.browser.connected).toBe(false)
+      expect(browser.connected).toBe(false)
     }, 30000)
   })
 
@@ -503,7 +507,7 @@ describe("MyBrowser", () => {
 
       await using browser = browserResult.unwrap()
       // Browser should be connected
-      expect(browser.browser.connected).toBe(true)
+      expect(browser.connected).toBe(true)
 
       await browser.browse(serverUrl)
       const firstUrl = await browser.getUrl()
@@ -515,7 +519,7 @@ describe("MyBrowser", () => {
       expect(firstUrl.isOk()).toBe(true)
       expect(secondUrl.isOk()).toBe(true)
       // Browser should still be connected
-      expect(browser.browser.connected).toBe(true)
+      expect(browser.connected).toBe(true)
     }, 30000)
 
     it("should verify browser connection state throughout lifecycle", async () => {
@@ -525,19 +529,19 @@ describe("MyBrowser", () => {
       const browser = browserResult.unwrap()
 
       // Initially connected
-      expect(browser.browser.connected).toBe(true)
+      expect(browser.connected).toBe(true)
 
       // Still connected after operations
       await browser.browse(serverUrl)
-      expect(browser.browser.connected).toBe(true)
+      expect(browser.connected).toBe(true)
 
       const urlResult = await browser.getUrl()
       expect(urlResult.isOk()).toBe(true)
-      expect(browser.browser.connected).toBe(true)
+      expect(browser.connected).toBe(true)
 
       // Disconnect
       await browser[Symbol.asyncDispose]()
-      expect(browser.browser.connected).toBe(false)
+      expect(browser.connected).toBe(false)
     }, 30000)
   })
 
@@ -552,6 +556,20 @@ describe("MyBrowser", () => {
       expect(error.name).toBe("BrowserError")
       expect(error.code).toBe(BrowserErrorCode.INVALID_URL)
       expect(error.message).toBe("Test error message")
+    })
+
+    it("should create BrowserError with LAUNCH_ERROR code keeping the original error", () => {
+      const cause = new Error("boom")
+      const error = new BrowserError(
+        BrowserErrorCode.LAUNCH_ERROR,
+        "Failed to launch the browser: boom",
+        { error: cause }
+      )
+
+      expect(error).toBeInstanceOf(Error)
+      expect(error.name).toBe("BrowserError")
+      expect(error.code).toBe(BrowserErrorCode.LAUNCH_ERROR)
+      expect(error.info.error).toBe(cause)
     })
 
     it("should create BrowserError with TIMEOUT code", () => {
@@ -610,7 +628,7 @@ describe("MyBrowser", () => {
       expect(browserResult.isOk()).toBe(true)
 
       await using browser = browserResult.unwrap()
-      expect(browser.browser.connected).toBe(true)
+      expect(browser.connected).toBe(true)
 
       // First operation creates a page
       await browser.browse(serverUrl)
@@ -626,7 +644,7 @@ describe("MyBrowser", () => {
       expect(firstUrl.unwrap()).toContain("localhost")
       expect(secondUrl.unwrap()).toContain("localhost")
       // Browser should still be connected
-      expect(browser.browser.connected).toBe(true)
+      expect(browser.connected).toBe(true)
     }, 30000)
 
     it("should create new page if none exists", async () => {
@@ -634,14 +652,14 @@ describe("MyBrowser", () => {
       expect(browserResult.isOk()).toBe(true)
 
       await using browser = browserResult.unwrap()
-      expect(browser.browser.connected).toBe(true)
+      expect(browser.connected).toBe(true)
 
       // getUrl should create a page automatically
       const result = await browser.getUrl()
 
       expect(result.isOk()).toBe(true)
       // Browser should still be connected
-      expect(browser.browser.connected).toBe(true)
+      expect(browser.connected).toBe(true)
     }, 30000)
   })
 })

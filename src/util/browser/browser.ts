@@ -1,24 +1,76 @@
 import {
-  type AsyncResult,
+  AsyncResult,
   err,
   ok,
   result,
-  TypedError,
   UnexpectedError,
   UnexpectedErrorCode,
 } from "always-panic"
-import puppeteer, { type Browser, type Page, TimeoutError } from "puppeteer"
+import puppeteer, { type BrowserContext, type Page } from "puppeteer"
 import { info } from "~misc/cli.js"
 import { env } from "~misc/env.js"
+import { BrowserError, BrowserErrorCode, toNavigationError } from "./error.js"
+
+/**
+ * The single shared Chrome process. Each MyBrowser instance owns an isolated
+ * {@link BrowserContext} inside it (separate cookies/storage per channel),
+ * so only one memory-heavy browser process exists no matter how many
+ * channels are active.
+ */
+let sharedBrowser: ReturnType<typeof launchSharedBrowser> | null = null
+
+function launchSharedBrowser() {
+  const args = env.puppeteerLaunchArgs?.split(" ") ?? []
+  return BrowserError.try(async () =>
+    ok(await puppeteer.launch({ pipe: false, args }))
+  ).mapErr(
+    (e) =>
+      new BrowserError(
+        BrowserErrorCode.LAUNCH_ERROR,
+        "An error happens while launching the browser",
+        { error: e.cause }
+      )
+  )
+}
+
+/**
+ * Get the shared browser, launching it on first use and relaunching it if
+ * Chrome died (e.g. OOM-killed). Concurrent callers share one launch attempt;
+ * a failed launch surfaces as a `LAUNCH_ERROR` and is not cached, so the
+ * next caller retries.
+ */
+function getSharedBrowser() {
+  return AsyncResult.from(async () => {
+    for (;;) {
+      sharedBrowser ??= launchSharedBrowser()
+      const pending = sharedBrowser
+      const res = await pending
+      if (res.isErr()) {
+        // Do not cache a failed launch; the next caller retries.
+        if (sharedBrowser === pending) sharedBrowser = null
+        return res
+      }
+      if (res.value.connected) return res
+      // Only the first caller to observe the dead browser relaunches; the
+      // rest loop into the fresh `sharedBrowser`.
+      if (sharedBrowser === pending) sharedBrowser = launchSharedBrowser()
+    }
+  })
+}
 
 class MyBrowser implements AsyncDisposable {
   TIMEOUT_SECONDS = 12
 
   /**
    * Create a new MyBrowser instance.
-   * @param browser - The underlying puppeteer browser.
+   * @param context - This instance's isolated context in the shared browser.
    */
-  constructor(public readonly browser: Browser) {}
+  constructor(public readonly context: BrowserContext) {}
+
+  /** Whether this instance can still drive its Chrome context. */
+  get connected() {
+    return !this.context.closed && this.context.browser().connected
+  }
 
   /**
    * Parse a URL string into a URL object.
@@ -35,33 +87,39 @@ class MyBrowser implements AsyncDisposable {
     }
   }
 
-  // The signature is for YukiBrowser to extend
+  /**
+   * Create a fresh isolated context in the shared browser,
+   * launching (or relaunching) the browser if needed.
+   * @returns A new BrowserContext.
+   */
+  protected static newContext() {
+    return getSharedBrowser().map((browser) => browser.createBrowserContext())
+  }
+
   /**
    * Create a new MyBrowser instance.
-   * @param _url - The main URL for this browser.
+   * @param url - The main URL for this browser, validated when given.
+   * (Validating here keeps this error union identical to YukiBrowser.new's,
+   * which the static override requires.)
    * @returns A MyBrowser instance.
    */
-  static new(
-    _url?: string
-  ): AsyncResult<MyBrowser, BrowserError<BrowserErrorCode>> {
+  static new(url?: string) {
     return result.panic(
-      BrowserError.try(async () => {
-        const args = env.puppeteerLaunchArgs?.split(" ") ?? []
-        const b = await puppeteer.launch({
-          pipe: false,
-          args,
-        })
-        return ok(new MyBrowser(b))
+      result.gen(async function* () {
+        if (url != null) yield* MyBrowser.parseUrl(url)
+        const context = yield* MyBrowser.newContext()
+        return ok(new MyBrowser(context))
       })
     )
   }
 
   /**
-   * Dispose the browser.
+   * Dispose this instance's context (and all its pages).
+   * The shared browser stays alive for other instances.
    */
   async [Symbol.asyncDispose]() {
     try {
-      await this.browser.close()
+      await this.context.close()
     } catch {
       // TODO: maybe do something here
     }
@@ -81,16 +139,17 @@ class MyBrowser implements AsyncDisposable {
   }
 
   /**
-   * Get the "second" page or create a new one if it doesn't exist.
-   * @returns The second page.
+   * Get this context's page or create a new one if it doesn't exist.
+   * (Unlike the default context, a fresh context starts with no pages.)
+   * @returns The page.
    */
   protected getPage() {
     return result.panic(
       BrowserError.try(async () => {
-        const pages = await this.browser.pages()
-        let page = pages[1]
+        const pages = await this.context.pages()
+        let page = pages[0]
         if (page == null) {
-          page = await this.browser.newPage()
+          page = await this.context.newPage()
           page.setDefaultTimeout(this.TIMEOUT_SECONDS * 1000)
           page.setDefaultNavigationTimeout(this.TIMEOUT_SECONDS * 1000)
           await page.setViewport({ width: 1280, height: 1024 })
@@ -201,41 +260,3 @@ class MyBrowser implements AsyncDisposable {
 }
 
 export default MyBrowser
-
-export enum BrowserErrorCode {
-  INVALID_URL,
-  INVALID_SCREENSHOT_FILENAME,
-  TIMEOUT,
-  ABORTED,
-}
-
-export class BrowserError<T extends BrowserErrorCode> extends TypedError<T> {
-  static override fromAny(e: unknown) {
-    return UnexpectedError.fromAny(e)
-  }
-}
-
-/**
- * Recognize the puppeteer navigation failures we know how to type.
- * Anything else is a bug in the chain and stays an `UnexpectedError`.
- */
-function toNavigationError(e: unknown) {
-  if (e instanceof Error) {
-    const message = e.message
-    if (
-      e instanceof TimeoutError ||
-      message.startsWith("net::ERR_CONNECTION_TIMED_OUT ")
-    )
-      return new BrowserError(BrowserErrorCode.TIMEOUT, message)
-    if (
-      message.startsWith("net::ERR_NAME_NOT_RESOLVED ") ||
-      message.startsWith(
-        "Protocol error (Page.navigate): Cannot navigate to invalid URL"
-      )
-    )
-      return new BrowserError(BrowserErrorCode.INVALID_URL, message)
-    if (message.startsWith("net::ERR_ABORTED "))
-      return new BrowserError(BrowserErrorCode.ABORTED, message)
-  }
-  return UnexpectedError.fromAny(e)
-}

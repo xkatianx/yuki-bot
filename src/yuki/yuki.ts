@@ -75,6 +75,17 @@ export class Yuki extends Bot {
   }
 
   /**
+   * Dispose the cached channel manager (and its browser) for the channel,
+   * so the next `getChannelManager` rebuilds it from scratch.
+   * @param channel - The channel to reset the channel manager for.
+   */
+  resetChannelManager(channel: TextChannel) {
+    return this.getSettings(channel.guild).map((settings) =>
+      settings.resetChannelManager(channel)
+    )
+  }
+
+  /**
    * Get the puzzle spreadsheet of the channel without launching a browser.
    * @param channel - The channel to get the puzzle spreadsheet for.
    * @returns The puzzle spreadsheet of the channel.

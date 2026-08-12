@@ -1,45 +1,30 @@
-import {
-  type AsyncResult,
-  err,
-  ok,
-  result,
-  TypedError,
-  UnexpectedError,
-} from "always-panic"
-import puppeteer, { type Browser, type Page } from "puppeteer"
-import { env } from "~misc/env.js"
-import MyBrowser, {
-  type BrowserError,
-  type BrowserErrorCode,
-} from "~util/browser/browser.js"
+import { err, ok, result, TypedError, UnexpectedError } from "always-panic"
+import type { BrowserContext, Page } from "puppeteer"
+import MyBrowser from "~util/browser/browser.js"
 
 export class YukiBrowser extends MyBrowser {
   isLogin = false
 
   constructor(
-    public override readonly browser: Browser,
+    context: BrowserContext,
     public mainUrl: URL
   ) {
-    super(browser)
+    super(context)
   }
 
   /**
-   * Create a new YukiBrowser instance.
+   * Create a new YukiBrowser instance, backed by a fresh isolated context
+   * in the shared browser.
    * @param url - The main URL for this browser.
    * @returns The new YukiBrowser instance.
    * @throws never
    */
-  static override new(
-    url: string
-  ): AsyncResult<YukiBrowser, BrowserError<BrowserErrorCode>> {
+  static override new(url: string) {
     return result.panic(
       result.gen(async function* () {
         const mainUrl = yield* MyBrowser.parseUrl(url)
-        return YukiBrowserError.try(async () => {
-          const args = env.puppeteerLaunchArgs?.split(" ") ?? []
-          const b = await puppeteer.launch({ args })
-          return ok(new YukiBrowser(b, mainUrl))
-        })
+        const context = yield* YukiBrowser.newContext()
+        return ok(new YukiBrowser(context, mainUrl))
       })
     )
   }
