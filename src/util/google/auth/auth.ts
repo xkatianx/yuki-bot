@@ -12,7 +12,8 @@ const auth = new google.auth.GoogleAuth({
 async function myEmail() {
   const drive = google.drive({ version: "v3", auth })
   const res = await drive.about.get({ fields: "user" })
-  return res.data.user?.emailAddress
+  // biome-ignore lint/style/noNonNullAssertion: ↑
+  return res.data.user!.emailAddress
 }
 
 const email = await myEmail()

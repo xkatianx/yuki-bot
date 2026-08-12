@@ -27,6 +27,11 @@ export const env = {
   puzzlesName: required("TEMPLATE_PUZZLES_SHEET_NAME"),
   /** The ID of the template puzzles spreadsheet */
   puzzlesId: required("TEMPLATE_PUZZLES_SHEET_ID"),
+  /**
+   * The ID of the registry spreadsheet, mapping every guild to its root
+   * folder and logging channel.
+   */
+  registrySheetId: required("REGISTRY_SHEET_ID"),
 
   DC: {
     /** Discord Bot CLIENT ID */

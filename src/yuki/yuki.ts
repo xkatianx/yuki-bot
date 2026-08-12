@@ -40,7 +40,7 @@ export class Yuki extends Bot {
 
   /**
    * Get the cached writable root folder for the guild,
-   * or create one from the pinned message if it doesn't exist.
+   * or create one from the registry spreadsheet if it doesn't exist.
    * @param guild - The guild to get the root folder for.
    * @returns The writable root folder for the guild.
    * @throws never

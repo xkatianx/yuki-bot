@@ -1,29 +1,31 @@
 // Set a root folder for a discord server.
 // Every data of the server would be stored under the root folder.
-// The bot will not store any data on its own,
-// so the bot can be hosted across different computers.
-// The root folder is set by pinning a message in any discord channel.
+// The mapping from guilds to root folders and logging channels is kept in
+// the registry spreadsheet (`REGISTRY_SHEET_ID`), owned by the bot host,
+// so the bot can still be hosted across different computers.
 
-import { err, ok, TypedError, UnexpectedError } from "always-panic"
+import { err, ok, result, TypedError } from "always-panic"
 import type { Guild } from "discord.js"
 import { warn } from "~misc/cli.js"
-import { displayCode, formatString, parseString } from "~misc/format.js"
+import { displayCode } from "~misc/format.js"
 import MyBrowser from "~util/browser/browser.js"
-import { getPinned, PinFormat } from "~util/discord/util/pin.js"
 import type { Yuki } from "../../yuki.js"
+import { RegistrySheet } from "./registry/registrySheet.js"
 import { RootFolder } from "./rootFolder.js"
 
 /**
- * Get the root folder url from the pinned message in the guild.
+ * Get the root folder url of the guild from the registry spreadsheet.
+ * Also sets the log channel of the guild from the registry entry.
  * @param bot - The bot instance.
  * @param guild - The guild instance.
  * @returns The root folder url.
  * @throws never
  */
 export function getRootFolderUrl(bot: Yuki, guild: Guild) {
-  return getPinned(guild, bot, PinFormat.Root).andThen((messages) => {
-    const lastMessage = messages.pop()
-    if (lastMessage == null)
+  return result.gen(async function* () {
+    const sheet = yield* RegistrySheet.fromEnv()
+    const entry = sheet.getEntry(guild.id)
+    if (entry == null)
       return err(
         new RootError(
           RootErrorCode.MISSING_URL,
@@ -31,32 +33,44 @@ export function getRootFolderUrl(bot: Yuki, guild: Guild) {
             " Please use `/root {url}` to set one."
         )
       )
-
-    bot.setLogChannel(guild.id, lastMessage.channel).unwrapOrElse(warn)
-
-    const url = parseString(PinFormat.Root, lastMessage.message.content)?.get(
-      "url"
-    )
-    // TODO: this may need further inspection
-    if (url == null)
-      return err(
-        UnexpectedError.unreachable(
-          "Wrong root url format in discord pinned message."
-        )
-      )
-    return ok(url)
+    const channel = guild.channels.cache.get(entry.loggingChannelId)
+    if (channel != null) bot.setLogChannel(guild.id, channel).unwrapOrElse(warn)
+    return ok(entry.rootUrl)
   })
 }
 
 /**
- * Set the root folder url by pinning a message in the guild.
- * This only returns the reply message, it does not pin the message.
- * @param url - The url of the root folder.
- * @returns The reply message.
+ * Save the root folder url and logging channel of a guild to the registry.
+ * @param guild - The guild to save the entry for.
+ * @param loggingChannelId - The ID of the logging channel.
+ * @param rootUrl - The url of the root folder.
+ * @returns The response from the spreadsheet.
+ * @throws never
  */
-export function setRootFolderUrl(url: string) {
+export function saveRootUrlToRegistry(
+  guild: Guild,
+  loggingChannelId: string,
+  rootUrl: string
+) {
+  return RegistrySheet.fromEnv().andThen((sheet) =>
+    sheet.setEntry({
+      guildId: guild.id,
+      guildName: guild.name,
+      rootUrl,
+      loggingChannelId,
+    })
+  )
+}
+
+/**
+ * Validate and normalize a root folder url.
+ * @param url - The url of the root folder.
+ * @returns The normalized url.
+ * @throws never
+ */
+export function parseRootFolderUrl(url: string) {
   return MyBrowser.parseUrl(url)
-    .map((url) => formatString(PinFormat.Root, { url: url.href }))
+    .map((url) => url.href)
     .mapErr(
       () =>
         new RootError(
@@ -67,7 +81,7 @@ export function setRootFolderUrl(url: string) {
 }
 
 /**
- * Get the writable root folder from the pinned message in the guild.
+ * Get the writable root folder of the guild from the registry spreadsheet.
  * @param bot - The bot instance.
  * @param guild - The guild instance.
  * @returns The writable root folder.
@@ -78,28 +92,6 @@ export function getRootFolder(bot: Yuki, guild: Guild) {
     .andThen((url) => RootFolder.fromUrl(url))
     .andThen((folder) => folder.checkWritePermission())
 }
-
-// /**
-//  * Prepare the root folder and the settings spreadsheet.
-//  * @param rootUrl - The url of the root folder.
-//  * @returns The writable root folder and the unique settings spreadsheet.
-//  */
-// export function prepareRoot(rootUrl: string) {
-//   return AsyncResult.from(RootFolder.fromUrl(rootUrl))
-//     .andThen((root) => root.checkWritePermission())
-//     .andThen((root) =>
-//       getSettings(root).map((settings) => ({ root, settings }))
-//     )
-// }
-
-// async function getSetting (bot: Bot, guild: Guild) {
-//   const root = await getRootFolder(bot, guild)
-// }
-
-// async function removeRootFolder(bot: Bot, guild: Guild): Promise<void> {
-//   const messages = await getPinned(bot, guild, PinFormat.Root);
-//   await Promise.all(messages.map(async (m) => await m.delete()));
-// }
 
 export enum RootErrorCode {
   MISSING_URL,

@@ -1,10 +1,12 @@
 import { ok, result } from "always-panic"
 import type { ChatInputCommandInteraction } from "discord.js"
 import { SlashCommandBuilder } from "discord.js"
+import { warn } from "~misc/cli.js"
 import { BotLogError } from "~util/discord/bot/log.js"
-import { DiscordError } from "~util/discord/error.js"
-import { pin } from "~util/discord/util/pin.js"
-import { setRootFolderUrl } from "../../guildManager/root/root.js"
+import {
+  parseRootFolderUrl,
+  saveRootUrlToRegistry,
+} from "../../guildManager/root/root.js"
 import { YukiBaseCommand } from "./_base.js"
 
 class RootCommand extends YukiBaseCommand {
@@ -41,21 +43,17 @@ class RootCommand extends YukiBaseCommand {
           return ok()
         }
         // SET
-        // set root folder url by pinning certain message
-        const reply = yield* setRootFolderUrl(newRootUrl)
-        const m = await interaction.editReply(reply)
-        return pin(channel, m)
-          .inspect(() => {
-            bot.roots.reset(guild.id)
-          })
-          .mapErr((e) =>
-            DiscordError.is(e)
-              ? e.changeMessage(
-                  "Failed: Please grant me permission to pin messages."
-                )
-              : e
-          )
-          .map(() => undefined)
+        // save the root folder url to the registry spreadsheet;
+        // the current channel becomes the logging channel
+        const url = yield* parseRootFolderUrl(newRootUrl)
+        yield* await saveRootUrlToRegistry(guild, channel.id, url)
+        bot.roots.reset(guild.id)
+        bot.setLogChannel(guild.id, channel).unwrapOrElse(warn)
+        await interaction.editReply(
+          `The root folder for this server is now:\n${url}\n` +
+            "I will log to this channel."
+        )
+        return ok()
       })
       .mapErr((e) => self.handleError(e))
   }
