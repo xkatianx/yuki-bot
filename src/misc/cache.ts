@@ -30,6 +30,8 @@ export class Cache<V> {
    * - If `key` is missing and no supplier is running, it calls `fn` and:
    *   - on `Ok(v)`: stores `v` under `key` and returns `Ok(v)`
    *   - on `Err(e)`: **does not** cache anything and returns `Err(e)`
+   *   - on throw/rejection: **does not** cache anything and the rejection
+   *     propagates; a later `getOrSet` for the same `key` calls `fn` again
    *
    * The supplier can be:
    * - a sync `() => Result<V, E>`
@@ -55,15 +57,21 @@ export class Cache<V> {
 
     const res1 = fn()
     if (res1 instanceof Promise || res1 instanceof AsyncResult) {
-      const promise = Promise.resolve(res1).then((res2: Result<V, E>) => {
-        this.#pending.delete(key)
-        return res2.map((v) => {
-          const cached = this.#map.get(key)
-          if (cached != null) return cached
-          this.#map.set(key, v)
-          return v
+      const promise = Promise.resolve(res1)
+        .then((res2: Result<V, E>) =>
+          res2.map((v) => {
+            const cached = this.#map.get(key)
+            if (cached != null) return cached
+            this.#map.set(key, v)
+            return v
+          })
+        )
+        .finally(() => {
+          // Must also run when the supplier rejects: otherwise the rejected
+          // promise stays in #pending forever and every later getOrSet for
+          // this key returns that same stale rejection.
+          this.#pending.delete(key)
         })
-      })
       this.#pending.set(key, promise as Promise<Result<V, unknown>>)
       return promise
     } else {

@@ -94,7 +94,9 @@ export class Bot {
    * Dispatches to the matching action. Internal failures come back as a
    * `BotError` and user-facing ones as a `BotLogError`; both are normalized by
    * `toBotLogError` and reported via {@link report}.
-   * Unexpected throws (Discord API errors, bugs) are caught and logged via `fail`.
+   * Unexpected throws (Discord API errors, bugs) are caught, logged via
+   * `fail`, and answered with a generic error message so a deferred
+   * interaction does not show "thinking..." forever.
    * @param i - The interaction to handle
    */
   protected async handleInteraction(i: Interaction): Promise<void> {
@@ -103,6 +105,20 @@ export class Bot {
       if (res.isErr()) await this.report(i, toBotLogError(res.error))
     } catch (e: unknown) {
       fail(e)
+      await this.replyInternalError(i)
+    }
+  }
+
+  /** Best-effort user-facing notice after an unexpected throw. */
+  protected async replyInternalError(i: Interaction): Promise<void> {
+    if (!i.isRepliable()) return
+    const content = "An unexpected error happened. Please try again."
+    try {
+      if (i.deferred) await i.editReply(content)
+      else if (i.replied) await i.followUp({ content, ephemeral: true })
+      else await i.reply({ content, ephemeral: true })
+    } catch {
+      // The interaction is gone or expired; the console log is all we have.
     }
   }
 

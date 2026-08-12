@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { AsyncResult, err, ok } from "always-panic"
+import { AsyncResult, err, ok, type Result } from "always-panic"
 import { Cache } from "./cache"
 
 describe("Cache", () => {
@@ -94,6 +94,48 @@ describe("Cache", () => {
         expect(result1.isOk() && result1.unwrap()).toBe(42)
         expect(result2.isOk() && result2.unwrap()).toBe(42)
         expect(callCount).toBe(1)
+      })
+
+      it("should not poison the cache when the supplier rejects", async () => {
+        const cache = new Cache<number>()
+        let callCount = 0
+
+        const failing = async (): Promise<Result<number, string>> => {
+          callCount++
+          throw new Error("boom")
+        }
+
+        await expect(cache.getOrSet("key1", failing)).rejects.toThrow("boom")
+
+        // The stale rejected promise must not be returned to later callers.
+        const result = await cache.getOrSet("key1", async () => ok(42))
+        expect(result.isOk()).toBe(true)
+        expect(result.unwrap()).toBe(42)
+        expect(cache.get("key1")).toBe(42)
+        expect(callCount).toBe(1)
+      })
+
+      it("should share the rejection with concurrent waiters, then retry", async () => {
+        const cache = new Cache<number>()
+        let callCount = 0
+
+        const failing = async (): Promise<Result<number, string>> => {
+          callCount++
+          await new Promise((resolve) => setTimeout(resolve, 10))
+          throw new Error("boom")
+        }
+
+        const [r1, r2] = await Promise.allSettled([
+          cache.getOrSet("key1", failing),
+          cache.getOrSet("key1", failing),
+        ])
+        expect(r1.status).toBe("rejected")
+        expect(r2.status).toBe("rejected")
+        expect(callCount).toBe(1)
+
+        const result = await cache.getOrSet("key1", async () => ok(42))
+        expect(result.isOk()).toBe(true)
+        expect(result.unwrap()).toBe(42)
       })
 
       it("should handle race condition - first call sets, second gets cached", async () => {
