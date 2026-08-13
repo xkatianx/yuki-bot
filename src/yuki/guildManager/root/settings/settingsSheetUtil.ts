@@ -1,5 +1,4 @@
 import { type AsyncResult, err, ok, TypedError } from "always-panic"
-import { noDefault } from "~misc/type.js"
 import type { GSpreadsheet } from "~util/google/sheet/sheet.js"
 import type { SettingsSheet } from "./settingsSheet.js"
 
@@ -95,7 +94,7 @@ function getInfo(sheet: GSpreadsheet, version: (typeof validVersions)[number]) {
       case "1.0.0":
         return getInfo_1_0_0(sheet)
       default:
-        noDefault(version)
+        return version satisfies never
     }
   })() satisfies AsyncResult<{ version: typeof version }, unknown>
 }
@@ -129,7 +128,7 @@ function setInfo(
     case "1.0.0":
       return setInfo_1_0_0.call(this, info)
     default:
-      noDefault(version)
+      return version satisfies never
   }
 }
 
