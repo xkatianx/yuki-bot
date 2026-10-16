@@ -5,12 +5,14 @@ export enum DiscordErrorCode {
   NO_ACCESS,
   NO_ACCESS_FETCH_PINS,
   NO_PERMISSION,
+  LOGIN_FAILED,
 }
 
 type DiscordErrorInfoMap = {
   [DiscordErrorCode.NO_ACCESS]: { cause: Error }
   [DiscordErrorCode.NO_ACCESS_FETCH_PINS]: { cause: Error }
   [DiscordErrorCode.NO_PERMISSION]: { cause: Error }
+  [DiscordErrorCode.LOGIN_FAILED]: { cause: Error }
 }
 
 export class DiscordError<T extends DiscordErrorCode> extends TypedError<

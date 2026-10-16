@@ -20,7 +20,7 @@ import {
 import { BotError, BotErrorCode } from "./bot/error.js"
 import { report } from "./bot/log.js"
 import type { BaseCommand } from "./commands/base.js"
-import { DiscordError } from "./error.js"
+import { DiscordError, DiscordErrorCode } from "./error.js"
 
 export class Bot {
   readonly client: Client
@@ -40,41 +40,53 @@ export class Bot {
     this.client = new Client({
       intents,
     })
-      .on(Events.Warn, (message) => {
-        warn("(from discord.js)", message)
-      })
-      .on(Events.Error, (message) => {
-        fail("(from discord.js)", message)
-      })
-      .once(Events.ClientReady, this.onReady.bind(this))
+      .on(Events.Warn, this.onWarn.bind(this))
+      .on(Events.Error, this.onError.bind(this))
+      .once(Events.ClientReady, this.onceClientReady.bind(this))
 
     // loadCommands
     for (const command of commands) {
       this.commands.set(command.data.name, command)
     }
     this.client.on(Events.InteractionCreate, (interaction) => {
-      void this.handleInteraction(interaction)
+      void this.onInteractionCreate(interaction)
     })
     // this.client.on(Events.MessageCreate, (message) => {
-    //   this.handleMessage(message)
+    //   this.onMessageCreate(message)
     // })
   }
 
-  protected onReady(readyClient: Client<true>) {
+  protected onceClientReady(readyClient: Client<true>) {
     this.#readyTime = Temporal.Now.instant()
     done(`Ready! Logged in as ${readyClient.user.tag}`)
+  }
+
+  protected onWarn(message: string) {
+    warn("(from discord.js)", message)
+  }
+
+  protected onError(error: Error) {
+    fail("(from discord.js)", error)
   }
 
   /**
    * Login to Discord.
    * @returns This bot instance
    */
-  login(): this {
-    this.client.login(this.token).catch((e: unknown) => {
-      fail("Failed to login discord bot:", e)
-      process.exit(1)
-    })
-    return this
+  async login() {
+    try {
+      await this.client.login(this.token)
+      return ok(this)
+    } catch (e) {
+      if (e instanceof Error) {
+        return err(
+          new DiscordError(DiscordErrorCode.LOGIN_FAILED, e.message, {
+            cause: e,
+          })
+        )
+      }
+      throw e
+    }
   }
 
   ///////////////////// Error handling //////////////////////////////
@@ -99,7 +111,7 @@ export class Bot {
    * interaction does not show "thinking..." forever.
    * @param i - The interaction to handle
    */
-  protected async handleInteraction(i: Interaction): Promise<void> {
+  protected async onInteractionCreate(i: Interaction): Promise<void> {
     try {
       const res = await this.route(i)
       if (res.isErr()) await this.report(i, toBotLogError(res.error))

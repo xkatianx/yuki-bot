@@ -33,9 +33,8 @@ export class Yuki extends Bot {
     this.client.mybot = this
   }
 
-  protected override onReady(readyClient: Client<true>): void {
-    // TODO: maybe fetch all log channels on ready
-    super.onReady(readyClient)
+  protected override onceClientReady(readyClient: Client<true>): void {
+    super.onceClientReady(readyClient)
   }
 
   /**
