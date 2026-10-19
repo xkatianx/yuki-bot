@@ -19,6 +19,9 @@ export const env = {
   /** Arguments for puppeteer launch, separated by space. */
   puppeteerLaunchArgs: optional("PUPPETEER_LAUNCH_ARGS"),
 
+  /** Log every text WebSocket frame the browser receives. Set to "true" to enable. */
+  listenWS: optional("LISTEN_WS") === "true",
+
   /** The name of the template settings spreadsheet */
   settingsName: required("TEMPLATE_SETTINGS_SHEET_NAME"),
   /** The ID of the template settings spreadsheet */

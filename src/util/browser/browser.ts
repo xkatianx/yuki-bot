@@ -136,7 +136,9 @@ class MyBrowser implements AsyncDisposable {
     const session = await page.createCDPSession()
     await session.send("Network.enable")
     session.on("Network.webSocketFrameReceived", (event) => {
-      info(event.response.payloadData)
+      if (event.response.opcode === 1) {
+        info(event.response.payloadData)
+      } // ignore binary payloads (opcode !== 1) for now
     })
   }
 
@@ -155,7 +157,7 @@ class MyBrowser implements AsyncDisposable {
           page.setDefaultTimeout(this.TIMEOUT_SECONDS * 1000)
           page.setDefaultNavigationTimeout(this.TIMEOUT_SECONDS * 1000)
           await page.setViewport({ width: 1280, height: 1024 })
-          await this.listenWS(page)
+          if (env.listenWS) await this.listenWS(page)
         }
         return ok(page)
       })
