@@ -92,6 +92,7 @@ describe("MyBrowser", () => {
         expect(result.error.name).toBe("BrowserError")
         expect(result.error.code).toBe(BrowserErrorCode.INVALID_URL)
         expect(result.error.message).toContain("Invalid URL")
+        expect(result.error.info.input).toBe("not-a-valid-url")
       }
     })
 
@@ -549,13 +550,15 @@ describe("MyBrowser", () => {
     it("should create BrowserError with correct properties", () => {
       const error = new BrowserError(
         BrowserErrorCode.INVALID_URL,
-        "Test error message"
+        "Test error message",
+        { input: "not a url" }
       )
 
       expect(error).toBeInstanceOf(Error)
       expect(error.name).toBe("BrowserError")
       expect(error.code).toBe(BrowserErrorCode.INVALID_URL)
       expect(error.message).toBe("Test error message")
+      expect(error.info.input).toBe("not a url")
     })
 
     it("should create BrowserError with LAUNCH_ERROR code keeping the original error", () => {
@@ -585,7 +588,13 @@ describe("MyBrowser", () => {
     })
 
     it("should be instance of Error", () => {
-      const error = new BrowserError(BrowserErrorCode.INVALID_URL, "Test error")
+      const error = new BrowserError(
+        BrowserErrorCode.INVALID_URL,
+        "Test error",
+        {
+          input: "x",
+        }
+      )
 
       expect(error instanceof Error).toBe(true)
     })
@@ -593,7 +602,8 @@ describe("MyBrowser", () => {
     it("should have different error codes", () => {
       const invalidUrlError = new BrowserError(
         BrowserErrorCode.INVALID_URL,
-        "Invalid URL"
+        "Invalid URL",
+        { input: "x" }
       )
       const timeoutError = new BrowserError(BrowserErrorCode.TIMEOUT, "Timeout")
 

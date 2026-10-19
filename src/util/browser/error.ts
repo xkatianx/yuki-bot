@@ -10,7 +10,10 @@ export enum BrowserErrorCode {
 }
 
 type BrowserErrorInfoMap = {
-  [BrowserErrorCode.INVALID_URL]: undefined
+  [BrowserErrorCode.INVALID_URL]: {
+    /** The URL that failed to parse or navigate */
+    input: string
+  }
   [BrowserErrorCode.INVALID_SCREENSHOT_FILENAME]: undefined
   [BrowserErrorCode.TIMEOUT]: undefined
   [BrowserErrorCode.ABORTED]: undefined
@@ -29,9 +32,10 @@ export class BrowserError<T extends BrowserErrorCode> extends TypedError<
 
 /**
  * Recognize the puppeteer navigation failures we know how to type.
+ * `input` is the URL being navigated to, kept on `INVALID_URL` errors.
  * Anything else is a bug in the chain and stays an `UnexpectedError`.
  */
-export function toNavigationError(e: unknown) {
+export function toNavigationError(e: unknown, input: string) {
   if (e instanceof Error) {
     const message = e.message
     if (
@@ -45,7 +49,9 @@ export function toNavigationError(e: unknown) {
         "Protocol error (Page.navigate): Cannot navigate to invalid URL"
       )
     )
-      return new BrowserError(BrowserErrorCode.INVALID_URL, message)
+      return new BrowserError(BrowserErrorCode.INVALID_URL, message, {
+        input,
+      })
     if (message.startsWith("net::ERR_ABORTED "))
       return new BrowserError(BrowserErrorCode.ABORTED, message)
   }

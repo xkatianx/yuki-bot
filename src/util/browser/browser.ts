@@ -82,7 +82,9 @@ class MyBrowser implements AsyncDisposable {
       return ok(new URL(url))
     } catch {
       return err(
-        new BrowserError(BrowserErrorCode.INVALID_URL, `Invalid URL: ${url}`)
+        new BrowserError(BrowserErrorCode.INVALID_URL, `Invalid URL: ${url}`, {
+          input: url,
+        })
       )
     }
   }
@@ -187,7 +189,7 @@ class MyBrowser implements AsyncDisposable {
           return ok(res)
         }).orElse((e) =>
           UnexpectedError.is(e, UnexpectedErrorCode.UNKNOWN)
-            ? err(toNavigationError(e.cause))
+            ? err(toNavigationError(e.cause, urlObj.href))
             : err(e)
         )
       })
