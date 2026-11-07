@@ -14,6 +14,7 @@ import { BaseCommand } from "~util/discord/commands/base.js"
 import { DiscordError } from "~util/discord/error.js"
 import { myGoogleInfo } from "~util/google/auth/auth.js"
 import { GFolderError, GFolderErrorCode } from "~util/google/folder/error.js"
+import { GSheetError, GSheetErrorCode } from "~util/google/sheet/error.js"
 import type { Yuki } from "../../yuki.js"
 
 /**
@@ -94,9 +95,24 @@ export abstract class YukiBaseCommand extends BaseCommand {
               `Please make sure the file exists or add ${target} as a viewer.`
             )
           ).unwrapErr(),
+        [GFolderErrorCode.SERVER_ERROR]: (e) => googleServerError(e),
+        else: (e) => BotLogError.say(e.message, e).unwrapErr(),
+      })
+    }
+    if (GSheetError.is(e)) {
+      return GSheetError.match(e, {
+        [GSheetErrorCode.SERVER_ERROR]: (e) => googleServerError(e),
         else: (e) => BotLogError.say(e.message, e).unwrapErr(),
       })
     }
     return BotLogError.say(e.message, e).unwrapErr()
   }
+}
+
+/** Google failed on its side (5xx); it's transient, so invite a retry. */
+function googleServerError(e: Error): BotLogError {
+  return BotLogError.say(
+    "Google had a temporary error. Please try again in a moment.",
+    e
+  ).unwrapErr()
 }

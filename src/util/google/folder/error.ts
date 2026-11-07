@@ -1,6 +1,7 @@
 import { TypedError, UnexpectedError } from "always-panic"
 import { GaxiosError } from "gaxios"
 import { fail } from "~misc/cli.js"
+import { isServerError } from "../misc.js"
 
 export enum GFolderErrorCode {
   CANNOT_WRITE,
@@ -13,6 +14,8 @@ export enum GFolderErrorCode {
   MANY_FOLDERS,
   MANY_SPREADSHEETS,
   UNKNOWN,
+  /** Google returned a 5xx; transient, so the user can retry. */
+  SERVER_ERROR,
 }
 
 type GFolderErrorInfoMap = {
@@ -32,6 +35,7 @@ type GFolderErrorInfoMap = {
   [GFolderErrorCode.MANY_FOLDERS]: undefined
   [GFolderErrorCode.MANY_SPREADSHEETS]: undefined
   [GFolderErrorCode.UNKNOWN]: undefined
+  [GFolderErrorCode.SERVER_ERROR]: { cause: Error }
 }
 
 export class GFolderError<T extends GFolderErrorCode> extends TypedError<
@@ -44,6 +48,11 @@ export class GFolderError<T extends GFolderErrorCode> extends TypedError<
       if (e instanceof GaxiosError) {
         if (message.startsWith("File not found:")) {
           return new GFolderError(GFolderErrorCode.MISSING_FILE, message)
+        }
+        if (isServerError(e)) {
+          return new GFolderError(GFolderErrorCode.SERVER_ERROR, message, {
+            cause: e,
+          })
         }
       }
       fail(e)
