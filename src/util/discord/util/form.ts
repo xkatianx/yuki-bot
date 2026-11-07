@@ -17,7 +17,8 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from "discord.js"
-import { fatal } from "~misc/cli.js"
+import { fatal, warn } from "~misc/cli.js"
+import { tryDiscord } from "../bot/action.js"
 import { BotLogError } from "../bot/log.js"
 import type { IRF } from "../commands/base.js"
 import { InteractionHandler } from "./interaction.js"
@@ -35,7 +36,6 @@ export interface FormInputProps {
 const GROUP_SIZE = 5
 
 export class Form {
-  #interaction?: ChatInputCommandInteraction
   #inputs: TextInputBuilder[] = []
   #labels = new Map<TextInputBuilder, string>()
   #text = ""
@@ -49,7 +49,7 @@ export class Form {
       BotLogError
     >
   >
-  #afterSubmit?: () => AsyncResult<void, BotLogError>
+  #afterSubmit?: (i: ButtonInteraction) => AsyncResult<void, BotLogError>
 
   getModal(idx: number): ModalBuilder {
     if (this.#modal[idx] == null) {
@@ -106,8 +106,14 @@ export class Form {
     return this
   }
 
-  /** The returned string of `fn` will be the message showed after submit. */
-  setAfterSubmit(fn: () => AsyncResult<void, BotLogError>): this {
+  /**
+   * Run `fn` after a successful submit. It receives the Submit button's
+   * interaction — reply through that, not the original command's interaction,
+   * whose token may have expired by now.
+   */
+  setAfterSubmit(
+    fn: (i: ButtonInteraction) => AsyncResult<void, BotLogError>
+  ): this {
     this.#afterSubmit = fn
     return this
   }
@@ -135,9 +141,16 @@ export class Form {
     const self = this
     const onSubmit: IRF<ButtonInteraction> = (i) =>
       result.gen(async function* () {
-        await i.deferReply()
-        await self.#interaction?.editReply({
-          components: [],
+        yield* await tryDiscord(() => i.deferReply())
+        // Edit via the bot token (`i.message`), not the original command's
+        // interaction: its token expires after 15 minutes, and users can
+        // easily take longer than that to fill in the form.
+        // Removing the buttons is cosmetic, so don't let it block submission.
+        const stripped = await tryDiscord(() =>
+          i.message.edit({ components: [] })
+        )
+        stripped.inspectErr((e) => {
+          warn("Failed to remove form buttons:", e)
         })
         if (self.onSubmit == null)
           return BotLogError.say(
@@ -145,8 +158,8 @@ export class Form {
             new Error("Missing submission function.")
           )
         const reply = yield* result.fromMaybe(await self.onSubmit(self))
-        await i.editReply(reply)
-        const res2 = await self.#afterSubmit?.()
+        yield* await tryDiscord(() => i.editReply(reply))
+        const res2 = await self.#afterSubmit?.(i)
         return res2 ?? ok()
       })
     const uid = InteractionHandler.setButton(onSubmit)
@@ -159,7 +172,6 @@ export class Form {
   }
 
   async reply(interaction: ChatInputCommandInteraction): Promise<Message> {
-    this.#interaction = interaction
     return await interaction.editReply({
       content: this.printToDiscord(),
       components: [this.buttons],

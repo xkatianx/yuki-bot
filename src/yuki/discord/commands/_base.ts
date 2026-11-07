@@ -8,8 +8,10 @@ import type {
 } from "discord.js"
 import { TextChannel } from "discord.js"
 import { lines } from "~misc/format.js"
+import { handleDiscordError } from "~util/discord/bot/action.js"
 import { BotLogError } from "~util/discord/bot/log.js"
 import { BaseCommand } from "~util/discord/commands/base.js"
+import { DiscordError } from "~util/discord/error.js"
 import { myGoogleInfo } from "~util/google/auth/auth.js"
 import { GFolderError, GFolderErrorCode } from "~util/google/folder/error.js"
 import type { Yuki } from "../../yuki.js"
@@ -76,6 +78,7 @@ export abstract class YukiBaseCommand extends BaseCommand {
 
   protected handleError(e: TypedError<Code>): BotLogError {
     if (BotLogError.is(e)) return e
+    if (DiscordError.is(e)) return handleDiscordError(e)
     if (GFolderError.is(e)) {
       const email = myGoogleInfo.email
       const target = email == null ? "me" : `\`${email}\``

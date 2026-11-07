@@ -14,6 +14,7 @@ import {
 import { displayCode } from "~misc/format.js"
 import { YYYY$MM } from "~misc/time/timestamp.js"
 import MyBrowser from "~util/browser/browser.js"
+import { tryDiscord } from "~util/discord/bot/action.js"
 import { BotLogError } from "~util/discord/bot/log.js"
 import type { IRF } from "~util/discord/commands/base.js"
 import { Form } from "~util/discord/util/form.js"
@@ -139,14 +140,15 @@ class NewCommand extends YukiBaseCommand {
               })
               .mapErr((e) => this.handleError(e))
           })
-        form.setAfterSubmit(() =>
+        form.setAfterSubmit((i) =>
           AsyncResult.from(settings.getChannelManager(channel))
-            .map(async (cm) => {
-              await interaction.followUp(
-                this.setTopicConfirm(channel, cm.spreadsheet.url)
-              )
-            })
             .mapErr((e) => this.handleError(e))
+            .andThen((cm) =>
+              tryDiscord(() =>
+                i.followUp(this.setTopicConfirm(channel, cm.spreadsheet.url))
+              )
+            )
+            .map(() => undefined)
         )
 
         await form.reply(interaction)

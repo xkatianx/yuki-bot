@@ -1,4 +1,4 @@
-import { AsyncResult, err, ok } from "always-panic"
+import { AsyncResult, err, ok, result } from "always-panic"
 import type {
   ButtonInteraction,
   ChatInputCommandInteraction,
@@ -7,6 +7,7 @@ import type {
   StringSelectMenuInteraction,
 } from "discord.js"
 import type { Bot } from "../bot.js"
+import { DiscordError, DiscordErrorCode } from "../error.js"
 import { InteractionHandler } from "../util/interaction.js"
 import { BotError, BotErrorCode } from "./error.js"
 import { BotLogError } from "./log.js"
@@ -80,6 +81,30 @@ export function handleBotError(e: BotError) {
     [BotErrorCode.UNKNOWN_INTERACTION]: (e) =>
       BotLogError.pss("This interaction is not supported.", e),
   })
+}
+
+/** Convert an expected {@link DiscordError} into a user-facing {@link BotLogError}. */
+export function handleDiscordError(e: DiscordError<DiscordErrorCode>) {
+  return DiscordError.match(e, {
+    [DiscordErrorCode.EXPIRED_TOKEN]: (e) =>
+      BotLogError.pss(
+        "The action has expired. Please run the command again.",
+        e.info.cause
+      ).unwrapErr(),
+    else: (e) => BotLogError.say(e.message, e.info.cause).unwrapErr(),
+  })
+}
+
+/**
+ * Run a Discord API call. Expected failures (see `DiscordError.fromAny`) come
+ * back as `Err(BotLogError)`; anything else panics.
+ */
+export function tryDiscord<T>(
+  fn: () => Promise<T>
+): AsyncResult<T, BotLogError> {
+  return result
+    .panic(DiscordError.try(async () => ok(await fn())))
+    .mapErr(handleDiscordError)
 }
 
 /** Normalize whatever an action returned into the reportable error type. */
